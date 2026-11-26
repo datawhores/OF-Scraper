@@ -41,7 +41,7 @@ live_option = click.option(
 
 live_watch_option = click.option(
     "--live-watch",
-    help="Keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes",
+    help="Keep checking who is live and record them; with --daemon it runs beside the scheduled scrapes. With -u or user filters, the creators to watch are chosen once, when watching starts",
     is_flag=True,
     default=False,
 )

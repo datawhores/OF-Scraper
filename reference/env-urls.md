@@ -44,6 +44,7 @@ Defined in `ofscraper/utils/of_env/values/url/url.py`.
 | <a id="labelledpostsep"></a>`OFSC_LABELLED_POSTS_EP`<br>Key: `labelledPostsEP` | **Default:** `'https://onlyfans.com/api2/v2/users/{}/posts?limit=100&offset={}&order=publish_date_desc&skip_users=all&counters=0&format=infinite&label={}'`. Endpoint for posts under a specific label. |
 | <a id="listep"></a>`OFSC_LIST_EP`<br>Key: `listEP` | **Default:** `'https://onlyfans.com/api2/v2/lists?offset={}&skip_users=all&limit=100&format=infinite'`. Endpoint for user's custom lists. |
 | <a id="listusersep"></a>`OFSC_LIST_USERS_EP`<br>Key: `listusersEP` | **Default:** `'https://onlyfans.com/api2/v2/lists/{}/users?offset={}&limit=100&format=infinite'`. Endpoint for users within a specific list. |
+| <a id="stream_active_url"></a>`OFSC_STREAM_ACTIVE_URL`<br>Key: `STREAM_ACTIVE_URL` | **Default:** `'https://onlyfans.com/api2/v2/users/{}/streams/active?view=full_with_check'`. Endpoint template used to check whether a creator's OnlyFans livestream is active. |
 
 ## Dynamic rule addresses
 

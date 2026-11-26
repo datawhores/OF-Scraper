@@ -79,7 +79,7 @@ async def get_blacklist():
     return set(list(map(lambda x: x["id"], names)))
 
 
-async def get_lists():
+async def get_lists(*, strict=False):
     output = []
     page_count = 0
     async with manager.Manager.session.aget_subscription_session(
@@ -90,7 +90,7 @@ async def get_lists():
         )
 
         try:
-            generator = scrape_for_list(c)
+            generator = scrape_for_list(c, strict=strict)
             async for batch in generator:
                 page_count += 1
                 progress_updater.userlist.update_overall_task(
@@ -99,17 +99,19 @@ async def get_lists():
                 )
                 output.extend(batch)
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
-
-        progress_updater.userlist.remove_overall_task(page_task)
+        finally:
+            progress_updater.userlist.remove_overall_task(page_task)
 
     trace_log_raw("list raw unduped", output)
     log.debug(f"[bold]lists name count without Dupes[/bold] {len(output)} found")
     return output
 
 
-async def scrape_for_list(c, offset=0):
+async def scrape_for_list(c, offset=0, *, strict=False):
     """
     Async Generator Worker for fetching user lists.
     """
@@ -126,6 +128,8 @@ async def scrape_for_list(c, offset=0):
                 visible=True,
             )
             async with c.requests_async(url=url) as r:
+                if strict and not 200 <= r.status < 300:
+                    raise RuntimeError(f"user lists: HTTP {r.status}")
                 data = await r.json_()
                 out_list = data["list"] or []
                 log.debug(
@@ -150,9 +154,13 @@ async def scrape_for_list(c, offset=0):
                 current_offset += len(out_list)
 
         except asyncio.TimeoutError:
+            if strict:
+                raise
             log.debug(f"Task timed out {url}")
             break
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
@@ -161,17 +169,18 @@ async def scrape_for_list(c, offset=0):
                 progress_updater.userlist.remove_job_task(task)
 
 
-async def get_list_users(lists):
+async def get_list_users(lists, *, strict=False):
     async with manager.Manager.session.aget_subscription_session(
         sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
     ) as c:
         # deduplicated by id below; the workers aren't part of a stop-tracked fetch
         output = await collect_pages(
-            [scrape_list_members(c, item) for item in lists],
+            [scrape_list_members(c, item, strict=strict) for item in lists],
             "UserList Users Pages Progress",
             key=None,
             progress=progress_updater.userlist,
             create_task=asyncio.create_task,
+            strict=strict,
         )
 
     outdict = {}
@@ -182,7 +191,7 @@ async def get_list_users(lists):
     return list(outdict.values())
 
 
-async def scrape_list_members(c, item, offset=0):
+async def scrape_list_members(c, item, offset=0, *, strict=False):
     """
     Async Generator Worker for fetching members of a specific list.
     """
@@ -200,6 +209,8 @@ async def scrape_list_members(c, item, offset=0):
             )
 
             async with c.requests_async(url=url) as r:
+                if strict and not 200 <= r.status < 300:
+                    raise RuntimeError(f"user list members: HTTP {r.status}")
                 log_id = f"offset:{current_offset} list:{item.get('name')} =>"
                 data = await r.json_()
                 users = data.get("list") or []
@@ -230,9 +241,13 @@ async def scrape_list_members(c, item, offset=0):
                     current_offset += len(users)
 
         except asyncio.TimeoutError:
+            if strict:
+                raise
             log.debug(f"Task timed out {url}")
             break
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break

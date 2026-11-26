@@ -251,4 +251,11 @@ def load_api_endpoints_config():
         "OF_SORT_SUBSCRIPTIONS_URL", "https://onlyfans.com/api2/v2/lists/following/sort"
     )
 
+    # STREAM_ACTIVE_URL: Endpoint template used to check whether a creator's OnlyFans livestream is active.
+    # Default: https://onlyfans.com/api2/v2/users/{}/streams/active?view=full_with_check
+    config["STREAM_ACTIVE_URL"] = os.getenv(
+        "OFSC_STREAM_ACTIVE_URL",
+        "https://onlyfans.com/api2/v2/users/{}/streams/active?view=full_with_check",
+    )
+
     return config

@@ -442,6 +442,18 @@ Defined in `ofscraper/utils/of_env/values/req/git.py`.
 | <a id="git_max_wait"></a>`OFSC_GIT_MAX_WAIT`<br>Key: `GIT_MAX_WAIT` | **Default:** `5.0`. Maximum wait, in seconds, before retrying a dynamic-rules download. |
 | <a id="git_num_tries"></a>`OFSC_GIT_NUM_TRIES`<br>Key: `GIT_NUM_TRIES` | **Default:** `3`. Maximum number of attempts when downloading dynamic signing rules. |
 
+### Livestream polling and recording
+
+Defined in `ofscraper/utils/of_env/values/req/live.py`.
+
+| Variable / Key | Description |
+|---|---|
+| <a id="live_check_concurrency"></a>`OFSC_LIVE_CHECK_CONCURRENCY`<br>Key: `LIVE_CHECK_CONCURRENCY` | **Default:** `5`. Maximum simultaneous per-creator status checks during `--live` / `--live-watch` polling. |
+| <a id="live_check_timeout"></a>`OFSC_LIVE_CHECK_TIMEOUT`<br>Key: `LIVE_CHECK_TIMEOUT` | **Default:** `15`. Timeout in seconds for a single livestream status check during recording. |
+| <a id="live_individual_max"></a>`OFSC_LIVE_INDIVIDUAL_MAX`<br>Key: `LIVE_INDIVIDUAL_MAX` | **Default:** `10`. Most OnlyFans creators chosen with `-u` that each `--live` / `--live-watch` check asks one by one; with more, a check reads the subscription list instead and asks this many of the chosen creators missing from it, taking turns. |
+| <a id="live_jitter"></a>`OFSC_LIVE_JITTER`<br>Key: `LIVE_JITTER` | **Default:** `10`. Maximum random jitter in seconds added to the `--live-watch` polling interval. |
+| <a id="live_max_failures"></a>`OFSC_LIVE_MAX_FAILURES`<br>Key: `LIVE_MAX_FAILURES` | **Default:** `3`. Consecutive failed stream-recovery attempts before stopping a Fansly recording. |
+
 ## DRM, CDM and Discord
 
 ### DRM manifests (MPD)

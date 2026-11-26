@@ -38,6 +38,63 @@ class ModelManager:
     Delegates all processing state to a StateManager instance.
     """
 
+    FILTER_ATTRIBUTES = (
+        "promo_price_min",
+        "promo_price_max",
+        "regular_price_min",
+        "regular_price_max",
+        "current_price_min",
+        "current_price_max",
+        "renewal_price_min",
+        "renewal_price_max",
+        "last_seen_before",
+        "last_seen_after",
+        "expired_before",
+        "expired_after",
+        "subscribed_before",
+        "subscribed_after",
+        "userlist",
+        "blacklist",
+        "current_price",
+        "renewal_price",
+        "regular_price",
+        "promo_price",
+        "last_seen",
+        "free_trial",
+        "promo",
+        "all_promo",
+        "sub_status",
+        "renewal",
+    )
+
+    # on/off flags (--promo-only/--promo-skip and so on): False is a filter too
+    TRISTATE_FILTERS = ("last_seen", "free_trial", "promo", "all_promo", "sub_status", "renewal")
+
+    @staticmethod
+    def built_in_lists(*kinds) -> set:
+        """The --user-list names of the built-in lists of these kinds
+        (``RESERVED``, ``ACTIVE``, ``EXPIRED``), as of_env sets them."""
+        return {
+            str(of_env.getattr(f"OFSCRAPER_{kind}_LIST{alt}")).lower()
+            for kind in kinds
+            for alt in ("", "_ALT")
+        }
+
+    @staticmethod
+    def user_lists(s=None) -> set:
+        """The --user-list names, lowercase."""
+        s = s or settings.get_settings()
+        return {str(x).strip().lower() for x in (getattr(s, "userlist", None) or []) if str(x).strip()}
+
+    @classmethod
+    def has_list_filters(cls, s=None) -> bool:
+        """True when --user-list names more than all or active subscriptions,
+        or --black-list is set."""
+        s = s or settings.get_settings()
+        return bool(cls.user_lists(s) - cls.built_in_lists("RESERVED", "ACTIVE")) or any(
+            str(x).strip() for x in (getattr(s, "blacklist", None) or [])
+        )
+
     # =========================================================================
     # 1. INITIALIZATION & BASE DATA ACCESS
     # =========================================================================
@@ -240,6 +297,32 @@ class ModelManager:
     # 3. INTERACTIVE UI & FILTERING
     # =========================================================================
 
+    def filter_models(self, models: List["Model"]) -> List["Model"]:
+        """Filter an explicit list of Model objects using active criteria without mutating self._all_subs_dict."""
+        if not models:
+            return []
+        temp = ModelManager()
+        temp._update_all_subs(list(models))
+        return list(temp._filtered_models().values())
+
+    @classmethod
+    def has_active_filters(cls, s=None, lists=True) -> bool:
+        """True when non-default userlist, blacklist, or model filters are
+        configured; without ``lists``, only model filters count."""
+        s = s or settings.get_settings()
+        if lists and cls.has_list_filters(s):
+            return True
+        for attr in cls.FILTER_ATTRIBUTES:
+            value = getattr(s, attr, None)
+            if attr in ("userlist", "blacklist"):
+                continue
+            elif attr in cls.TRISTATE_FILTERS:
+                if value is not None:
+                    return True
+            elif value not in (None, False, "", [], ()):
+                return True
+        return False
+
     def _select_models_scraper(self, keep_previous: bool = True) -> List["Model"]:
         """
         SCRAPER-MODE ROUTER:
@@ -441,36 +524,7 @@ class ModelManager:
     def _print_filter_settings(self):
         """Prints a readable summary of active filters to the console."""
         s = settings.get_settings()
-        filter_attributes = [
-            "promo_price_min",
-            "promo_price_max",
-            "regular_price_min",
-            "regular_price_max",
-            "current_price_min",
-            "current_price_max",
-            "renewal_price_min",
-            "renewal_price_max",
-            "last_seen_before",
-            "last_seen_after",
-            "expired_before",
-            "expired_after",
-            "subscribed_before",
-            "subscribed_after",
-            "sort",
-            "desc",
-            "userlist",
-            "blacklist",
-            "current_price",
-            "renewal_price",
-            "regular_price",
-            "promo_price",
-            "last_seen",
-            "free_trial",
-            "promo",
-            "all_promo",
-            "sub_status",
-            "renewal",
-        ]
+        filter_attributes = ("sort", "desc", *self.FILTER_ATTRIBUTES)
 
         print("\n--- Active Filter Settings ---")
         found_active_filter = False

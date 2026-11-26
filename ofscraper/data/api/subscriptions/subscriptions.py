@@ -67,7 +67,7 @@ async def get_all_expired_subscriptions(subscribe_count):
         return await process_task([scrape_subscriptions_disabled(c)])
 
 
-async def activeHelper(subscribe_count, c):
+async def activeHelper(subscribe_count, c, *, strict=False):
     # Blacklist/Reserved list logic check
     if any(
         x in common.get_black_list_helper()
@@ -98,10 +98,10 @@ async def activeHelper(subscribe_count, c):
     ):
         return []
 
-    return await process_task([scrape_subscriptions_active(c)])
+    return await process_task([scrape_subscriptions_active(c, strict=strict)], strict=strict)
 
 
-async def expiredHelper(subscribe_count, c):
+async def expiredHelper(subscribe_count, c, *, strict=False):
     if any(
         x in common.get_black_list_helper()
         for x in [
@@ -131,10 +131,10 @@ async def expiredHelper(subscribe_count, c):
     ):
         return []
 
-    return await process_task([scrape_subscriptions_disabled(c)])
+    return await process_task([scrape_subscriptions_disabled(c, strict=strict)], strict=strict)
 
 
-async def process_task(generators):
+async def process_task(generators, *, strict=False):
     """
     Fixed Orchestrator: Consumes async generators and returns a final LIST.
     This satisfies the 'await' in retriver.py.
@@ -155,6 +155,8 @@ async def process_task(generators):
                     ]
                     output.extend(users)
         except Exception as E:
+            if strict:
+                raise
             log.debug("Failed in subscription processing loop")
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
@@ -170,10 +172,11 @@ def _subscription_page_step(url, count):
     return step if step > 0 else count
 
 
-async def scrape_subscriptions_active(c, offset=0):
+async def scrape_subscriptions_active(c, offset=0, strict=False):
     """
     Async Generator Worker Loop for active subscriptions.
-    Yields batches page-by-page.
+    Yields batches page-by-page. With ``strict``, a failed request raises
+    instead of ending the list, so an empty list and a failed one differ.
     """
     current_offset = offset
     empty_pages = 0
@@ -184,6 +187,8 @@ async def scrape_subscriptions_active(c, offset=0):
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Subscription API Error: {r.status}")
+                    if strict:
+                        raise RuntimeError(f"active subscriptions: HTTP {r.status}")
                     break
 
                 response = await r.json_()
@@ -213,14 +218,18 @@ async def scrape_subscriptions_active(c, offset=0):
 
         except asyncio.TimeoutError:
             log.debug(f"Task timed out {url}")
+            if strict:
+                raise
             break
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
 
 
-async def scrape_subscriptions_disabled(c, offset=0):
+async def scrape_subscriptions_disabled(c, offset=0, *, strict=False):
     """
     Async Generator Worker Loop for expired subscriptions.
     Yields batches page-by-page.
@@ -234,6 +243,8 @@ async def scrape_subscriptions_disabled(c, offset=0):
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Subscription API Error: {r.status}")
+                    if strict:
+                        raise RuntimeError(f"expired subscriptions: HTTP {r.status}")
                     break
 
                 response = await r.json_()
@@ -262,9 +273,13 @@ async def scrape_subscriptions_disabled(c, offset=0):
                 current_offset += step
 
         except asyncio.TimeoutError:
+            if strict:
+                raise
             log.debug(f"Task timed out {url}")
             break
         except Exception as E:
+            if strict:
+                raise
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
