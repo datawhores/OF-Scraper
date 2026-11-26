@@ -17,9 +17,9 @@ discord_log_level_option = click.option(
     "-dc",
     "--discord",
     "discord_level",
-    help="Set Discord log level",
+    help="Set Discord log level; SUMMARY sends one message per run (or daemon pass) and no log lines",
     type=click.Choice(
-        ["OFF", "LOW", "NORMAL"],
+        ["OFF", "SUMMARY", "LOW", "NORMAL"],
         case_sensitive=False,
     ),
     default="OFF",

@@ -76,6 +76,7 @@ def funct(prompt_):
     after_action_script: A script that runs after an action for each model has completed.
    
     post_script: A script that runs after all actions for all models have completed.
+    alert_script: A script that runs when something needs a person (login rejected, disk full, daemon pass failing).
     naming_script: A script that provides custom logic for generating the final filename. 
     It outputs the desired filename or path.
 
@@ -330,6 +331,13 @@ def script_config():
                 "message": "Script to run after all model actions complete",
                 "default": data.get_post_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
+            },
+            {
+                "type": "input",
+                "name": "alert_script",
+                "message": "Script to run when something needs a person (login rejected, disk full)",
+                "default": data.get_alert_script() or "",
+                "option_instruction": "Leave empty to skip the alert script",
             },
             {
                 "type": "input",

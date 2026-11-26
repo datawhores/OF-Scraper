@@ -303,6 +303,16 @@ def get_post_script(config=None):
 
 
 @wrapper.config_reader
+def get_alert_script(config=None):
+    return _value(
+        config,
+        "ALERT_SCRIPT_DEFAULT",
+        "alert_script",
+        "script_options.alert_script",
+    )
+
+
+@wrapper.config_reader
 def get_naming_script(config=None):
     return _value(
         config,

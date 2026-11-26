@@ -15,6 +15,12 @@ post_script_option = click.option(
     help="Runs a script after processing all users (e.g. after a full scrape).",
 )
 
+alert_script_option = click.option(
+    "--alert-script",
+    "alert_script",
+    help="Runs a script when something needs a person: login rejected, disk full, or a daemon pass failing.",
+)
+
 naming_script_option = click.option(
     "-ns",
     "--naming-script",

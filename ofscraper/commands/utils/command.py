@@ -23,9 +23,15 @@ log = logging.getLogger("shared")
 def log_user_failure(username, error, what=None):
     """Say at normal output that a creator failed (#379); the full traceback
     stays at traceback level."""
+    from ofscraper.utils.checkers import LoginRejected, check_login_after_failure
+
+    if isinstance(error, LoginRejected):
+        raise error  # said already; it ends the pass, not just this creator
     what = f" {what}" if what else ""
     log.warning(f"[{username}]{what} failed: {type(error).__name__}: {error}")
     exit_status.record(exit_status.PARTIAL)
+    # a 401 or 403 may mean the login was rejected: that stops the pass
+    check_login_after_failure(error)
 
 
 class CommandManager:

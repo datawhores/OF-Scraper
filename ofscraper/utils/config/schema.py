@@ -72,6 +72,7 @@ def get_current_config_schema(config: dict = None) -> dict:
         "script_options": {
             "after_action_script": data.get_after_action_script(config=config),
             "post_script": data.get_post_script(config=config),
+            "alert_script": data.get_alert_script(config=config),
             "naming_script": data.get_naming_script(config=config),
             "after_download_script": data.get_after_download_script(config=config),
             "skip_download_script": data.get_skip_download_script(config=config),

@@ -52,7 +52,9 @@ def getLevel(input_):
     
     return {
         "OFF": 100,
-        "PROMPT": "ERROR", 
+        # Discord only: no log lines; the run summary is sent on its own
+        "SUMMARY": 100,
+        "PROMPT": "ERROR",
         "LOW": "WARNING",
         "NORMAL": "INFO",
         #Alias Warning

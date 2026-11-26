@@ -12,10 +12,17 @@ def get_free():
 def space_checker(func):
     def inner(*args, **kwargs):
         if not check_free_size():
+            alert_full()
             raise Exception("Space min has been reached")
         return func(*args, **kwargs)
 
     return inner
+
+
+def alert_full():
+    import ofscraper.main.close.alerts as alerts
+
+    alerts.failing(alerts.DISK_FULL, "The free-space limit was reached; downloads stopped")
 
 
 def check_free_size():

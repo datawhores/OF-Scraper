@@ -7,7 +7,8 @@ from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
-from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.checkers import check_auth, LoginRejected
+import ofscraper.main.close.alerts as alerts
 import ofscraper.main.close.exit_status as exit_status
 from ofscraper.main.close.final.final import final_action
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
@@ -59,7 +60,7 @@ class scraperManager(CommandManager):
             try:
                 self._runner(menu=menu)
             except stop.DownloadsStopped:
-                final_action()
+                final_action("stopped")
                 if not menu:
                     raise SystemExit(130)
 
@@ -277,7 +278,8 @@ def daemon_process():
                 raise
             except Exception as E:
                 # the daemon carries on with the next pass (#379)
-                exit_status.record(exit_status.ERROR)
+                if not isinstance(E, LoginRejected):  # already "login failed"
+                    exit_status.record(exit_status.ERROR)
                 pass_done = True
                 log.warning(f"Daemon pass failed: {type(E).__name__}: {E}")
                 log.traceback_(E)
@@ -291,6 +293,7 @@ def daemon_process():
                         )
                     else:
                         log.info("Daemon pass finished with status 0 (ok)")
+                    alerts.after_pass(outcome)
                 jobqueue.task_done()
     except (KeyboardInterrupt, Exception, SystemExit) as exc:
         wakeup.stopped = True

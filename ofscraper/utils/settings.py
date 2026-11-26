@@ -232,6 +232,7 @@ def merged_settings():
     merged.client_id = args.client_id or config_data.get_client_id()
     merged.hash = config_data.get_hash()
     merged.post_script = args.post_script or config_data.get_post_script()
+    merged.alert_script = getattr(args, "alert_script", None) or config_data.get_alert_script()
     merged.after_action_script = (
         args.after_action_script or config_data.get_after_action_script()
     )

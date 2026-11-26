@@ -88,6 +88,10 @@ GETTER_PATHS = {
         "scripts.post_script",
         "script_options.post_script",
     ],
+    "get_alert_script": [
+        "alert_script",
+        "script_options.alert_script",
+    ],
     "get_naming_script": [
         "naming_script",
         "advanced_options.naming_script",
@@ -336,6 +340,7 @@ EXPECTED_GETTERS = {
     "get_ssl_verify": (166, "eb0d01bd3b25af97"),
     "get_after_action_script": (403, "ad7fdaf7391c96f9"),
     "get_post_script": (736, "a9b5f1c70ee0e89b"),
+    "get_alert_script": (166, "477d11d9ed6f3c87"),
     "get_naming_script": (736, "81bb95241465f41a"),
     "get_skip_download_script": (736, "c11cf8e1d3e2c615"),
     "get_after_download_script": (736, "e3f2a5ce42744547"),
@@ -548,17 +553,17 @@ def _schema_results(path):
     return results
 
 
-# flat_legacy sets its key mode; the others take the default, now manual
+# flat_legacy sets its key mode; the others take the default, now manual; every file gains script_options.alert_script (null)
 EXPECTED_SCHEMA = {
-    "false": "25df51e4abe3c47b",
-    "empty": "25df51e4abe3c47b",
-    "empty:written": "25df51e4abe3c47b",
-    "flat_legacy": "384d63ec957bf2ed",
-    "flat_legacy:written": "384d63ec957bf2ed",
-    "nested_legacy": "757f497b89ca2989",
-    "nested_legacy:written": "757f497b89ca2989",
-    "explicit_falsy": "13578dd7de7e4174",
-    "explicit_falsy:written": "13578dd7de7e4174",
+    "false": "a0d9b8f6b0599926",
+    "empty": "a0d9b8f6b0599926",
+    "empty:written": "a0d9b8f6b0599926",
+    "flat_legacy": "cf6b56e72afd0425",
+    "flat_legacy:written": "cf6b56e72afd0425",
+    "nested_legacy": "3f9df13b4b6395bd",
+    "nested_legacy:written": "3f9df13b4b6395bd",
+    "explicit_falsy": "5062e1e2a1708ae8",
+    "explicit_falsy:written": "5062e1e2a1708ae8",
 }
 
 

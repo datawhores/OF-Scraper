@@ -247,6 +247,9 @@ def load_main_config():
     # POST_SCRIPT_DEFAULT: Default for `script_options.post_script`.
     config["POST_SCRIPT_DEFAULT"] = os.getenv("OFSC_POST_SCRIPT_DEFAULT", None)
 
+    # ALERT_SCRIPT_DEFAULT: Default for `script_options.alert_script`.
+    config["ALERT_SCRIPT_DEFAULT"] = os.getenv("OFSC_ALERT_SCRIPT_DEFAULT", None)
+
     # SKIP_DOWNLOAD_SCRIPT_DEFAULT: Default for `script_options.skip_download_script`.
     config["SKIP_DOWNLOAD_SCRIPT_DEFAULT"] = os.getenv(
         "OFSC_SKIP_DOWNLOAD_SCRIPT_DEFAULT", None
