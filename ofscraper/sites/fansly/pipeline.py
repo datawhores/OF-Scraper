@@ -159,6 +159,39 @@ class Selector:
         self.downloaded = filters.downloaded_media_ids(
             username=username, model_id=model_id
         )
+        # --skip-purchased-dupes, as filters.skip_purchased_copies: media
+        # ids with a non-Purchased copy this run, with any copy downloaded,
+        # and with a Purchased copy downloaded or chosen
+        self.skip_purchased = settings.skip_purchased_dupes()
+        self.elsewhere = set()
+        self.saved = set()
+        self.purchase_saved = set()
+        if self.skip_purchased and self.downloaded is not None:
+            self.saved = {media_id for media_id, _ in self.downloaded}
+            self.purchase_saved = {
+                media_id
+                for media_id, _ in filters.downloaded_purchased_pairs(
+                    username=username, model_id=model_id
+                )
+            }
+        self.purchase_chosen = set()
+        self.held = 0  # copies left out for a Purchased copy downloaded before
+
+    def _purchase_covers(self, item):
+        """Whether --skip-purchased-dupes leaves this copy out. Purchased is
+        scanned last, so the other copies of its media are already seen."""
+        if filters.is_purchased_copy(item):
+            if item.id in self.elsewhere | self.saved | self.purchase_chosen:
+                return True
+            self.purchase_chosen.add(item.id)
+            return False
+        first = item.id not in self.elsewhere
+        self.elsewhere.add(item.id)
+        # a Purchased copy downloaded before stands in for the first other copy
+        if first and item.id in self.purchase_saved:
+            self.held += filters.media_key(item) not in self.downloaded
+            return True
+        return False
 
     def select(self, posts):
         media = [m for post in posts for m in post.prepare_media_for_download()]
@@ -169,6 +202,8 @@ class Selector:
             if key in self.seen:
                 continue
             self.seen.add(key)
+            if self.skip_purchased and self._purchase_covers(item):
+                continue
             if self.downloaded is not None and key in self.downloaded:
                 self.already_downloaded += 1
                 continue
@@ -467,6 +502,12 @@ async def _produce(run):
             except Exception as E:
                 # pages already queued still download; the next area runs
                 post_area.log_area_failure(run.username, area, E)
+        # only areas downloaded from reach the selector
+        filters.log_held_back(
+            run.username,
+            run.selector.held,
+            [area for area in areas if area in download_area],
+        )
     finally:
         await _write_locked_rows(run)
 

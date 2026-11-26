@@ -118,6 +118,8 @@ class Harness:
         self.areas = list(pipeline.ORDER)
         self.download_area = set(pipeline.ORDER)
         self.downloaded = set()
+        # (media id, post id) of downloaded Purchased copies (--skip-purchased-dupes)
+        self.downloaded_purchased = set()
         m = monkeypatch
 
         def area_gen(area):
@@ -294,6 +296,12 @@ class Harness:
         m.setattr(post, "clean_stray_media", strays)
         m.setattr(post, "get_final_posts_area", lambda: self.areas)
         m.setattr(filters, "downloaded_media_ids", lambda **k: set(self.downloaded))
+        m.setattr(
+            filters,
+            "downloaded_purchased_pairs",
+            lambda **k: set(self.downloaded_purchased),
+            raising=False,
+        )
         m.setattr(filters, "seperate_self", lambda media: media)
         m.setattr(separate, "seperate_avatars", lambda media: media)
         stop.clear()

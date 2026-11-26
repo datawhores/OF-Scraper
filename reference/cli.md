@@ -36,13 +36,13 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 | Command | Summary |
 |---|---|
-| [Main program (no command)](#main-program-no-command) (107 options) | OF-Scraper Options |
-| [`manual`](#manual) (53 options) | Manually download media by providing a list of URLs or IDs |
-| [`msg_check`](#msg_check) (53 options) | Produces a media table from messages with filterable entries and quick downloads |
-| [`story_check`](#story_check) (51 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
-| [`paid_check`](#paid_check) (53 options) | Produces a media table from purchases with filterable entries and quick downloads |
-| [`post_check`](#post_check) (55 options) | Produces a media table from posts with filterable entries and quick downloads |
-| [`metadata`](#metadata) (86 options) | Modify metadata or db files |
+| [Main program (no command)](#main-program-no-command) (108 options) | OF-Scraper Options |
+| [`manual`](#manual) (54 options) | Manually download media by providing a list of URLs or IDs |
+| [`msg_check`](#msg_check) (54 options) | Produces a media table from messages with filterable entries and quick downloads |
+| [`story_check`](#story_check) (52 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
+| [`paid_check`](#paid_check) (54 options) | Produces a media table from purchases with filterable entries and quick downloads |
+| [`post_check`](#post_check) (56 options) | Produces a media table from posts with filterable entries and quick downloads |
+| [`metadata`](#metadata) (87 options) | Modify metadata or db files |
 | [`db`](#db) (61 options) | Print information from the database |
 | [`creator_names`](#creator_names-separate-entry-point) (argparse) | List and record the usernames each creator account has had. |
 | [`doctor`](#doctor-separate-entry-point) (argparse) | Check the setup without running a scrape. |
@@ -61,7 +61,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-**Options:** 107 · **`--help` summary:** OF-Scraper Options
+**Options:** 108 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -74,37 +74,37 @@ The run reads `auth.json` and `config.json` from the profile. It writes media un
 
 ### `manual`
 
-**Options:** 53 · **`--help` summary:** Manually download media by providing a list of URLs or IDs
+**Options:** 54 · **`--help` summary:** Manually download media by providing a list of URLs or IDs
 
 `ofscraper manual -u URL...` or `-f FILE` (one is required). Downloads specific posts, given as OnlyFans URLs (post, chat message, story, highlight) or bare post ids. A bare id is looked up on the timeline, then in that creator's purchases. It forces `force_all`, so existing files are downloaded again. It writes posts and media to the creator's `user_data.db` and media under `save_location`, then runs the after-download script.
 
 ### `msg_check`
 
-**Options:** 53 · **`--help` summary:** The msg_check subcommand gathers information on media content from messages. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
+**Options:** 54 · **`--help` summary:** The msg_check subcommand gathers information on media content from messages. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper msg_check -u ITEM...` or `-f FILE`. Each item is a creator username, a model id, or a chat URL (`onlyfans.com/my/chats/chat/<id>` or `onlyfans.com/my/chats/<id>/?id=<message id>`), whose number is taken as the model id. Any other item is skipped with a warning. It fetches the creator's messages and purchases, writes them to `user_data.db`, and opens an interactive table of the media. Unlocked rows in the table can be queued for download, and a background thread downloads them. The messages and purchases come from the check cache unless you pass `--force`. The cache expires after 3 days.
 
 ### `story_check`
 
-**Options:** 51 · **`--help` summary:** The story_check subcommand gathers information on media content from stories and highlights. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
+**Options:** 52 · **`--help` summary:** The story_check subcommand gathers information on media content from stories and highlights. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper story_check -u USERNAME...` (or `-f`). Fetches the creators' stories and highlights from the API, without the check cache. It writes them to `user_data.db` and opens the same downloadable media table.
 
 ### `paid_check`
 
-**Options:** 53 · **`--help` summary:** The paid_check subcommand gathers information on media content from purchases. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
+**Options:** 54 · **`--help` summary:** The paid_check subcommand gathers information on media content from purchases. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper paid_check -u USERNAME_OR_ID...` (or `-f`). Fetches each creator's purchased content, writes it to `user_data.db` and opens the media table. The content comes from the check cache unless you pass `--force`. A deleted creator, named `DELETED_MODEL_PLACEHOLDER`, is read from all purchases.
 
 ### `post_check`
 
-**Options:** 55 · **`--help` summary:** The post_check subcommand gathers information on media content from posts. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
+**Options:** 56 · **`--help` summary:** The post_check subcommand gathers information on media content from posts. It presents this data in a table format with filtering options for focused searches. Allows unlocked media entries to be directly downloaded through the table.
 
 `ofscraper post_check -u URL_OR_USERNAME...` or `-f FILE`. Takes `onlyfans.com/<username>` URLs or bare usernames. It fetches the areas in `--check-area` (default Timeline, Pinned, Archived and Streams; Labels is also available), writes them to `user_data.db` and opens the media table. The areas come from the check cache unless you pass `--force`. All check commands set `force_all` and `after=0`.
 
 ### `metadata`
 
-**Options:** 86 · **`--help` summary:** Uses API to modify db files without the need for downloading
+**Options:** 87 · **`--help` summary:** Uses API to modify db files without the need for downloading
 
 `ofscraper metadata --metadata check|update|complete`, with the usual user and area options (`--scrape-paid` takes a mode too). It uses the API to update the creators' `user_data.db` without downloading. The modes differ as follows:
 
@@ -443,6 +443,16 @@ Download media that is in several posts once for each post, instead of once (def
 Without this option, `ALLOW_DUPE_MEDIA` decides (`merged_settings`); `--no-allow-dupes` turns it off for the run. When on, media appearing in several posts is downloaded once per post, and each copy is tracked per `(media_id, post_id)` (`downloaded_media_ids`), so later runs still download copies from posts not yet saved. Applies to OnlyFans and Fansly. Each copy gets its own file (see `file_options.filename_collision`) and its own `medias` row update. A Purchased copy is downloaded like any other post's copy, even if the media is also in Messages or another post. However, a message listed in Purchased under the same ID counts as one post and is downloaded once. The `metadata` command and the Fansly silent-video check read each post's own record. Copies already marked downloaded by a run without this option still count as downloaded.
 
 **Dest:** `allow_dupe_downloads` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
+
+#### `--skip-purchased-dupes`
+
+**Type:** flag · **Default:** off · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata`
+
+With --allow-dupes, skip a Purchased copy of media that's in another post or was downloaded from one. Media only in Purchased still downloads. Matches by media ID before download; remove_hash_match removes copies with different IDs
+
+Only with `--allow-dupes`. A Purchased copy of media that is also in another post in the run (Messages, Timeline and so on), or was downloaded from one, is skipped: OnlyFans gives a purchased message a different post id in Purchased, so `--allow-dupes` alone downloads it twice. It works the other way round too: when a Purchased copy was downloaded first (with `--scrape-paid`, say), the oldest other copy of the media is not downloaded again. A run that doesn't scan Messages may give that credit to a repost of a bought message instead; when it holds a copy back that way, an info line says how many and that Messages wasn't scanned, and the copy downloads once a run includes Messages. Media found only in Purchased still downloads (one viewable copy), and other posts still get a copy each. A post listed in Purchased under the same id as a post in another area counts as that post, whichever area was scanned first; saved copies count as Purchased by their row's `api_type`. Every copy still gets its own `medias` row, and the `metadata` command is unaffected; only the download selection leaves copies out (`skip_purchased_copies` in `ofscraper/filters/media/filters.py`; the Fansly selector in `ofscraper/sites/fansly/pipeline.py`). `manual` downloads every copy of the URLs it is given. Without `--allow-dupes` it changes nothing. Matches by media ID before download; `advanced_options.remove_hash_match` removes copies with different IDs (`_remove_copies` in `ofscraper/utils/hash.py`).
+
+**Dest:** `skip_purchased_dupes` · **Defined in:** `ofscraper/utils/args/parse/arguments/download.py`
 
 ### Media Filters Options
 
