@@ -7,7 +7,6 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.config.data as data
 
 
 log = logging.getLogger("shared")
