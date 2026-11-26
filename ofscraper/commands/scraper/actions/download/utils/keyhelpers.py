@@ -42,8 +42,15 @@ def missing_cdm_keys():
     s = settings.get_settings()
     if s.key_mode != "manual":
         return None
+    return cdm_key_problems(s.key_mode, s.client_id, s.private_key)
+
+
+def cdm_key_problems(key_mode, client_id, private_key):
+    """missing_cdm_keys for the values given, not the settings."""
+    if key_mode != "manual":
+        return None
     problems = []
-    for name, value in (("client-id", s.client_id), ("private-key", s.private_key)):
+    for name, value in (("client-id", client_id), ("private-key", private_key)):
         value = str(value or "").strip()
         if not value:
             problems.append(f"{name} is not set")
@@ -317,6 +324,17 @@ async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
         raise E
 
 
+def load_device(private_key, client_id):
+    """The Widevine device the two key files make; raises if they can't."""
+    return Device(
+        security_level=3,
+        private_key=pathlib.Path(private_key).read_bytes(),
+        client_id=pathlib.Path(client_id).read_bytes(),
+        type_="ANDROID",
+        flags=None,
+    )
+
+
 async def key_helper_manual(c, pssh, licence_url, id, kid=None):
     key = None
     log.debug(f"ID:{id} using manual key helper")
@@ -328,15 +346,7 @@ async def key_helper_manual(c, pssh, licence_url, id, kid=None):
         pssh_obj = PSSH(pssh)
 
         # load device
-        private_key = pathlib.Path(settings.get_settings().private_key).read_bytes()
-        client_id = pathlib.Path(settings.get_settings().client_id).read_bytes()
-        device = Device(
-            security_level=3,
-            private_key=private_key,
-            client_id=client_id,
-            type_="ANDROID",
-            flags=None,
-        )
+        device = load_device(settings.get_settings().private_key, settings.get_settings().client_id)
 
         # load cdm
         cdm = Cdm.from_device(device)

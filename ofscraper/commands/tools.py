@@ -55,6 +55,12 @@ def _rename_to_format():
     return mod.main
 
 
+def _doctor():
+    import ofscraper.commands.doctor as mod
+
+    return mod.main
+
+
 TOOLS = {
     "stash_sync": (
         _stash_sync,
@@ -87,6 +93,10 @@ TOOLS = {
     "rename_to_format": (
         _rename_to_format,
         "Rename a creator's downloaded files to the current file_format and dir_format",
+    ),
+    "doctor": (
+        _doctor,
+        "Check the setup (config, auth files, ffmpeg, keys, folders), offline",
     ),
 }
 

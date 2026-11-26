@@ -31,6 +31,9 @@ import ofscraper.managers.manager as manager
 
 curr_auth = None
 last_check = None
+# the last fetch: the source that gave the rule (None if none did), and
+# (source, reason) for each that didn't, for `ofscraper doctor --online`
+last_attempt = {"used": None, "failed": []}
 
 # tried in order when the chosen source fails or gives an unusable rule:
 # all three gave a rule OnlyFans accepted in a live check on 2026-11-19,
@@ -169,6 +172,8 @@ def get_request_auth():
                 + ")"
             )
         break
+    last_attempt["used"] = name if auth is not None else None
+    last_attempt["failed"] = [(s, failure_reason(err)) for s, err in failures]
     if auth is None:
         # not cached, so the next request tries again. The last error is
         # chained for the debug log's traceback

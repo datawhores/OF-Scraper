@@ -31,6 +31,8 @@ from ofscraper.sites.fansly.normalize import hashtags
 from ofscraper.utils.string import html_lines
 
 DEFAULT_URL = "http://localhost:9999/graphql"
+# the environment variables main() reads (doctor --online reads them too)
+URL_ENV, API_KEY_ENV = "STASH_URL", "STASH_API_KEY"
 ONLYFANS, FANSLY = "onlyfans", "fansly"
 # per site: default studio and tag prefix, and the studio's and a creator's links
 SITES = {
