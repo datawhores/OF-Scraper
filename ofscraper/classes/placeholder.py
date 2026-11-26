@@ -645,6 +645,11 @@ class Textholders(basePlaceholder):
         self._variables.update({"user_name": username})
         self._variables.update({"model_id": model_id})
         self._variables.update({"post_id": ele.id})
+        # a text file is named with the same file_format as media, so it has
+        # the media's placeholders too: the post's id for the media id, and
+        # Normal, as text is never DRM-protected
+        self._variables.update({"media_id": ele.id})
+        self._variables.update({"download_type": "Normal"})
         self._variables.update({"first_letter": username[0].capitalize()})
         self._variables.update({"value": ele.value.capitalize()})
         self._variables.update(
