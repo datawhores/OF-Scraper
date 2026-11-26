@@ -79,8 +79,8 @@ FLAGS = [
     "others_model_id_constraint_added", "posts_is_deleted", "posts_mentions", "posts_model_id",
     "posts_model_id_constraint_added", "posts_opened", "posts_pinned", "posts_purchase_type",
     "posts_stream", "products_model_id", "products_model_id_constraint_added",
-    "profile_username_constraint_modified", "profiles_seen_at", "stories_model_id",
-    "stories_model_id_constraint_added",
+    "profile_username_constraint_modified", "profiles_seen_at", "stories_highlight_id",
+    "stories_model_id", "stories_model_id_constraint_added",
 ]
 # when the run starts on the creator: the name is seen then (#643)
 STARTED = "2024-07-01T12:00:00+00:00"
@@ -122,7 +122,7 @@ EXPECTED_ROWS = {
         [(1, 12345, "pinmodel", STARTED, STARTED)],
     ),
     "schema_flags": (["flag_name", "flag_value"], [(f, "1") for f in FLAGS]),
-    "stories": (POST_COLS, []),
+    "stories": (POST_COLS + ["highlight_id"], []),
 }
 
 

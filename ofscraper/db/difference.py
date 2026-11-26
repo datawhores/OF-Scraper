@@ -23,6 +23,7 @@ groupA = [
     "messages_group_id",
     "media_skip_permanent",
     "profiles_seen_at",
+    "stories_highlight_id",
 ]
 
 groupB = [

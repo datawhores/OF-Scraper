@@ -800,6 +800,7 @@ def test_every_step_added_since_reaches_a_database_made_before():
             )
     assert postgres.ADDED_COLUMNS == (
         ("profiles_seen_at", "profiles", ("first_seen_at", "last_seen_at")),
+        ("stories_highlight_id", "stories", ("highlight_id",)),
     )
 
 
@@ -832,10 +833,13 @@ STEP_DONE = (
     " ON CONFLICT (flag_name) DO NOTHING",
     ["profiles_seen_at"],
 )
+ASK_FOR_STORY_COLUMNS = (ASK_FOR_COLUMNS[0], ["stories"])
+# a stories table that already has the column the stories step adds (#728)
+STORIES_NOW = {"stories": postgres.TABLE_COLUMNS["stories"]}
 
 
 def test_tables_made_before_get_the_columns_added_since():
-    cur = ColumnsCursor({"profiles": ["id", "user_id", "username"]})
+    cur = ColumnsCursor({"profiles": ["id", "user_id", "username"], **STORIES_NOW})
 
     postgres.POSTGRES._add_columns(cur)
 
@@ -844,20 +848,39 @@ def test_tables_made_before_get_the_columns_added_since():
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ", None),
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
+    ]
+
+
+def test_a_stories_table_made_before_gets_the_highlight_column():
+    stories = [c for c in postgres.TABLE_COLUMNS["stories"] if c != "highlight_id"]
+    cur = ColumnsCursor(
+        {"profiles": postgres.TABLE_COLUMNS["profiles"], "stories": stories}
+    )
+
+    postgres.POSTGRES._add_columns(cur)
+
+    assert cur.asked == [
+        ASK_FOR_COLUMNS,
+        ASK_FOR_STORY_COLUMNS,
+        ("ALTER TABLE stories ADD COLUMN IF NOT EXISTS highlight_id BIGINT", None),
+        (STEP_DONE[0], ["stories_highlight_id"]),
     ]
 
 
 def test_tables_that_have_the_columns_are_only_asked():
     # every start after the first: nothing is changed, and nothing locked
-    cur = ColumnsCursor({"profiles": postgres.TABLE_COLUMNS["profiles"]})
+    cur = ColumnsCursor({"profiles": postgres.TABLE_COLUMNS["profiles"], **STORIES_NOW})
 
     postgres.POSTGRES._add_columns(cur)
 
-    assert cur.asked == [ASK_FOR_COLUMNS]
+    assert cur.asked == [ASK_FOR_COLUMNS, ASK_FOR_STORY_COLUMNS]
 
 
 def test_a_column_that_is_missing_alone_is_added_alone():
-    cur = ColumnsCursor({"profiles": ["id", "user_id", "username", "first_seen_at"]})
+    cur = ColumnsCursor(
+        {"profiles": ["id", "user_id", "username", "first_seen_at"], **STORIES_NOW}
+    )
 
     postgres.POSTGRES._add_columns(cur)
 
@@ -865,6 +888,7 @@ def test_a_column_that_is_missing_alone_is_added_alone():
         ASK_FOR_COLUMNS,
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
     ]
 
 
@@ -907,14 +931,19 @@ def started(monkeypatch, columns):
 def test_a_start_brings_tables_made_before_up_to_date(monkeypatch):
     asked = started(
         monkeypatch,
-        {"schema_flags": ["flag_name"], "profiles": ["id", "user_id", "username"]},
+        {
+            "schema_flags": ["flag_name"],
+            "profiles": ["id", "user_id", "username"],
+            **STORIES_NOW,
+        },
     )
 
-    assert asked[-5:] == [
+    assert asked[-6:] == [
         ASK_FOR_COLUMNS,
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ", None),
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
         # all of it kept, or none
         "commit",
     ]

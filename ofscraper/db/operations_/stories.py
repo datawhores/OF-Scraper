@@ -36,19 +36,25 @@ CREATE TABLE IF NOT EXISTS stories (
 	archived BOOLEAN, 
 	created_at TIMESTAMP, 
     model_id INTEGER, 
+	highlight_id INTEGER, 
 	PRIMARY KEY (id), 
 	UNIQUE (post_id,model_id)
 )
 """
 storiesInsert = """INSERT INTO stories(
-post_id, text,price,paid,archived,created_at,model_id)
-            VALUES (?, ?,?,?,?,?,?)"""
+post_id, text,price,paid,archived,created_at,model_id,highlight_id)
+            VALUES (?, ?,?,?,?,?,?,?)"""
 # a scan's insert: a story another run saved since this one read the ids is
 # already there (#657). Merges and rebuilds keep the plain insert
 storiesInsertNew = storiesInsert + " ON CONFLICT DO NOTHING;"
 storiesUpdate = """UPDATE stories
 SET text = ?, price = ?, paid = ?, archived = ?, created_at = ? ,model_id=?
 WHERE post_id = ? and model_id=(?);"""
+# fills highlight_id of a story saved before it was known (from the Stories
+# area, or before the column existed), on every highlights scan
+storiesFillMissing = """UPDATE stories
+SET highlight_id = ?
+WHERE post_id = ? AND model_id = (?) AND highlight_id IS NULL;"""
 
 
 # columns a later version added are (name, stand-in when missing): see
@@ -61,6 +67,7 @@ storiesSelectTransition = [
     "archived",
     "created_at",
     ("model_id", "NULL"),
+    ("highlight_id", "NULL"),
 ]
 allStoriesCheck = """
 SELECT post_id FROM stories
@@ -92,6 +99,7 @@ def write_stories_table(
                     data.archived,
                     wrapper.date_value(conn, data.date),
                     model_id,
+                    data.highlight_id,
                 ),
                 stories,
             )
@@ -110,7 +118,11 @@ def stories_transition_rows(inputData: list) -> list:
         "created_at",
         "model_id",
     ]
-    return [tuple([data[key] for key in ordered_keys]) for data in inputData]
+    # optional column: a row read before it existed has no value
+    return [
+        tuple([data[key] for key in ordered_keys] + [data.get("highlight_id")])
+        for data in inputData
+    ]
 
 
 @wrapper.operation_wrapper_async
@@ -159,6 +171,20 @@ def update_stories_table(
 
 
 @wrapper.operation_wrapper_async
+def fill_stories_missing_fields(stories: list, model_id=None, conn=None, **kwargs):
+    fillData = [
+        (data.highlight_id, data.id, model_id)
+        for data in stories
+        if data.highlight_id is not None
+    ]
+    if not fillData:
+        return
+    with contextlib.closing(conn.cursor()) as cur:
+        cur.executemany(storiesFillMissing, fillData)
+        conn.commit()
+
+
+@wrapper.operation_wrapper_async
 def get_all_stories_ids(model_id=None, username=None, conn=None, **kwargs) -> list:
     with contextlib.closing(conn.cursor()) as cur:
         creator, params = db_columns.creator_filter(cur, "stories", model_id, "WHERE")
@@ -191,6 +217,18 @@ def add_column_stories_ID(conn=None, **kwargs):
                 cur.execute("ALTER TABLE stories ADD COLUMN model_id INTEGER;")
 
             # Commit changes
+            conn.commit()
+        except wrapper.DB_ERRORS as e:
+            conn.rollback()
+            raise e
+
+
+@wrapper.operation_wrapper_async
+def add_column_stories_highlight_id(conn=None, **kwargs):
+    with contextlib.closing(conn.cursor()) as cur:
+        try:
+            if "highlight_id" not in db_columns.table_columns(cur, "stories"):
+                cur.execute("ALTER TABLE stories ADD COLUMN highlight_id INTEGER;")
             conn.commit()
         except wrapper.DB_ERRORS as e:
             conn.rollback()
@@ -231,3 +269,9 @@ async def make_stories_table_changes(
     if settings.get_settings().metadata and len(curr_posts) > 0:
         curr_posts = convert.converthelper(curr_posts)
         await update_stories_table(curr_posts, model_id=model_id, username=username)
+    # new rows too: a story in both areas is inserted from its Stories copy,
+    # without a highlight, and its Highlights copy isn't inserted
+    if len(all_stories_filtered) > 0:
+        await fill_stories_missing_fields(
+            all_stories_filtered, model_id=model_id, username=username
+        )
