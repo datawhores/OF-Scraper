@@ -9,6 +9,7 @@ from ofscraper.utils.args.parse.arguments.automatic import (
     live_max_option,
     live_option,
     live_watch_option,
+    profiles_option,
 )
 
 # Create the option group
@@ -20,6 +21,7 @@ automatic_options_tuple = (
     action_option,
     daemon_option,
     daemon_jitter_option,
+    profiles_option,
     live_option,
     live_watch_option,
     live_interval_option,

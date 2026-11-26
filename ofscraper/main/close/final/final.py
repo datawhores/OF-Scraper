@@ -11,7 +11,10 @@ r"""
                                                                                       f
 """
 
+import logging
+
 import ofscraper.main.close.exit_status as exit_status
+import ofscraper.utils.settings as settings
 from ofscraper.scripts.final_script import final_script
 from ofscraper.utils.logs.logs import printEndValues
 import ofscraper.managers.manager as manager
@@ -25,6 +28,14 @@ def final_action(outcome="ok"):
     if manager.Manager.stats_manager.failed_count() > 0:
         exit_status.record(exit_status.PARTIAL)
     record = run_record.finish(outcome)
+    try:
+        # the daemon checks after each pass; a one-off run has only this
+        if outcome == "ok" and not getattr(settings.get_settings(), "daemon", None):
+            import ofscraper.main.close.alerts as alerts
+
+            alerts.after_run()
+    except Exception as e:  # an alert must never break the run's end
+        logging.getLogger("shared").debug(f"disk alert not checked: {e}")
     final_script(record)
     manager.Manager.stats_manager.print_summary_by_activity()
     manager.Manager._stats_manager.print_global_summary()

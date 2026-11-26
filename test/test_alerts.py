@@ -333,3 +333,55 @@ def test_free_space_is_only_checked_when_the_disk_alert_is_open(sent, monkeypatc
     monkeypatch.setattr(free, "get_free", lambda: checked.append(1) or 50)
     alerts.after_pass(exit_status.OK)
     assert checked == [] and sent.script == []
+
+
+def test_one_off_runs_announce_the_disk_alert_recovered(sent, monkeypatch, tmp_path):
+    # a --profiles child is a one-off run of its profile, its alert state in
+    # that profile's status.json: a later run with room again says so
+    import ofscraper.main.close.final.final as final_mod
+    import ofscraper.main.close.status_file as status_file
+    import ofscraper.managers.stats as stats_mod
+
+    sent.settings.daemon = None
+    status = tmp_path / "status.json"
+    monkeypatch.setenv("OFSC_STATUS_FILE", str(status))
+    monkeypatch.setattr(final_mod, "final_script", lambda record: None)
+    monkeypatch.setattr(final_mod, "printEndValues", lambda: None)
+    monkeypatch.setattr(stats_mod.StatsManager, "print_summary_by_activity", lambda self: None)
+    monkeypatch.setattr(stats_mod.StatsManager, "print_global_summary", lambda self: None)
+    sent.settings.system_free_min = 10
+    free_bytes = [5]
+    monkeypatch.setattr(free, "get_free", lambda: free_bytes[0])
+    download = free.space_checker(lambda: "downloaded")
+
+    def one_off_run(downloads):
+        # a new process: only the status file carries the alerts over
+        alerts.reset(reload=True)
+        status_file.reset()
+        exit_status.reset()
+        sm = stats_mod.StatsManager()
+        monkeypatch.setattr(
+            final_mod.manager, "Manager", SimpleNamespace(stats_manager=sm, _stats_manager=sm)
+        )
+        run_record.start()
+        for _ in range(downloads):
+            try:
+                download()
+            except Exception:
+                pass
+        final_mod.final_action()
+
+    one_off_run(1)  # hits the limit
+    one_off_run(0)  # the disk is still full
+    assert [a["kind"] for a in sent.script] == ["disk_full"]
+    free_bytes[0] = 50
+    one_off_run(1)
+    assert [a["kind"] for a in sent.script] == ["disk_full", "disk_full"]
+    assert "running again" in sent.script[1]["message"]
+    assert "failing_alerts" not in json.loads(status.read_text(encoding="utf-8"))
+    one_off_run(1)  # quiet: nothing failing, nothing recovered
+    free_bytes[0] = 5
+    one_off_run(1)  # full again: announced again
+    assert [a["kind"] for a in sent.script] == ["disk_full", "disk_full", "disk_full"]
+    alerts.reset()
+    status_file.reset()

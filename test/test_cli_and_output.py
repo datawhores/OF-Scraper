@@ -116,6 +116,21 @@ def _fail():
     raise RuntimeError("simulated failure")
 
 
+@pytest.fixture
+def no_profiles(monkeypatch):
+    """run.main() reads --profiles from the command line. Give it no profiles
+    rather than parsing pytest's own arguments, so these tests don't depend
+    on an earlier test having parsed the command line already."""
+    import types
+
+    import ofscraper.utils.settings as settings
+
+    monkeypatch.setattr(
+        settings, "get_args", lambda *a, **k: types.SimpleNamespace(profiles=[])
+    )
+
+
+@pytest.mark.usefixtures("no_profiles")
 def test_failed_run_exits_with_status_1_and_logs_the_error(monkeypatch):
     monkeypatch.setattr(run, "start_manager", _fail)
     monkeypatch.setattr(run.exit_manager, "shutdown", lambda: None)
@@ -133,6 +148,7 @@ def test_failed_run_exits_with_status_1_and_logs_the_error(monkeypatch):
     assert any("simulated failure" in r.getMessage() for r in records)
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_successful_run_exits_0(monkeypatch):
     monkeypatch.setattr(run, "check_database", lambda: None)
     monkeypatch.setattr(run, "start_manager", lambda: None)
@@ -170,6 +186,7 @@ def test_exit_status_most_severe_wins_regardless_of_order():
         exit_status.reset()
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_run_main_exit_codes(monkeypatch):
     import ofscraper.commands.utils.command as command_mod
     import ofscraper.data.posts.post as post_mod
@@ -386,6 +403,7 @@ def test_corrupt_fansly_auth_file_exits_3(monkeypatch, tmp_path):
         path.unlink()
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_ctrl_c_during_error_shutdown_exits_130(monkeypatch):
     import ofscraper.main.close.exit_status as exit_status
 
@@ -447,6 +465,7 @@ def test_daemon_pass_logs_outcome_and_resets_status(monkeypatch, caplog):
     assert exit_status.code() == exit_status.OK
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_keyboard_interrupt_in_run_exits_130(monkeypatch):
     def interrupt():
         raise KeyboardInterrupt
@@ -468,6 +487,7 @@ def test_keyboard_interrupt_in_run_exits_130(monkeypatch):
     assert shutdowns == ["logs"]
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_second_ctrl_c_during_shutdown_skips_to_the_forced_shutdown(monkeypatch):
     import signal
 
@@ -500,6 +520,7 @@ def test_second_ctrl_c_during_shutdown_skips_to_the_forced_shutdown(monkeypatch)
     assert steps == ["logs", "forced"]
 
 
+@pytest.mark.usefixtures("no_profiles")
 def test_sigterm_interrupt_in_run_exits_0(monkeypatch):
     def sigterm():
         raise run.exit_context.SigtermInterrupt
