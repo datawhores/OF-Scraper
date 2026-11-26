@@ -6,6 +6,7 @@ import traceback
 import ofscraper.main.close.exit_status as exit_status
 import ofscraper.main.open.run as run
 import ofscraper.utils.config.config as config_
+import ofscraper.utils.config.file as config_file
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.logs as logs
@@ -57,6 +58,7 @@ def setdate():
 
 def setLogger():
     logger.get_shared_logger()
+    config_file.log_notes()
     logs.discord_warning()
     paths_manage.cleanup_logs()
 
