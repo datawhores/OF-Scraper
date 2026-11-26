@@ -570,3 +570,37 @@ def test_dated_file_logs_nothing(names_env, tmp_path, monkeypatch):
     _, final = download_names(item, tmp_path, monkeypatch)
     assert final.name == "2024-05-01_7.jpg"
     assert names_env.warnings == []
+
+
+# ---------------------------------------------------------------- {year}, {month}, {day} (#765)
+
+
+def date_part_names(item, monkeypatch, cls=placeholder.Placeholders):
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: "{year}/{month}")
+    monkeypatch.setattr(
+        placeholder.data, "get_fileformat", lambda *a, **k: "{year}{month}{day} {date}.{ext}"
+    )
+    holder = cls(item, "jpg")
+    folder = pathlib.Path(asyncio.run(holder.getmediadir(create=False)))
+    return folder.parent.name, folder.name, asyncio.run(holder.createfilename())
+
+
+def test_date_parts_in_folder_and_file_names(names_env, monkeypatch):
+    item = of_media("2024-05-01T20:00:00+00:00", "2024-04-01T00:00:00+00:00")
+    assert date_part_names(item, monkeypatch) == ("2024", "05", "20240501 2024-05-01.jpg")
+
+
+def test_date_parts_use_the_same_fallback_as_date(names_env, monkeypatch):
+    item = of_media(None, "2024-04-01T00:00:00+00:00")
+    assert date_part_names(item, monkeypatch) == ("2024", "04", "20240401 2024-04-01.jpg")
+    assert len(no_date_warnings(names_env)) == 1
+    assert date_part_names(of_media(), monkeypatch) == ("1970", "01", "19700101 1970-01-01.jpg")
+
+
+def test_date_parts_in_text_file_names(names_env, monkeypatch):
+    raw = {"id": 8, "text": "hello", "price": 0, "isOpened": True, "responseType": "post",
+           "postedAt": "2023-11-09T10:00:00+00:00"}
+    post = posts_.Post(raw, 1, "u", "timeline")
+    assert date_part_names(post, monkeypatch, placeholder.Textholders) == (
+        "2023", "11", "20231109 2023-11-09.jpg"
+    )
