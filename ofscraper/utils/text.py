@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import html
 import itertools
 import locale
 import logging
@@ -10,12 +11,13 @@ import traceback
 import aiofiles
 
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.sites as sites
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_script import after_download_script
-from ofscraper.utils.string import parse_safe
+from ofscraper.utils.string import html_lines, parse_safe
 
 
 async def get_text(username, values):
@@ -27,12 +29,36 @@ async def get_text(username, values):
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
+def file_text(text):
+    """What a post's text file holds: the caption as it reads on the site.
+    An OnlyFans caption is HTML, so a <br> or the start or end of a
+    paragraph, div, list item or heading is a line break, the other tags are removed and
+    entities are decoded, as stash_sync.clean_text does. A Fansly
+    caption is plain text already. Each of the caption's lines is wrapped on
+    its own, so its line breaks stay."""
+    if not sites.is_fansly():
+        text = html.unescape(html_lines(text))
+        text = "\n".join(line.strip() for line in text.splitlines())
+    width = of_env.getattr("MAX_TEXT_LENGTH")
+    lines = []
+    for line in text.strip().splitlines():
+        lines.extend(textwrap.wrap(line, width=width) or [""])
+    return "\n".join(lines)
+
+
+def _older_file_text(text):
+    """What a version before #751 wrote for the same caption: the raw text,
+    HTML included, wrapped as one paragraph. A file holding this is the
+    post's own, and is rewritten where it is."""
+    return "\n".join(textwrap.wrap(text, width=of_env.getattr("MAX_TEXT_LENGTH")))
+
+
 def _run_together_text(text):
     """What a version before #133 wrote for the same caption: the wrapped
     lines run together with nothing between them, in the system's code page
     rather than UTF-8. Where a line had a character the code page can't
     encode (an emoji, on Windows), the write stopped before that line. A
-    file holding this is the post's own text, not another post's."""
+    file holding this is the post's own, and is rewritten where it is."""
     encoding = locale.getpreferredencoding(False)
     written = []
     for line in textwrap.wrap(text, width=of_env.getattr("MAX_TEXT_LENGTH")):
@@ -110,26 +136,32 @@ async def _write_text(ele):
         return
 
     try:
+        content = file_text(ele.text)
+        # a caption of only markup, e.g. "<p></p>", has no text to save
+        if not content:
+            return
+
         new_ele = copy.deepcopy(ele)
         new_ele.mediatype = "Text"
 
         placeholderObj = await placeholder.Textholders(new_ele, "txt").init()
 
-        wrapped_text = textwrap.wrap(
-            new_ele.text, width=of_env.getattr("MAX_TEXT_LENGTH")
-        )
-        content = "\n".join(wrapped_text)
-        filepath = _own_path(
-            placeholderObj.filepath,
-            new_ele,
-            content,
+        older = (
+            _older_file_text(new_ele.text),
             _run_together_text(new_ele.text),
         )
+        filepath = _own_path(placeholderObj.filepath, new_ele, content, *older)
 
         # Check for existing file BEFORE marking the attempt. A file at a
         # name with {post_id} in it is kept as it is, even with other
         # content (an older or hand-edited caption): --force-all rewrites it.
-        if filepath.exists() and not dupe:
+        # The exception, at any name, is a file holding what an older
+        # version wrote for this caption, which is rewritten.
+        if (
+            filepath.exists()
+            and not dupe
+            and (_holds(filepath, content) or not _holds(filepath, *older))
+        ):
             # Returning without marking attempt will accurately log it as "skipped" in stats
             return
 

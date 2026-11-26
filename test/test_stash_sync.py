@@ -1121,3 +1121,29 @@ def test_graphql_errors_are_raised(monkeypatch):
     monkeypatch.setattr(stash_sync.urllib.request, "urlopen", lambda *a, **k: Response())
     with pytest.raises(StashError, match="bad field"):
         stash_sync.StashClient().call("{ x }")
+
+
+@pytest.mark.parametrize("raw, details", [
+    ("<div>first</div><div>second</div>", "first\nsecond"),
+    ("<ul><li>one</li><li>two</li></ul>", "one\ntwo"),
+    ("<h2>New set</h2><p>out now</p>", "New set\nout now"),
+    ("<p>Line one<br />Line two</p>", "Line one\nLine two"),
+])
+def test_stash_details_end_a_line_at_each_block(raw, details):
+    # the end of a div, list item or heading ends a line, as the end of a
+    # paragraph does, and as a post's --text file reads it (utils/text.py)
+    entry = {"posts": [("2026-10-31 12:00:00", "1001")], "sources": {"1001": {"Timeline"}}}
+    meta = stash_sync.describe(entry, {"1001": ("posts", raw)}, "a creator")
+    assert meta["details"] == details
+    assert meta["title"] == details.splitlines()[0]
+
+
+@pytest.mark.parametrize("raw, details", [
+    ("Intro<p>Body</p>", "Intro\nBody"),
+    ("<b>Sale</b><ul><li>one</li><li>two</li></ul>", "Sale\none\ntwo"),
+])
+def test_stash_details_start_a_line_at_each_block(raw, details):
+    # as a post's --text file reads it: "Intro<p>Body" isn't "IntroBody"
+    entry = {"posts": [("2026-10-31 12:00:00", "1001")], "sources": {"1001": {"Timeline"}}}
+    meta = stash_sync.describe(entry, {"1001": ("posts", raw)}, "a creator")
+    assert meta["details"] == details
