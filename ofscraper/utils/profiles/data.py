@@ -10,6 +10,13 @@ currentProfile = None
 currentData = None
 
 
+def clear_my_info():
+    """Discard the signed-in identity after credentials have changed."""
+    global currentData, currentProfile
+    currentData = None
+    currentProfile = None
+
+
 def get_my_info():
     global currentData
     global currentProfile

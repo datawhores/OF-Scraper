@@ -300,3 +300,51 @@ def test_site_name_placeholder(fansly_profile, monkeypatch):
     monkeypatch.setattr(settings.get_settings(), "site", "onlyfans")
     p.create_variables_base()
     assert p._variables["site_name"] == "Onlyfans"
+
+
+@pytest.mark.parametrize("outcome", ["saved", "cancelled", "write_failed"])
+def test_auth_edit_refreshes_account_path_identity_only_after_save(monkeypatch, fansly_profile, outcome):
+    import ofscraper.data.api.me as me
+    import ofscraper.prompts.prompts as prompts
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.profiles.data as profile_data
+    from ofscraper.classes.placeholder import basePlaceholder
+    from ofscraper.prompts.cancel import PromptCancelled
+
+    monkeypatch.setattr(profile_data, "currentData", None)
+    monkeypatch.setattr(profile_data, "currentProfile", None)
+    calls = []
+    replacement = base64.b64encode(f"100000000000000888:1:2:{'cd34' * 16}".encode()).decode()
+
+    def account():
+        token = fansly_auth.read_auth()["authorization_token"]
+        calls.append(token)
+        return {"id": 1 if token == TOKEN else 2, "username": "old_account" if token == TOKEN else "new_account", "name": "Test account"}
+
+    monkeypatch.setattr(me, "scrape_user", account)
+    before = basePlaceholder()
+    before.create_variables_base()
+    assert before._variables["my_id"] == 1
+    assert before._variables["my_username"] == "old_account"
+    monkeypatch.setattr(fansly_auth, "token_prompt", lambda current: replacement)
+    monkeypatch.setattr(prompts, "user_agent_prompt", lambda current: UA)
+    if outcome == "cancelled":
+        def cancel(current):
+            raise PromptCancelled()
+        monkeypatch.setattr(fansly_auth, "token_prompt", cancel)
+        with pytest.raises(PromptCancelled):
+            auth_file.edit_auth()
+    elif outcome == "write_failed":
+        def fail(*args, **kwargs):
+            raise OSError("test save failure")
+        monkeypatch.setattr(fansly_auth, "write_auth", fail)
+        with pytest.raises(OSError, match="test save failure"):
+            auth_file.edit_auth()
+    else:
+        auth_file.edit_auth()
+
+    after = basePlaceholder()
+    after.create_variables_base()
+    assert after._variables["my_id"] == (2 if outcome == "saved" else 1)
+    assert after._variables["my_username"] == ("new_account" if outcome == "saved" else "old_account")
+    assert calls == ([TOKEN, replacement] if outcome == "saved" else [TOKEN])

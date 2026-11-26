@@ -182,6 +182,10 @@ def edit_auth() -> dict:
     except (ValueError, OSError):
         current = empty()
     updated = make_auth(current)
+    # make_auth returns only after saving; cancelled or failed edits keep the cache.
+    import ofscraper.utils.profiles.data as profile_data
+
+    profile_data.clear_my_info()
     Console().print("Your `fansly_auth.json` file has been edited.")
     return updated
 

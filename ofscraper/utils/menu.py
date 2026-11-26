@@ -12,6 +12,7 @@ import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.managers.manager as manager
@@ -141,16 +142,21 @@ def _action_name(choice):
 
 @back_to_menu
 def profile_menu_helper(result_profiles_prompt):
-    if result_profiles_prompt == "default":
-        # Change profiles
-        profiles_manage.change_default_profile()
-        sites.set_active_site(None)
-        settings.update_settings()
-    elif result_profiles_prompt == "active":
-        # Change profiles
-        profiles_manage.change_active_profile()
-        sites.set_active_site(None)
-        settings.update_settings()
+    if result_profiles_prompt in {"default", "active"}:
+        previous_profile = profile_data.get_active_profile()
+        previous_site = sites.current_site()
+        if result_profiles_prompt == "default":
+            profiles_manage.change_default_profile()
+        else:
+            profiles_manage.change_active_profile()
+        # Re-selecting the active profile is a no-op, including its session site.
+        if profile_data.get_active_profile() != previous_profile:
+            sites.set_active_site(None)
+            settings.update_settings()
+            if sites.current_site() != previous_site:
+                actions.remove_post_area()
+                actions.remove_download_area()
+                actions.remove_like_area()
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()

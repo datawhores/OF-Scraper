@@ -237,3 +237,71 @@ def test_main_menu_counts_each_queued_creator_once(monkeypatch, menu_profile):
     state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["a creator"])
     state.set_queue(EActivity.ScrapeActivity.LIKE, ["a creator", "another creator"])
     assert "| Users: 2 selected |" in _main_menu_instruction(monkeypatch)
+
+
+def _profile_switch_setup(monkeypatch, tmp_path, args, stored_site, override=None):
+    config = tmp_path / "config.json"
+    config.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(common_paths, "get_config_path", lambda: config)
+    sites.write_profile_site(tmp_path / "main_profile", stored_site)
+    args.posts = ["Pinned"]
+    args.download_area = ["Archived"]
+    args.like_area = ["Featured"]
+    args.scrape_paid = True
+    settings.update_settings()
+    if override:
+        sites.set_active_site(override)
+        settings.update_settings()
+
+
+@pytest.mark.parametrize("choice", ["active", "default"])
+@pytest.mark.parametrize("source,target", [(sites.ONLYFANS, sites.FANSLY), (sites.FANSLY, sites.ONLYFANS)])
+def test_profile_site_change_clears_all_areas(monkeypatch, tmp_path, menu_profile, choice, source, target):
+    _profile_switch_setup(monkeypatch, tmp_path, menu_profile, source)
+    sites.write_profile_site(tmp_path / "other_profile", target)
+    monkeypatch.setattr(menu.prompts, "get_profile_prompt", lambda *args: "other_profile")
+
+    menu.profile_menu_helper(choice)
+
+    assert profile_data.get_active_profile() == "other_profile"
+    assert sites.current_site() == target
+    args = settings.get_args()
+    assert not args.posts
+    assert not args.download_area
+    assert not args.like_area
+    assert args.scrape_paid is None
+    assert areas.get_download_area() == set()
+
+
+@pytest.mark.parametrize("choice", ["active", "default"])
+@pytest.mark.parametrize("selection", ["main_profile", None])
+def test_profile_noop_keeps_site_override_and_areas(monkeypatch, tmp_path, menu_profile, choice, selection):
+    _profile_switch_setup(monkeypatch, tmp_path, menu_profile, sites.FANSLY, sites.ONLYFANS)
+    monkeypatch.setattr(menu.prompts, "get_profile_prompt", lambda *args: selection)
+
+    menu.profile_menu_helper(choice)
+
+    assert profile_data.get_active_profile() == "main_profile"
+    assert sites.current_site() == sites.ONLYFANS
+    assert sites._session_site == sites.ONLYFANS
+    assert settings.get_args().posts == ["Pinned"]
+    assert settings.get_args().download_area == ["Archived"]
+    assert settings.get_args().like_area == ["Featured"]
+    assert settings.get_args().scrape_paid is True
+
+
+@pytest.mark.parametrize("choice", ["active", "default"])
+def test_profile_change_compares_effective_sites(monkeypatch, tmp_path, menu_profile, choice):
+    _profile_switch_setup(monkeypatch, tmp_path, menu_profile, sites.FANSLY, sites.ONLYFANS)
+    sites.write_profile_site(tmp_path / "other_profile", sites.ONLYFANS)
+    monkeypatch.setattr(menu.prompts, "get_profile_prompt", lambda *args: "other_profile")
+
+    menu.profile_menu_helper(choice)
+
+    assert profile_data.get_active_profile() == "other_profile"
+    assert sites.current_site() == sites.ONLYFANS
+    assert sites._session_site is None
+    assert settings.get_args().posts == ["Pinned"]
+    assert settings.get_args().download_area == ["Archived"]
+    assert settings.get_args().like_area == ["Featured"]
+    assert settings.get_args().scrape_paid is True
