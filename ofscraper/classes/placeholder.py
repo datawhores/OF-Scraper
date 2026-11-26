@@ -259,9 +259,11 @@ def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, mode
         stem = stem[: -(len(ext) + 1)]
     if not live_names_apart(dir_fmt, file_fmt):
         stem = f"{stem}_{stamp}"
-    # joined as Placeholders.getmediadir joins: a folder that's a full path
-    # stays under the root, as the startup check says
-    return pathlib.Path(os.path.normpath(f"{root}/{folder}"), f"{stem}.{ext}")
+    # Drop the folder's drive and root before joining it to the save location.
+    folder_path = pathlib.Path(folder)
+    if folder_path.anchor:
+        folder_path = pathlib.Path(*folder_path.parts[1:])
+    return pathlib.Path(os.path.normpath(root / folder_path), f"{stem}.{ext}")
 
 
 def final_path(path):

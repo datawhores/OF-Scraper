@@ -2147,21 +2147,25 @@ def test_live_path_uses_stream_account_id_without_cached_models(monkeypatch, tmp
     assert recorder.base.parent == tmp_path / "Fansly" / "123"
 
 
-def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(tmp_path, monkeypatch):
-    """The name was shortened to fit "<name>.mp4" only, so a reconnect's
-    "_part2.mp4" or the "_chat.jsonl" sidecar went over the limit"""
-    import ofscraper.classes.placeholder as placeholder
+def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(tmp_path, monkeypatch, fansly_settings):
+    import ofscraper.utils.config.file as config_file
+    import ofscraper.utils.paths.paths as paths
 
-    limit = 60
-
-    def final_path(path):  # a system whose names hold 60 characters
-        path = pathlib.Path(path)
-        if len(path.name) <= limit:
-            return path
-        stem, ext = (path.name[:-11], path.name[-11:]) if path.name.endswith("_000000.mp4") else (path.stem, path.suffix)
-        return path.with_name(stem[: limit - len(ext)] + ext)
-
-    monkeypatch.setattr(placeholder, "final_path", final_path)
-    base = live.recording_base(tmp_path, "a" * 80, STARTED_MS)
-    for made in (live.part_path(base, 1), live.part_path(base, 99), live.sidecar_path(base), live.chat_path(base)):
-        assert len(made.name) <= limit, made.name
+    fansly_settings(trunicate=True)
+    config = {"live_options": {"dir_format": "recordings", "file_format": "a" * 300 + "{date}"}}
+    monkeypatch.setattr(config_file, "open_config", lambda: config)
+    # Use the production Linux truncator on every test host.
+    limit = 255
+    real_getenv = paths.of_env.getattr
+    overrides = {"LINUX_MAX_FILE_NAME_BYTES": limit, "UTF": "utf-8"}
+    monkeypatch.setattr(paths.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(paths.of_env, "getattr", lambda key, *a, **kw:
+                        overrides[key] if key in overrides else real_getenv(key, *a, **kw))
+    base = live.recording_base(tmp_path, "test_creator", STARTED_MS)
+    assert len(live.chat_path(base).name.encode("utf-8")) == limit
+    for n in (1, 99, 100, 1000):
+        part = live.part_path(base, n)
+        assert part.name.endswith(".mp4" if n == 1 else f"_part{n}.mp4")
+        assert len(part.name.encode("utf-8")) <= limit, part.name
+    for sidecar in (live.sidecar_path(base), live.chat_path(base)):
+        assert len(sidecar.name.encode("utf-8")) <= limit, sidecar.name

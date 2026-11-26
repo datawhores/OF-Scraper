@@ -178,19 +178,27 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
         save_location, folder_name(username), utc_start(started_at),
         site_name="Fansly", ext="mp4", model_id=model_id,
     )
-    # part_path adds .mp4 or _part<n>.mp4, and the sidecars .json and
-    # _chat.jsonl: shortened with room for the longest of them (a stand-in
-    # as long, which the shortening keeps whole), so each fits
-    room = placeholder.final_path(path.with_name(f"{path.stem}{_LONGEST_SUFFIX}"))
-    return room.with_name(room.name[: -len(_LONGEST_SUFFIX)])
+    # Keep room for chat and the shorter part suffixes in the shared base.
+    return _base_with_suffix_room(path.with_suffix(""), _CHAT_SUFFIX)
 
 
-# as long as "_chat.jsonl" and "_part<n>.mp4" below part 100
-_LONGEST_SUFFIX = "_000000.mp4"
+_CHAT_SUFFIX = "_chat.jsonl"
+
+
+def _base_with_suffix_room(base: pathlib.Path, suffix: str) -> pathlib.Path:
+    import ofscraper.classes.placeholder as placeholder
+
+    # The truncator preserves a numeric suffix before the extension.
+    reserved = f"_{'0' * (len(suffix) - len('_.mp4'))}.mp4"
+    fitted = placeholder.final_path(base.with_name(f"{base.name}{reserved}"))
+    return fitted.with_name(fitted.name[: -len(reserved)])
 
 
 def part_path(base: pathlib.Path, n: int) -> pathlib.Path:
-    return base.with_name(f"{base.name}.mp4" if n == 1 else f"{base.name}_part{n}.mp4")
+    suffix = ".mp4" if n == 1 else f"_part{n}.mp4"
+    if len(suffix) > len(_CHAT_SUFFIX):
+        base = _base_with_suffix_room(base, suffix)
+    return base.with_name(f"{base.name}{suffix}")
 
 
 def next_part_number(base: pathlib.Path) -> int:
@@ -222,7 +230,7 @@ def sidecar_path(base: pathlib.Path) -> pathlib.Path:
 
 
 def chat_path(base: pathlib.Path) -> pathlib.Path:
-    return base.with_name(f"{base.name}_chat.jsonl")
+    return base.with_name(f"{base.name}{_CHAT_SUFFIX}")
 
 
 # ------------------------------------------------------------------ ffmpeg

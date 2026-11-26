@@ -212,7 +212,7 @@ def problems():
             " in dir_format now fills one folder, so dates no longer nest. Use"
             " {year}/{month}/{day} in dir_format for nested date folders"
         )
-    names = _type_names()
+    names = area_type_names() | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
     same = {}
     for name in data.get_type_options():
         same.setdefault(type_name(name), []).append(name)
@@ -231,8 +231,8 @@ def problems():
             )
     import ofscraper.classes.placeholder as placeholder
 
-    _root, dir_fmt, file_fmt = placeholder.live_templates()
     try:
+        _root, dir_fmt, file_fmt = placeholder.live_templates()
         apart = placeholder.live_names_apart(dir_fmt, file_fmt)
     except ValueError:
         # a template that isn't valid ("{date"): named above already, and
@@ -256,17 +256,13 @@ POST_AREAS = {
 MEDIA_TYPES = {"images", "videos", "audios", "text"}
 
 
-def _type_names():
-    """the names a type_options entry can match, lowercased: also the folder
-    names the responsetype section gives each area"""
+def area_type_names():
+    """Names a type_options entry can match by post area or response folder."""
     import ofscraper.utils.config.file as config_file
     import ofscraper.utils.config.schema as schema
 
     folders = schema.get_current_config_schema(config_file.open_config())["responsetype"]
-    return (
-        POST_AREAS | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
-        | {type_name(folder) for folder in folders.values() if folder}
-    )
+    return POST_AREAS | {type_name(folder) for folder in folders.values() if folder}
 
 
 def report():

@@ -898,26 +898,38 @@ def test_type_options_names_for_the_same_type_are_named(path_options):
     assert placeholder.media_templates(("Messages", "Messages", "Images"))[1] == "b"
 
 
-@pytest.mark.parametrize("dir_format", ["/elsewhere/{model_username}", "C:/elsewhere/{model_username}"])
-def test_a_full_path_live_folder_stays_under_the_save_location(path_options, tmp_path, dir_format):
+@pytest.mark.parametrize("dir_format", ["/streams/{username}", "D:/streams/{username}"])
+def test_a_full_path_live_folder_stays_under_the_save_location(path_options, tmp_path, monkeypatch, dir_format):
     import datetime
+    import os
     import pathlib
 
     config, save = path_options
-    config["live_options"] = {"dir_format": dir_format}
+    config["live_options"] = {"save_location": "C:/library", "dir_format": dir_format}
     save()
+    if os.name != "nt":
+        # Exercise the Windows join on CI hosts that don't have Windows paths.
+        monkeypatch.setattr(placeholder, "os", SimpleNamespace(path=ntpath))
+        monkeypatch.setattr(placeholder, "pathlib", SimpleNamespace(Path=pathlib.PureWindowsPath))
+        monkeypatch.setattr(placeholder, "final_path", lambda path: path)
     result = placeholder.live_recording_path(
         tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
-    assert pathlib.Path(result).is_relative_to(tmp_path)
+    assert result == pathlib.PureWindowsPath("C:/library/streams/test_creator/test_creator_20240501_000000_live.webm")
 
 
-def test_a_broken_live_template_doesnt_hide_the_other_warnings(path_options):
+@pytest.mark.parametrize("site", ["onlyfans", "fansly"])
+def test_a_broken_live_template_doesnt_hide_the_other_warnings(path_options, monkeypatch, site):
     from ofscraper.utils.config import naming_check
 
     config, save = path_options
     config["file_options"]["dir_format"] = "{nope}/x"
-    config["live_options"] = {"file_format": "{date"}
+    config["live_options"] = {"dir_format": "streams", "file_format": "{date"}
     save()
-    lines = naming_check.problems()
-    assert any(line.startswith('file_options.dir_format "{nope}/x"') for line in lines)
+    current_settings = placeholder.settings.get_settings()
+    current_settings.site = site
+    monkeypatch.setattr(placeholder.settings, "get_settings", lambda: current_settings)
+    lines = []
+    monkeypatch.setattr(naming_check.log, "warning", lines.append)
+    naming_check.report()
+    assert any(line.startswith('file_options.dir_format "{nope}/x"') for line in lines), lines
     assert any(line.startswith('live_options.file_format "{date"') for line in lines)
