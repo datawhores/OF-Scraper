@@ -2,6 +2,7 @@
 
 import json
 import os
+import pathlib
 import sys
 
 import pytest
@@ -52,6 +53,97 @@ def result(report, check):
 
 def files_under(path):
     return sorted(str(p) for p in path.rglob("*"))
+
+
+def command_on_path(tmp_path, monkeypatch, content):
+    folder = tmp_path / "bin"
+    folder.mkdir()
+    script = folder / ("ofscraper.exe" if os.name == "nt" else "ofscraper")
+    script.write_bytes(content)
+    script.chmod(0o755)
+    monkeypatch.setenv("PATH", str(folder))
+    return script
+
+
+def test_the_first_line_names_the_running_install(home):
+    from ofscraper.__version__ import __version__
+
+    first = doctor.run().results[0]
+    assert first["check"] == "install" and first["status"] == "PASS"
+    assert __version__ in first["detail"] and doctor.redact(sys.executable) in first["detail"]
+    assert doctor.redact(str(pathlib.Path(doctor.__file__).resolve().parents[1])) in first["detail"]
+
+
+def test_ofscraper_on_path_from_this_install_passes(home, tmp_path, monkeypatch):
+    script = command_on_path(tmp_path, monkeypatch, f"#!{sys.executable}\nimport ofscraper\n".encode())
+    assert passes_as_this_install(script)
+
+
+def passes_as_this_install(script):
+    # Windows finds ofscraper.exe as ofscraper.EXE, the case PATHEXT gives
+    status, detail = result(doctor.run(), "ofscraper on PATH")
+    return status == "PASS" and os.path.normcase(detail) == os.path.normcase(f"{doctor.redact(str(script))}, this install")
+
+
+def test_ofscraper_on_path_from_another_install_warns(home, tmp_path, monkeypatch):
+    other = str(tmp_path / "pipx" / "venvs" / "ofscraper" / "bin" / "python")
+    script = command_on_path(tmp_path, monkeypatch, f"#!{other}\nimport ofscraper\n".encode())
+    status, detail = result(doctor.run(), "ofscraper on PATH")
+    assert status == "WARN" and os.path.normcase(doctor.redact(str(script))) in os.path.normcase(detail)
+    assert doctor.redact(sys.executable) in detail
+    # pip's form for a long path
+    script.write_bytes(f"#!/bin/sh\n'''exec' \"{other}\" \"$0\" \"$@\"\n' '''\n".encode())
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "WARN"
+    script.write_bytes(f"#!/bin/sh\n'''exec' \"{sys.executable}\" \"$0\" \"$@\"\n' '''\n".encode())
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "PASS"
+
+
+def installed_command(tmp_path, name, python):
+    """An ofscraper command an install made, outside PATH."""
+    folder = tmp_path / name / "bin"
+    folder.mkdir(parents=True)
+    command = folder / "ofscraper"
+    command.write_bytes(f"#!{python}\nimport ofscraper\n".encode())
+    return command
+
+
+@pytest.mark.parametrize("wrapper", [
+    '#!/bin/sh\nexec "{command}" "$@"\n',
+    '#!/usr/bin/env bash\n# my wrapper\nset -e\nexec {command} --no-rich "$@"\n',
+    '#!/bin/bash\nexec "{python}" -m ofscraper "$@"\n',
+])
+def test_a_shell_wrapper_that_runs_this_install_passes(home, tmp_path, monkeypatch, wrapper):
+    command = installed_command(tmp_path, "venv", sys.executable)
+    command_on_path(tmp_path, monkeypatch, wrapper.format(command=command.as_posix(), python=sys.executable).encode())
+    status, detail = result(doctor.run(), "ofscraper on PATH")
+    assert status == "PASS" and detail.endswith(", this install")
+
+
+def test_a_shell_wrapper_that_runs_another_install_warns(home, tmp_path, monkeypatch):
+    other = str(tmp_path / "pipx" / "venvs" / "ofscraper" / "bin" / "python")
+    command = installed_command(tmp_path, "other", other)
+    command_on_path(tmp_path, monkeypatch, f'#!/bin/sh\nexec "{command}" "$@"\n'.encode())
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "WARN"
+
+
+def test_a_shim_doctor_cant_follow_isnt_called_another_install(home, tmp_path, monkeypatch):
+    # a version manager's shim: the program it runs is only known at run time
+    shim = '#!/usr/bin/env bash\nset -e\nprogram="${0##*/}"\nexec "/opt/manager/libexec/manager" exec "$program" "$@"\n'
+    command_on_path(tmp_path, monkeypatch, shim.encode())
+    status, detail = result(doctor.run(), "ofscraper on PATH")
+    assert status == "SKIP" and "can't tell" in detail
+
+
+def test_the_install_lines_show_the_home_folder_as_tilde(home, tmp_path, monkeypatch):
+    fake_home = pathlib.Path(sys.executable).parents[1]
+    monkeypatch.setattr(doctor.pathlib.Path, "home", classmethod(lambda cls: fake_home))
+    install = doctor.run().results[0]["detail"]
+    assert str(fake_home) not in install and f"~{os.sep}" in install
+
+
+def test_no_ofscraper_on_path(home, tmp_path, monkeypatch):
+    monkeypatch.setenv("PATH", str(tmp_path))
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "SKIP"
 
 
 def test_an_empty_home_gets_findings_and_nothing_is_created(home):
@@ -667,6 +759,165 @@ def test_an_auth_value_that_isnt_text_fails_and_isnt_cleaned(home, value):
     assert result(report, "OnlyFans auth")[0] == "FAIL"
     assert "not text" in result(report, "OnlyFans auth")[1]
     assert not [r for r in report.results if r["check"] == "OnlyFans auth values"]
+
+
+# --- which Python a command on PATH starts ---
+
+def pe_with_rcdata(resources, tail=b""):
+    """A minimal PE32+ file with RT_RCDATA resources named as uv's
+    trampolines name theirs (uv-trampoline-builder: UV_PYTHON_PATH, ...)."""
+    import struct
+
+    names, entries, blobs = b"", [], b""
+    # the resource tree: root -> RT_RCDATA (id 10) -> one dir per name -> language 0 -> data
+    count = len(resources)
+    root = 16 + 8
+    rcdata = root
+    rcdata_size = 16 + 8 * count
+    name_dirs = rcdata + rcdata_size
+    data_entries = name_dirs + count * (16 + 8)
+    name_strings = data_entries + count * 16
+    strings = b""
+    string_at = []
+    for name, _ in resources:
+        string_at.append(name_strings + len(strings))
+        strings += struct.pack("<H", len(name)) + name.encode("utf-16-le")
+    blobs_at = name_strings + len(strings)
+    blobs_at += -blobs_at % 4
+    section_va = 0x1000
+    tree = struct.pack("<IIHHHH", 0, 0, 0, 0, 0, 1) + struct.pack("<II", 10, 0x80000000 | rcdata)
+    tree += struct.pack("<IIHHHH", 0, 0, 0, 0, count, 0)
+    for i in range(count):
+        tree += struct.pack("<II", 0x80000000 | string_at[i], 0x80000000 | (name_dirs + i * 24))
+    data = b""
+    for i, (_, value) in enumerate(resources):
+        tree += struct.pack("<IIHHHH", 0, 0, 0, 0, 0, 1) + struct.pack("<II", 0, data_entries + i * 16)
+    for i, (_, value) in enumerate(resources):
+        tree += struct.pack("<IIII", section_va + blobs_at + len(data), len(value), 0, 0)
+        data += value + b"\0" * (-len(value) % 4)
+    tree += strings
+    tree += b"\0" * (blobs_at - len(tree)) + data
+    raw_at = 0x400
+    pe_at = 0x80
+    opt = struct.pack("<H", 0x20B) + b"\0" * 106 + struct.pack("<I", 16)
+    directories = [(0, 0)] * 16
+    directories[2] = (section_va, len(tree))
+    opt += b"".join(struct.pack("<II", *d) for d in directories)
+    coff = struct.pack("<HHIIIHH", 0x8664, 1, 0, 0, 0, len(opt), 0x22)
+    section = b".rsrc\0\0\0" + struct.pack("<IIIIIIHHI", len(tree), section_va, len(tree), raw_at, 0, 0, 0, 0, 0x40000040)
+    head = b"MZ" + b"\0" * 58 + struct.pack("<I", pe_at)
+    head += b"\0" * (pe_at - len(head)) + b"PE\0\0" + coff + opt + section
+    return head + b"\0" * (raw_at - len(head)) + tree + tail
+
+
+def test_a_uv_trampoline_names_its_python_in_a_resource(tmp_path):
+    script = tmp_path / "ofscraper.exe"
+    # absolute in this system's form: a Windows path on Windows
+    python = str(tmp_path / "uv" / "tools" / "ofscraper" / "Scripts" / "python.exe")
+    script.write_bytes(pe_with_rcdata([("UV_TRAMPOLINE_KIND", b"\x01"), ("UV_PYTHON_PATH", python.encode()),
+                                       ("UV_SCRIPT_DATA", b"PK\x05\x06" + b"\0" * 18)]))
+    assert doctor._script_python(str(script)) == python
+
+
+def test_a_uv_trampolines_relative_python_is_beside_the_command(tmp_path, monkeypatch):
+    folder = tmp_path / "Scripts"
+    folder.mkdir()
+    script = folder / "ofscraper.exe"
+    script.write_bytes(pe_with_rcdata([("UV_TRAMPOLINE_KIND", b"\x01"), ("UV_PYTHON_PATH", b"python.exe")]))
+    monkeypatch.chdir(tmp_path)
+    assert doctor._script_python(str(script)) == str(folder / "python.exe")
+    # the older form, with the path at the end of the file
+    path = b"python.exe"
+    script.write_bytes(b"MZ launcher" + path + len(path).to_bytes(4, "little") + b"UVPY")
+    assert doctor._script_python(str(script)) == str(folder / "python.exe")
+
+
+@pytest.mark.parametrize("line, python", [
+    (b'#!"C:\\Program Files\\Python312\\Python.EXE"\r\n', "C:\\Program Files\\Python312\\Python.EXE"),
+    (b"#!/opt/py/bin/python3.12 -s\n", "/opt/py/bin/python3.12"),
+    (b"#!/opt/py/bin/PYTHON3 -E -s\n", "/opt/py/bin/PYTHON3"),
+    (b"#!/bin/bash\n", None),
+])
+def test_shebang_forms(tmp_path, line, python):
+    script = tmp_path / "ofscraper"
+    script.write_bytes(line + b"import ofscraper\n")
+    assert doctor._script_python(str(script)) == python
+
+
+@pytest.mark.parametrize("second_line, python", [
+    (b"'''exec' \"/opt/x y/bin/python3\" \"$0\" \"$@\"", "/opt/x y/bin/python3"),
+    # shlex.quote'd, as some installers write it
+    (b"'''exec' '/path with space/python' \"$0\" \"$@\"", "/path with space/python"),
+    (b"'exec' '/path with space/python' \"$0\" \"$@\"", "/path with space/python"),
+    (b"exec '/opt/x y/bin/python3' \"$0\" \"$@\"", "/opt/x y/bin/python3"),
+    (b"exec '/opt/it'\"'\"'s/bin/python3' \"$0\" \"$@\"", "/opt/it's/bin/python3"),
+])
+def test_a_sh_wrapper_for_a_long_or_spaced_python_path(tmp_path, second_line, python):
+    script = tmp_path / "ofscraper"
+    script.write_bytes(b"#!/bin/sh\n" + second_line + b"\n' '''\nimport ofscraper\n")
+    assert doctor._script_python(str(script)) == python
+
+
+def test_a_truncated_or_damaged_windows_program_cant_tell(tmp_path):
+    """Every offset in the PE and resource headers is checked against the
+    file's length: a cut or damaged file names no Python, never raises."""
+    import random
+
+    whole = pe_with_rcdata([("UV_TRAMPOLINE_KIND", b"\x01"), ("UV_PYTHON_PATH", b"python.exe")])
+    assert doctor._pe_resource(whole, "UV_PYTHON_PATH") == b"python.exe"
+    for size in range(len(whole)):
+        # only the padding after the value can go without losing it
+        assert doctor._pe_resource(whole[:size], "UV_PYTHON_PATH") in (None, b"python.exe")
+    rng = random.Random(0)
+    for _ in range(2000):
+        damaged = bytearray(whole)
+        for _ in range(rng.randint(1, 4)):
+            damaged[rng.randrange(len(damaged))] = rng.randrange(256)
+        assert isinstance(doctor._pe_resource(bytes(damaged), "UV_PYTHON_PATH"), (bytes, type(None)))
+    script = tmp_path / "ofscraper.exe"
+    script.write_bytes(whole[:0x420])
+    assert doctor._script_python(str(script)) is None
+
+
+def test_a_pip_windows_launcher_with_an_upper_case_python(tmp_path):
+    script = tmp_path / "ofscraper.exe"
+    script.write_bytes(b"MZ launcher code" + b'#!"C:\\Python312\\PYTHON.EXE"\r\n' + b"PK\x03\x04zip")
+    assert doctor._script_python(str(script)) == "C:\\Python312\\PYTHON.EXE"
+
+
+def test_env_shebang_finds_the_python_on_path(home, tmp_path, monkeypatch):
+    script = command_on_path(tmp_path, monkeypatch, f"#!/usr/bin/env -S {os.path.basename(sys.executable)} -s\nimport ofscraper\n".encode())
+    monkeypatch.setenv("PATH", os.pathsep.join([str(script.parent), os.path.dirname(sys.executable)]))
+    assert passes_as_this_install(script)
+
+
+def test_a_shebang_through_a_linked_folder_is_this_install(home, tmp_path, monkeypatch):
+    """macOS's /var is /private/var: the same folder by another path."""
+    link = tmp_path / "linked"
+    try:
+        link.symlink_to(os.path.dirname(sys.executable), target_is_directory=True)
+    except OSError:
+        if os.name != "nt":
+            raise
+        # a symlink needs a privilege on Windows; a junction doesn't
+        import _winapi
+
+        _winapi.CreateJunction(os.path.dirname(sys.executable), str(link))
+    python = link / os.path.basename(sys.executable)
+    script = command_on_path(tmp_path, monkeypatch, f"#!{python}\nimport ofscraper\n".encode())
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "PASS"
+
+
+def test_the_users_scripts_folder_of_the_preferred_scheme(home, tmp_path, monkeypatch):
+    """A framework build on macOS installs --user commands under
+    osx_framework_user, not posix_user."""
+    import sysconfig
+
+    script = command_on_path(tmp_path, monkeypatch, b"\x7fELF not a script")
+    real = sysconfig.get_path
+    monkeypatch.setattr(sysconfig, "get_preferred_scheme", lambda key: "osx_framework_user" if key == "user" else "posix_prefix")
+    monkeypatch.setattr(sysconfig, "get_path", lambda name, scheme=None, *a, **k: str(script.parent) if scheme == "osx_framework_user" else real(name, *a, **k) if scheme is None else real(name, scheme, *a, **k))
+    assert result(doctor.run(), "ofscraper on PATH")[0] == "PASS"
 
 
 def test_key_mode_cdrm_with_a_malformed_server_address(home, monkeypatch):

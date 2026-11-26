@@ -1,5 +1,6 @@
-"""Check the setup without running a scrape: config, logins on file, ffmpeg,
-key files, folders, free space and the database setting.
+"""Check the setup without running a scrape: which install is running,
+config, logins on file, ffmpeg, key files, folders, free space and the
+database setting.
 
 It reads config.json as it is, changes nothing, makes no connection and
 never asks a question. Each line is PASS, WARN, FAIL or SKIP; the exit status
@@ -20,9 +21,11 @@ import json
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
+import sysconfig
 import urllib.parse
 
 import ofscraper.utils.of_env.of_env as of_env
@@ -254,6 +257,232 @@ def check_auth(config, folder, site, report):
                 check_config_auth(config, report)
         else:
             report.add(SKIP, label, f"not used: the profile is for {sites.SITE_NAMES[site]}")
+
+
+def _norm(path):
+    return os.path.normcase(os.path.abspath(path))
+
+
+def _pe_resource(data, name):
+    """An RT_RCDATA resource of a Windows program, by name, or None: where
+    uv's trampolines keep the Python they start (UV_PYTHON_PATH)."""
+
+    def word(at, size):
+        if at < 0 or at + size > len(data):
+            raise ValueError("outside the file")
+        return int.from_bytes(data[at:at + size], "little")
+
+    try:
+        if data[:2] != b"MZ":
+            return None
+        pe = word(0x3C, 4)
+        if data[pe:pe + 4] != b"PE\0\0":
+            return None
+        sections, optional_size = word(pe + 6, 2), word(pe + 20, 2)
+        optional = pe + 24
+        # the data directories follow the optional header's fields: 96
+        # bytes of them in PE32, 112 in PE32+; the resources are the third
+        directories = optional + (96 if word(optional, 2) == 0x10B else 112)
+        table = [
+            (word(at + 12, 4), max(word(at + 8, 4), word(at + 16, 4)), word(at + 20, 4))
+            for at in range(optional + optional_size, optional + optional_size + 40 * sections, 40)
+        ]
+
+        def offset(rva):
+            for address, size, raw in table:
+                if address <= rva < address + size:
+                    return rva - address + raw
+            raise ValueError("not in a section")
+
+        base = offset(word(directories + 16, 4))
+
+        def entries(directory):
+            count = word(directory + 12, 2) + word(directory + 14, 2)
+            for at in range(directory + 16, directory + 16 + 8 * min(count, 4096), 8):
+                yield word(at, 4), word(at + 4, 4)
+
+        def below(pointer):
+            return base + (pointer & 0x7FFFFFFF)
+
+        def named(key):
+            if not key & 0x80000000:
+                return None
+            at = below(key)
+            return data[at + 2:at + 2 + 2 * word(at, 2)].decode("utf-16-le", "replace")
+
+        # the tree: type (RT_RCDATA is 10), then name, then language
+        rcdata = next((below(p) for key, p in entries(base) if key == 10 and p & 0x80000000), None)
+        if rcdata is None:
+            return None
+        found = next((below(p) for key, p in entries(rcdata) if (named(key) or "").upper() == name and p & 0x80000000), None)
+        if found is None:
+            return None
+        languages = [p for _key, p in entries(found)]
+        if not languages or languages[0] & 0x80000000:
+            return None
+        entry = below(languages[0])
+        start, size = offset(word(entry, 4)), word(entry + 4, 4)
+        if start + size > len(data):
+            return None
+        return data[start:start + size]
+    except ValueError:
+        return None
+
+
+PYTHON_NAME = re.compile(r"pythonw?[\d.]*(?:\.exe)?", re.IGNORECASE)
+
+
+def _shebang_python(line):
+    """The Python a #! line starts, or None: its program (quoted or not; the
+    flags after it aren't part of it) when that is a python, or the python
+    /usr/bin/env would find on PATH."""
+    words = [quoted or bare for quoted, bare in re.findall(r'"([^"]*)"|(\S+)', line)]
+    if words and re.split(r"[\\/]", words[0])[-1].lower() in ("env", "env.exe"):
+        words = [w for w in words[1:] if not w.startswith("-") and "=" not in w][:1]
+        if words and PYTHON_NAME.fullmatch(words[0]):
+            return shutil.which(words[0]) or words[0]
+        return None
+    if words and PYTHON_NAME.fullmatch(re.split(r"[\\/]", words[0])[-1]):
+        return words[0]
+    return None
+
+
+def _exec_target(data):
+    """The program a shell script hands over to with exec, or None."""
+    for raw in data.splitlines()[1:100]:
+        try:
+            words = shlex.split(raw.decode("utf-8", "replace"), comments=True)
+        except ValueError:
+            continue
+        if len(words) > 1 and words[0] == "exec":
+            return words[1]
+    return None
+
+
+def _is_script(path):
+    try:
+        with open(path, "rb") as file:
+            return file.read(2) == b"#!"
+    except OSError:
+        return False
+
+
+def _follow(script, depth=0):
+    """(the Python an ofscraper command on PATH starts or None, the last
+    file read): from its shebang (or the one in a Windows launcher, or uv's
+    trampoline), following a shell wrapper that execs a python or another
+    command."""
+    try:
+        with open(script, "rb") as file:
+            data = file.read(4 * 2**20)
+    except OSError:
+        return None, script
+    python = _script_python(script, data)
+    if python or not data.startswith(b"#!") or depth >= 4:
+        return python, script
+    target = _exec_target(data)
+    if not target:
+        return None, script
+    if PYTHON_NAME.fullmatch(re.split(r"[\\/]", target)[-1]):
+        return target, script
+    found = target if os.path.isabs(target) else shutil.which(target)
+    if not found or not os.path.isfile(found):
+        return None, script
+    return _follow(found, depth + 1)
+
+
+def _script_python(script, data=None):
+    """The Python an ofscraper command on PATH starts, from its shebang (or
+    the one in a Windows launcher, or uv's trampoline), or None."""
+    if data is None:
+        try:
+            with open(script, "rb") as file:
+                data = file.read(4 * 2**20)
+        except OSError:
+            return None
+    uv = _pe_resource(data, "UV_PYTHON_PATH")
+    if uv is None and data[-4:] in (b"UVSC", b"UVPY") and len(data) > 8:
+        # uv's trampolines before the path moved into a resource
+        size = int.from_bytes(data[-8:-4], "little")
+        if 0 < size < len(data) - 8:
+            uv = data[-8 - size:-8]
+    if uv:
+        # a relative path is beside the trampoline, as uv-trampoline reads it
+        return os.path.join(os.path.dirname(os.path.abspath(script)), uv.decode("utf-8", "replace"))
+    # pip's wrapper for long paths: #!/bin/sh, then '''exec' "/path/python" "$0" "$@";
+    # the path can also be in single quotes, as shlex.quote writes it
+    wrapped = re.match(rb"#!/bin/sh\r?\n([^\r\n]*)", data)
+    if wrapped:
+        try:
+            words = shlex.split(wrapped.group(1).decode("utf-8", "replace"))
+        except ValueError:
+            words = []
+        # only a python: a wrapper that execs another command is followed
+        # by _follow
+        if len(words) > 1 and words[0] == "exec" and PYTHON_NAME.fullmatch(re.split(r"[\\/]", words[1])[-1]):
+            return words[1]
+    # a script's first line, or the last #! line of a Windows launcher
+    # (distlib's: the launcher, then the #! line, then a zip of the script)
+    if data.startswith(b"#!"):
+        line = data.split(b"\n", 1)[0]
+    else:
+        found = re.findall(rb"#!([^\r\n]*)\r?\n", data)
+        line = found[-1] if found else None
+    if line is None:
+        return None
+    return _shebang_python(line.removeprefix(b"#!").decode("utf-8", "replace").strip())
+
+
+def _scripts_dirs():
+    """Where this Python's installs put their commands."""
+    dirs = {os.path.dirname(sys.executable), sysconfig.get_path("scripts")}
+    try:
+        # posix_user, nt_user, or osx_framework_user for a macOS framework build
+        dirs.add(sysconfig.get_path("scripts", sysconfig.get_preferred_scheme("user")))
+    except KeyError:
+        pass
+    return {_norm(os.path.realpath(d)) for d in dirs if d}
+
+
+def check_install(report):
+    """Which install is running, and whether ofscraper on PATH is another."""
+    from ofscraper.__version__ import __dist_name__, __version__
+
+    frozen = getattr(sys, "frozen", False)
+    if frozen:
+        report.add(PASS, "install", f"{__dist_name__} {__version__}, binary {sys.executable}")
+    else:
+        package = pathlib.Path(__file__).resolve().parents[1]
+        report.add(PASS, "install", f"{__dist_name__} {__version__}, Python {sys.executable}, package {package}")
+    script = shutil.which("ofscraper")
+    if not script:
+        report.add(SKIP, "ofscraper on PATH", "no ofscraper command on PATH")
+        return
+    python, final = _follow(script)
+    if frozen:
+        same = _norm(os.path.realpath(final)) == _norm(os.path.realpath(sys.executable))
+    else:
+        if python:
+            # python and python3 in one folder can be the same install;
+            # two virtual environments' pythons can be links to one file
+            same = _norm(python) == _norm(sys.executable) or (
+                _norm(os.path.realpath(os.path.dirname(python))) == _norm(os.path.realpath(os.path.dirname(sys.executable)))
+                and _norm(os.path.realpath(python)) == _norm(os.path.realpath(sys.executable))
+            )
+        else:
+            same = _norm(os.path.dirname(os.path.realpath(final))) in _scripts_dirs()
+    if not same and not python and _is_script(final):
+        # a wrapper or shim whose program is only known when it runs
+        report.add(SKIP, "ofscraper on PATH",
+                   f"{script} is a script that doesn't name the Python or ofscraper it runs: doctor can't tell"
+                   " whether it runs this install")
+        return
+    if same:
+        report.add(PASS, "ofscraper on PATH", f"{script}, this install")
+    else:
+        report.add(WARN, "ofscraper on PATH",
+                   f"{script} is a different install from the one running doctor ({sys.executable}):"
+                   " the ofscraper command doesn't run this one")
 
 
 def check_ffmpeg(config, report):
@@ -658,6 +887,7 @@ def run(config=None, profile=None, site=None, online=False):
     import ofscraper.sites as sites
 
     report = Report()
+    check_install(report)
     path = config_path(config)
     settings = read_config(path, report)
     folder = profile_folder(settings, profile, path)
