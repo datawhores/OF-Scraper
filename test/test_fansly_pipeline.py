@@ -751,7 +751,10 @@ def test_the_pipeline_scans_the_areas_the_scan_first_path_would(
         pipeline_lines = [m for m in caplog.messages]
     assert set(areas) == set(scanned)
     assert areas == [a for a in pipeline.ORDER if a in scanned]
-    assert pipeline_lines == [m for m in scan_first_lines if "skipping" in m.lower()]
+    # the same skip lines, and the same note about an inactive subscription
+    assert pipeline_lines == [
+        m for m in scan_first_lines if "skipping" in m.lower() or "not active" in m
+    ]
 
 
 # ------------------------------------------------------------------ same files, same folders

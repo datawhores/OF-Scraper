@@ -136,6 +136,7 @@ def ordered() -> bool:
 
 def areas_for(ele, username):
     """The areas to scan, in ``ORDER``, decided as the scan-first path does."""
+    post_area.log_inactive_subscription(ele, username)
     areas = post_area.site_post_areas()
     if post_area.skip_wall(ele):
         if any(a in areas for a in ("Timeline", "Labels")):
