@@ -191,6 +191,48 @@ def test_key_files(home, tmp_path):
     assert status == "FAIL" and detail.startswith("the key files can't be loaded")
 
 
+def manual_keys(home, client, key):
+    write_config(home, {"cdm_options": {"key-mode-default": "manual", "client-id": str(client), "private-key": str(key)}})
+    return result(doctor.run(), "key files")
+
+
+def test_key_files_say_a_tilde_isnt_expanded(home, tmp_path):
+    status, detail = manual_keys(home, "~/keys/client_id.bin", tmp_path / "private_key.pem")
+    assert status == "FAIL" and "file not found" in detail
+    assert "client-id starts with ~, which isn't expanded: use the full path" in detail
+
+
+def test_key_files_name_a_dumped_file_beside_the_missing_one(home, tmp_path):
+    (tmp_path / "device_client_id_blob").write_bytes(b"c")
+    (tmp_path / "private_key").write_bytes(b"k")
+    status, detail = manual_keys(home, tmp_path / "client_id.bin", tmp_path / "private_key.pem")
+    assert status == "FAIL"
+    assert "client-id: no file at that name, but device_client_id_blob is in that folder" in detail
+    assert "private-key: no file at that name, but private_key is in that folder" in detail
+
+
+def test_key_files_that_look_swapped_or_json(home, tmp_path):
+    client, key = tmp_path / "client_id.bin", tmp_path / "private_key.pem"
+    client.write_bytes(b"-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----\n")
+    key.write_bytes(b"\x08\x01\x12\x10not a key")
+    status, detail = manual_keys(home, client, key)
+    assert status == "FAIL" and detail.startswith("the key files can't be loaded")
+    assert "client-id looks like a private key: the two may be swapped" in detail
+    assert "private-key looks like a client id: the two may be swapped" in detail
+    client.write_text('{"client_id": "abc"}', encoding="utf-8")
+    status, detail = manual_keys(home, client, key)
+    assert "client-id looks like a JSON file, not a key file" in detail
+
+
+def test_key_files_set_in_auth_json(home, tmp_path):
+    write_config(home, {"cdm_options": {"key-mode-default": "manual"}})
+    write_auth(home, **{"client-id": SECRET, "private_key": SECRET})
+    status, detail = result(doctor.run(), "key files")
+    assert status == "FAIL" and detail.startswith("client-id is not set; private-key is not set")
+    assert "client-id and private-key are in auth.json: they belong in config.json" in detail
+    assert SECRET not in detail
+
+
 def test_key_mode_cdrm_warns_without_contacting_it(home, tmp_path, monkeypatch):
     from ofscraper.commands.scraper.actions.download.utils import keyhelpers
 
@@ -544,6 +586,35 @@ def test_key_mode_cdrm_with_a_server_of_your_own(home, monkeypatch):
     assert "127.0.0.1" in detail and "cookies" in detail and SECRET not in detail
 
 
+def test_key_files_that_name_a_folder(home, tmp_path):
+    keys = tmp_path / "keys"
+    keys.mkdir()
+    (keys / "client_id.bin").write_bytes(b"c")
+    (keys / "private_key.pem").write_bytes(b"k")
+    status, detail = manual_keys(home, keys, keys / "private_key.pem")
+    assert status == "FAIL"
+    assert "client-id is a folder, not a file: client_id.bin is in it" in detail
+
+
+def test_key_files_named_in_another_case(home, tmp_path):
+    (tmp_path / "Client_ID.bin").write_bytes(b"c")
+    (tmp_path / "DEVICE_PRIVATE_KEY").write_bytes(b"k")
+    status, detail = manual_keys(home, tmp_path / "client_id.bin", tmp_path / "private_key.pem")
+    assert status == "FAIL"
+    if not (tmp_path / "client_id.bin").exists():
+        # on a file system that ignores case (Windows, macOS) it is the file
+        assert "client-id: no file at that name, but Client_ID.bin is in that folder" in detail
+    assert "private-key: no file at that name, but DEVICE_PRIVATE_KEY is in that folder" in detail
+
+
+def test_a_json_key_file_with_a_bom(home, tmp_path):
+    client, key = tmp_path / "client_id.bin", tmp_path / "private_key.pem"
+    client.write_bytes(b"\xef\xbb\xbf  {\"client_id\": \"abc\"}")
+    key.write_bytes(b"not a key")
+    status, detail = manual_keys(home, client, key)
+    assert status == "FAIL" and "client-id looks like a JSON file, not a key file" in detail
+
+
 def test_key_mode_cdrm_with_a_malformed_server_address(home, monkeypatch):
     """An OFSC_CDRM_URL that urlsplit can't parse (an unclosed IPv6
     bracket) still gets the warning, without naming a host or crashing."""
@@ -636,3 +707,12 @@ def test_a_linked_save_folder_is_measured_on_the_links_target(home, tmp_path, mo
                         lambda key, *a, **k: "" if key == "DISK_SPACE_CHECK_PATH" else real(key, *a, **k))
     status, detail = result(doctor.run(), "free-space limit")
     assert detail.startswith(f"1000 bytes, measured at {doctor.redact(str(target.resolve()))},")
+
+
+@pytest.mark.parametrize("empty", ["", None, "  "])
+def test_empty_key_placeholders_in_auth_json_arent_named(home, empty):
+    write_config(home, {"cdm_options": {"key-mode-default": "manual"}})
+    write_auth(home, **{"client-id": empty, "private_key": SECRET})
+    status, detail = result(doctor.run(), "key files")
+    assert status == "FAIL" and "private-key is in auth.json: it belongs in config.json" in detail
+    assert "client-id and" not in detail
