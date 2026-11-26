@@ -3,6 +3,7 @@ import schedule
 import logging
 from datetime import timezone
 from dateutil import tz
+import random
 import time
 import traceback
 import signal
@@ -44,6 +45,13 @@ class DaemonWakeup:
             self.installed = False
 
 
+def next_wait_minutes(interval, jitter=0):
+    """Return ``interval`` minutes plus a random delay in ``[0, jitter]``."""
+    if jitter and jitter > 0:
+        return interval + random.uniform(0, jitter)
+    return interval
+
+
 def set_schedule(*functs, wakeup=None):
     sleep = min(max(settings.get_settings().daemon / 5, 1), 60)
     # after an error, wait the normal interval even when polling fast (#379)
@@ -60,12 +68,18 @@ def set_schedule(*functs, wakeup=None):
             # the local zone with its daylight saving rules (arrow 1.4's
             # arrow.now() has a fixed offset): the time is handed to schedule
             # as a local wall-clock time
-            next = arrow.now(tz.tzlocal()).shift(minutes=settings.get_settings().daemon)
+            s = settings.get_settings()
+            wait = next_wait_minutes(s.daemon, getattr(s, "daemon_jitter", 0) or 0)
+            next = arrow.now(tz.tzlocal()).shift(minutes=wait)
             log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
             status_file.set_next_pass(next.datetime.astimezone(timezone.utc))
             job = schedule.every().day.at(next.format("HH:mm:ss")).do(
                 schedule_helper, *functs, wakeup=wakeup
             )
+            # .day.at() picks the next time that clock time comes round, so a
+            # wait of a day or more (--daemon 1440 with jitter) would run
+            # within the day: the job runs once, at the time worked out here
+            job.next_run = next.to(tz.tzlocal()).naive
             if wakeup is not None:
                 wakeup.state = "idle"
             while len(schedule.jobs) > 0 and (wakeup is None or not wakeup.stopped):
