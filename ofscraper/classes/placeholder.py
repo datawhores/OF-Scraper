@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import pathlib
-import platform
 import re
 import string
 import arrow
@@ -14,6 +13,7 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.paths.names as names
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
@@ -46,16 +46,12 @@ def post_date(date, fallback, name, ele):
     return arrow.get(date)
 
 
-# can't be in a folder or file name on Windows; a slash would add a folder
-_NOT_IN_A_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
-
 def path_safe_label(label):
     """The {label} value: the label's name without characters a file name
     can't hold. Names arrive decoded ("Q&A <3", not "Q&amp;A &lt;3"), so
     ``<`` and ``>`` would otherwise stop the folder being made on Windows.
     Spaces and dashes are kept, so existing label folders keep their names."""
-    return _NOT_IN_A_NAME.sub("", str(label)).strip() or "None"
+    return names.clean_label(label)
 
 
 def site_save_location():
@@ -468,12 +464,8 @@ class databasePlaceholder(basePlaceholder):
         self._metadata = input
 
 
-# names Windows keeps for devices, with or without an extension ("con.txt")
-_WINDOWS_DEVICE = re.compile(r"(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?=\s*(\.|$))")
-
-
 def _on_windows():
-    return platform.system() == "Windows"
+    return names.on_windows()
 
 
 def _safe_parts(path, literal=None):
@@ -483,21 +475,7 @@ def _safe_parts(path, literal=None):
     gets "CON_"): a caption or a name can be either. literal marks each character the template itself wrote: a
     name made only of those (dir_format ".", to save in save_location) is
     kept."""
-    path = str(path)
-    literal = literal or [False] * len(path)
-    out, start = [], 0
-    for part in re.split(r"([/\\])", path):
-        own = all(literal[start : start + len(part)])
-        start += len(part)
-        if len(out) % 2:
-            pass
-        elif re.fullmatch(r"\s*\.[.\s]*", part) and not own:
-            part = "_"
-        elif _on_windows():
-            # only Windows has device names: elsewhere "aux" is a name
-            part = _WINDOWS_DEVICE.sub(r"\1_", part)
-        out.append(part)
-    return "".join(out)
+    return names.safe_parts(path, literal, windows=_on_windows())
 
 
 def _safe_format(template, variables):

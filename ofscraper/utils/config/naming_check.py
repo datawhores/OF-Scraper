@@ -6,14 +6,15 @@ before downloads start, instead of failing or changing every file quietly.
 
 import json
 import logging
-import platform
 import re
 import string
+
+import ofscraper.utils.paths.names as names
 
 log = logging.getLogger("shared")
 
 # can't be in a file name on Windows; a slash would add a folder
-NOT_IN_A_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
+NOT_IN_A_NAME = names.WINDOWS_FORBIDDEN
 
 TEXT_TYPES = ("letter", "word")
 
@@ -77,19 +78,18 @@ def text_type(value):
 
 
 # outside Windows a name can hold all but "/" (it adds a folder) and NUL
-NOT_IN_A_POSIX_NAME = re.compile(r"[/\x00]")
+NOT_IN_A_POSIX_NAME = names.POSIX_FORBIDDEN
 
 
 def on_windows():
-    return platform.system() == "Windows"
+    return names.on_windows()
 
 
 def name_safe(text):
     """text without the characters a file name can't hold on this system:
     on Windows NOT_IN_A_NAME; elsewhere only "/" and NUL, so a ":" from
     HH:mm in the date setting stays, as in names made before"""
-    banned = NOT_IN_A_NAME if on_windows() else NOT_IN_A_POSIX_NAME
-    return banned.sub("", str(text))
+    return names.strip_forbidden(text, windows=on_windows())
 
 
 # "/x", "\x", "C:", "C:/x" or "~/x": dir_format is placed under save_location
@@ -99,7 +99,7 @@ FULL_PATH = re.compile(r"[/\\~]|[A-Za-z]:")
 
 def space_replacer_ok(value):
     # JSON can hold a number or a list there, which can't replace a space
-    return isinstance(value, str) and not NOT_IN_A_NAME.search(value)
+    return isinstance(value, str) and not names.has_forbidden(value)
 
 
 DOWNLOAD_EFFECT = "Each file will fail to download until it's fixed"

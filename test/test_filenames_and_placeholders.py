@@ -519,7 +519,7 @@ def test_a_device_name_is_kept_outside_windows(naming, monkeypatch, tmp_path, cl
     "system, windows", [("Windows", True), ("Linux", False), ("Darwin", False)]
 )
 def test_on_windows_follows_the_system(monkeypatch, system, windows):
-    monkeypatch.setattr(placeholder.platform, "system", lambda: system)
+    monkeypatch.setattr("platform.system", lambda: system)
     assert placeholder._on_windows() is windows
 
 
