@@ -7,13 +7,12 @@ Optionally, you can store every creator's rows in one PostgreSQL database instea
 ## What you need
 
 - **PostgreSQL 15 or newer**, with a database where the scraper's login can create tables.
-- **The PostgreSQL driver**, depending on how you installed the scraper:
-  - **pip:** the first run with `OFSC_DATABASE_URL` set offers to install the `postgres` extra for you when it runs at a terminal (the daemon, cron and `sudo` runs print the command instead). To install it yourself (or with `OFSC_INSTALL_EXTRAS=False`, which turns the offer off):
-    ```bash
-    pip install "ofscraper[postgres]"
-    ```
-  - **Docker:** already included in the image.
-  - **Standalone downloads** (the `.exe` and other single-file builds): not included. Use the pip or Docker install instead.
+- **The PostgreSQL driver** (psycopg). It comes with the scraper on Windows (x64), macOS and 64-bit Linux (x86_64, aarch64, ppc64le, riscv64), whether installed with pip, Docker or a standalone download.
+
+  On other systems, such as Windows on ARM or Android, the first run with `OFSC_DATABASE_URL` set offers to install it when it runs at a terminal (the daemon, cron and `sudo` runs print the command instead). If that install is declined, fails or is turned off (`OFSC_INSTALL_EXTRAS=False`), install it yourself:
+  ```bash
+  pip install "ofscraper[postgres]"
+  ```
 
 ## Turning it on
 

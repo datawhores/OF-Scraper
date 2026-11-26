@@ -515,7 +515,7 @@ def _driver():
             missing = E
     if getattr(sys, "frozen", False):
         fix = (
-            "The standalone download doesn't include it: use the pip or "
+            "This standalone download doesn't include it: use the pip or "
             "Docker install, or unset the variable to use SQLite."
         )
     else:

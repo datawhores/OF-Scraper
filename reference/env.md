@@ -551,20 +551,20 @@ Defined in `ofscraper/utils/of_env/values/system.py`.
 | <a id="ffmpeg_subprocess_level"></a>`OFSC_FFMPEG_SUBPROCESS_LEVEL`<br>Key: `FFMPEG_SUBPROCESS_LEVEL` | **Default:** `10`. Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ffprobe_subprocess_level"></a>`OFSC_FFPROBE_SUBPROCESS_LEVEL`<br>Key: `FFPROBE_SUBPROCESS_LEVEL` | **Default:** `10`. Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | **Default:** `''`. A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. [Details](#ofsc_database_url-details). |
-| <a id="install_extras"></a>`OFSC_INSTALL_EXTRAS`<br>Key: `INSTALL_EXTRAS` | **Default:** `True`. Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the `postgres` driver when `OFSC_DATABASE_URL` is set. [Details](#install_extras-details). |
+| <a id="install_extras"></a>`OFSC_INSTALL_EXTRAS`<br>Key: `INSTALL_EXTRAS` | **Default:** `True`. Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the PostgreSQL driver when `OFSC_DATABASE_URL` is set on a system it isn't installed with by default. [Details](#install_extras-details). |
 | <a id="disk_space_check_path"></a>`OFSC_DISK_SPACE_CHECK_PATH`<br>Key: `DISK_SPACE_CHECK_PATH` | **Default:** `'/'`. The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be. |
 
 ##### `OFSC_DATABASE_URL` details
 
 **Environment variable:** `OFSC_DATABASE_URL` · **Default:** `''`
 
-A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image).
+A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the PostgreSQL driver (psycopg), which is installed with OF-Scraper on macOS, 64-bit Windows and 64-bit Linux (x86_64, aarch64, ppc64le, riscv64) and is in the Docker image. Elsewhere, the first run with a URL offers to install it (`OFSC_INSTALL_EXTRAS`), or install the `postgres` extra.
 
 ##### `INSTALL_EXTRAS` details
 
 **Environment variable:** `OFSC_INSTALL_EXTRAS` · **Default:** `True`
 
-Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the `postgres` driver when `OFSC_DATABASE_URL` is set. It asks first, and only at a terminal: the daemon, runs without a terminal (cron, services) and root under sudo are given the install command instead. They go into the Python running OF-Scraper, with pip, or with uv when that Python has no pip, using `OFSC_PROXY` when set. When False, or when the install is declined or fails, the feature stops and says how to install the extra. The standalone download never installs anything.
+Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the PostgreSQL driver when `OFSC_DATABASE_URL` is set on a system it isn't installed with by default. It asks first, and only at a terminal: the daemon, runs without a terminal (cron, services) and root under sudo are given the install command instead. They go into the Python running OF-Scraper, with pip, or with uv when that Python has no pip, using `OFSC_PROXY` when set. When False, or when the install is declined or fails, the feature stops and says how to install the extra. The standalone download never installs anything.
 
 ### Menu choices
 
