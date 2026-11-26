@@ -672,6 +672,7 @@ def options(s=None) -> dict:
         "excluded": getattr(s, "excluded_username", None),
         "username_search": getattr(s, "username_search", None),
         "has_filters": has_custom_user_filters(s),
+        "refresh_users": bool(getattr(s, "refresh_users", False)),
     }
 
 
@@ -976,8 +977,13 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 log.debug("No active Fansly livestreams found.")
 
         async def fetch_online():
-            nonlocal announced_no_targets
+            nonlocal announced_no_targets, following_set
             lookups["poll"] += 1
+            if opts["refresh_users"]:
+                resolved_cache.clear()
+                unfollowed_cache.clear()
+                filtered_cache.clear()
+                following_set = None
             usernames = opts["usernames"]
             name_list = [usernames] if isinstance(usernames, str) else list(usernames or [])
             search_mode = opts["username_search"]

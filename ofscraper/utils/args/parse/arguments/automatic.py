@@ -111,3 +111,13 @@ live_chat_option = click.option(
     is_flag=True,
     default=False,
 )
+
+refresh_users_option = click.option(
+    "--refresh-users",
+    "--live-pull",
+    "--daemon-pull",
+    "refresh_users",
+    help="Force a refresh of the model list on each pass in daemon,live modes, and prompt mode across OnlyFans and Fansly",
+    is_flag=True,
+    default=False,
+)

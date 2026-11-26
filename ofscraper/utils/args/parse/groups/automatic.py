@@ -12,6 +12,7 @@ from ofscraper.utils.args.parse.arguments.automatic import (
     live_option,
     live_watch_option,
     profiles_option,
+    refresh_users_option,
 )
 
 # Create the option group
@@ -31,6 +32,7 @@ automatic_options_tuple = (
     live_interval_option,
     live_max_option,
     live_chat_option,
+    refresh_users_option,
 )
 automatic_options = click.option_group(
     automatic_options_desc,

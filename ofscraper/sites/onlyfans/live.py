@@ -364,6 +364,9 @@ async def get_online_streams(c, checks=None) -> list:
     cache = _TARGET_CACHE.get()
     if cache is None:
         cache = {}
+    elif getattr(s, "refresh_users", False):
+        for key in ("targets", "unresolved", "blacklist_ids", "named_ids"):
+            cache.pop(key, None)
 
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)

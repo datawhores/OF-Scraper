@@ -36,7 +36,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 | Command | Summary |
 |---|---|
-| [Main program (no command)](#main-program-no-command) (110 options) | OF-Scraper Options |
+| [Main program (no command)](#main-program-no-command) (111 options) | OF-Scraper Options |
 | [`manual`](#manual) (54 options) | Manually download media by providing a list of URLs or IDs |
 | [`msg_check`](#msg_check) (54 options) | Produces a media table from messages with filterable entries and quick downloads |
 | [`story_check`](#story_check) (52 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
@@ -61,7 +61,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-**Options:** 110 · **`--help` summary:** OF-Scraper Options
+**Options:** 111 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -881,6 +881,14 @@ Most livestreams recorded at the same time (default 2)
 Fansly only: also save livestream chat to a .jsonl file (read-only; off by default)
 
 **Dest:** `live_chat` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
+
+#### `--refresh-users`
+
+**Also:** `--live-pull`, `--daemon-pull` · **Type:** flag · **Default:** off · **Commands:** main program
+
+Force a refresh of the model list on each pass in daemon,live modes, and prompt mode across OnlyFans and Fansly
+
+**Dest:** `refresh_users` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 ### User Selection Options
 

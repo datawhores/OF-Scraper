@@ -148,8 +148,12 @@ class ModelManager:
         activities_to_process = self._get_activities(actions)
         final_selection = []
 
-        # Load all base data into memory first
-        self._load_all_subs_if_needed()
+        # Load all base data into memory first (or force refresh when --refresh-users is set)
+        if self._refresh_users():
+            log.info("Refresh users active. Re-fetching subscriptions for this pass.")
+            self._fetch_all_subs(force_refetch=True, reset=True)
+        else:
+            self._load_all_subs_if_needed()
 
         # --- Step 2: Select Models Based on Mode ---
         if settings.get_args().daemon:
@@ -167,7 +171,7 @@ class ModelManager:
             # "Yes Update Selection" opens the picker with nothing checked
             keep_previous = True
 
-            if existing_queued_users:
+            if existing_queued_users and not self._refresh_users():
                 prompt_choice = None
                 while not prompt_choice:
                     prompt_choice = prompts.reset_username_prompt()
@@ -284,6 +288,8 @@ class ModelManager:
         """
         Forces a background sync of models from the API without interacting with queues.
         """
+        if self._refresh_users():
+            return
         fetched_models = await retriver.get_models(
             all_main_models=all_main_models,
         )
@@ -345,11 +351,11 @@ class ModelManager:
         usernames = settings.get_settings().usernames or []
         is_daemon = settings.get_settings().daemon
 
-        # Guard Clause 1: Daemon mode with a specific list of users. The same
-        # filters as an interactive run, but no prompt if they remove everyone (#285)
-        if is_daemon and usernames:
+        # Guard Clause 1: Daemon mode with a specific list of users or --refresh-users.
+        # The same filters as an interactive run, but no prompt if they remove everyone (#285)
+        if is_daemon and (usernames or self._refresh_users()):
             filtered_models = self._filtered_models()
-            if "ALL" in usernames:
+            if not usernames or "ALL" in usernames:
                 if not filtered_models:
                     log.warning("The filters removed every creator, so none were selected.")
                 return list(filtered_models.values())
@@ -699,6 +705,9 @@ class ModelManager:
     # =========================================================================
     # 7. PRIVATE UTILITIES
     # =========================================================================
+
+    def _refresh_users(self) -> bool:
+        return bool(getattr(settings.get_settings(), "refresh_users", False))
 
     def _get_activities(self, activities):
         if not activities:
