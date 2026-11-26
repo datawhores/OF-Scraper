@@ -70,6 +70,14 @@ def test_a_long_linux_name_fits_in_the_name_limit():
     assert size(out.name) <= 254 < size("a" + out.name)
 
 
+@pytest.mark.parametrize("ext", [".mp3", ".3gp", ".3g2", "_2.mp3"])
+def test_an_extension_with_digits_is_kept(ext):
+    out = cut(f"{FOLDER}\\2026-10-31 {CAPTION}{ext}")
+    assert out.name.endswith(ext) and windows_chars(out) <= 259
+    out = paths._linux_truncateHelper(f"/data/2026-10-31 {CAPTION * 3}{ext}")
+    assert out.name.endswith(ext)
+
+
 @pytest.mark.parametrize("name", ["💀" * 200 + ".txt", "💀" * 200])
 def test_a_folder_that_leaves_no_room_for_a_character_says_so(name):
     # room for 2 bytes after the folder: not one emoji (4), so nothing of the
@@ -101,6 +109,16 @@ def test_a_linux_name_with_no_room_for_a_character_says_so(monkeypatch):
         paths._linux_truncateHelper(f"/data/{'💀' * 100}.txt")
 
 
+@pytest.mark.parametrize("end", [" fine.", " fine_1."])
+def test_a_bare_trailing_dot_is_not_an_extension(end):
+    # a caption ending in "." has no extension: the dot is cut with the rest
+    # rather than kept on the end, where Windows would drop it anyway
+    name = f"2026-10-31 {CAPTION * 3}{end}"
+    assert paths._split_ext(name) == (name, "")
+    assert not cut(f"{FOLDER}\\{name}").name.endswith(".")
+    assert not paths._linux_truncateHelper(f"/data/{name}").name.endswith(".")
+
+
 @pytest.mark.parametrize("root", ["C:\\", "\\\\server\\share\\"])
 def test_a_name_in_a_drive_or_share_root_gets_all_of_max_path(root):
     # the root already ends with its backslash: it isn't counted twice
@@ -113,3 +131,12 @@ def test_a_linux_extension_over_the_name_limit_says_so(monkeypatch):
     monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "3")
     with pytest.raises(ValueError, match="no room"):
         paths._linux_truncateHelper("/data/.txt")
+
+
+def test_a_long_dotted_tail_is_not_taken_for_an_extension():
+    # a name with no extension whose caption ends ".word...": no real
+    # extension is that long, so the tail is cut like the rest of the name
+    name = f"2026-10-31 {CAPTION}.{'y' * 300}"
+    assert paths._split_ext(name) == (name, "")
+    assert str(cut(f"{FOLDER}\\{name}").parent) == FOLDER
+    assert paths._linux_truncateHelper(f"/data/{name}").name.startswith("2026-10-31")
