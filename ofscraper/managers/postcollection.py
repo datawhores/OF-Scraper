@@ -130,7 +130,7 @@ class PostCollection:
         all_media = helpers.previous_download_filter(
             all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
-        all_media = helpers.ele_count_filter(all_media)
+        all_media = helpers.ele_count_filter(all_media, username=self.username)
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for download.")
@@ -148,7 +148,7 @@ class PostCollection:
         all_media = helpers.previous_download_filter(
             all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
-        all_media = helpers.ele_count_filter(all_media)
+        all_media = helpers.ele_count_filter(all_media, username=self.username)
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for metadata.")
