@@ -21,9 +21,20 @@ def check_database():
         )
 
 
+def check_dry_run():
+    """Refuse a dry run that can't be one, before anything connects."""
+    import ofscraper.utils.dry_run as dry_run
+
+    if dry_run.active() and dry_run.refuse_reason():
+        logging.getLogger("shared").error(dry_run.refuse_reason())
+        raise SystemExit(2)
+
+
 def main():
     exit_status.reset()
     try:
+        # before the --profiles daemon too, so a dry run is checked there
+        check_dry_run()
         import ofscraper.utils.settings as settings
 
         args = settings.get_args()

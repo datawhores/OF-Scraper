@@ -36,6 +36,7 @@ import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
@@ -162,6 +163,9 @@ class scraperManager(CommandManager):
                         )
                         if stop.requested.is_set():
                             raise stop.DownloadsStopped
+                    elif action in {"like", "unlike"} and dry_run.active():
+                        log.info(f"Dry run: not {action}ing posts for {username}")
+                        continue
                     elif action == "like":
                         like_action.process_like(
                             ele=ele,
@@ -209,11 +213,22 @@ def main():
     with progress_utils.stop_live_screen(clear="all"):
         try:
             print_start()
+            if dry_run.active() and dry_run.refuse_reason():
+                log.error(dry_run.refuse_reason())
+                raise SystemExit(2)
             paths.temp_cleanup()
             paths.cleanDB()
             network.check_cdm()
 
-            scrapper()
+            try:
+                scrapper()
+            finally:
+                # each finished scan reported itself (dry_run.finish); a scan
+                # that failed or was stopped has no report, only copies and
+                # counts, which a later report mustn't include
+                if dry_run.active():
+                    dry_run.reset()
+                    dry_run.cleanup()
             paths.temp_cleanup()
             paths.cleanDB()
         except KeyboardInterrupt:
@@ -337,6 +352,8 @@ def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
     scrapingManager = scraperManager()
     scrapingManager.runner()
+    if dry_run.active():
+        dry_run.finish()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
@@ -353,6 +370,8 @@ def process_selected_areas():
             else:
                 menu.get_count() > 0 and menu.reset_menu_helper()
                 scrapingManager.runner()
+                if dry_run.active():
+                    dry_run.finish()
                 menu.update_count()
 
 

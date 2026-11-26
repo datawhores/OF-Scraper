@@ -69,7 +69,11 @@ def systemSet():
 
 
 def readConfig():
-    config_.read_config()
+    import ofscraper.utils.dry_run as dry_run
+
+    # a dry run changes nothing, so an older config.json isn't rewritten in
+    # the current form; the getters read either form
+    config_.read_config(update=not dry_run.active())
 
 
 def make_folder():

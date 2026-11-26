@@ -60,6 +60,22 @@ action_option = click.option(
     callback=StringSplitParse,
 )
 
+dry_run_option = click.option(
+    "--dry-run",
+    "dry_run",
+    help="Scan as usual and report how many files a download would attempt, without downloading or changing anything; needs --action download",
+    is_flag=True,
+    default=False,
+)
+
+dry_run_json_option = click.option(
+    "--dry-run-json",
+    "dry_run_json",
+    help="Also write the dry run's report to this file as JSON; implies --dry-run",
+    type=click.Path(dir_okay=False, writable=True),
+    default=None,
+)
+
 # Livestream recording (Fansly, and OnlyFans with the optional "live" extra).
 live_option = click.option(
     "--live",

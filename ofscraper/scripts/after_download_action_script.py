@@ -6,6 +6,7 @@ import subprocess
 
 
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 from ofscraper.utils.system.subprocess import run
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
@@ -15,6 +16,9 @@ def after_download_action_script(username, media, posts=None, action=None):
     log = logging.getLogger("shared")
     action = action or "download"
     if not settings.get_settings().after_action_script:
+        return
+    if dry_run.active():
+        log.debug("dry run: not running the after action script")
         return
     script_path = settings.get_settings().after_action_script
     if not script_path:
