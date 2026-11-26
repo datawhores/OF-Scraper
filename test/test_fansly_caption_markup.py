@@ -108,4 +108,6 @@ def test_onlyfans_text_is_unchanged(site):
     raw = r"\[c:blue\] \*hi\* ~~y~~"
     post = posts_.Post({"id": 3, "text": raw}, 1, "a creator", "timeline")
     assert post.text == raw
-    assert post.file_sanitized_text == r"\[cblue\] \hi\ ~~y~~"
+    # the codes stay; only what can't be in a file name goes, backslashes
+    # included (#739)
+    assert post.file_sanitized_text == "[cblue] hi ~~y~~"
