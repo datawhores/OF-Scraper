@@ -33,10 +33,6 @@ log = logging.getLogger("shared")
 # which would introduce extra folders).
 WINDOWS_FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
 
-# Historical label pattern without DEL (\x7f), kept only until the DEL
-# drift fix lands separately.
-_WINDOWS_FORBIDDEN_NO_DEL = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
 # Outside Windows a name can hold anything except "/" (a folder separator)
 # and NUL, so a ":" from HH:mm in a date format stays.
 POSIX_FORBIDDEN = re.compile(r"[/\x00]")
@@ -62,10 +58,9 @@ def has_forbidden(text: str) -> bool:
     return bool(WINDOWS_FORBIDDEN.search(text))
 
 
-def clean_label(label, *, include_del: bool = False) -> str:
+def clean_label(label) -> str:
     """Make a label name safe as a folder or file name component."""
-    pattern = WINDOWS_FORBIDDEN if include_del else _WINDOWS_FORBIDDEN_NO_DEL
-    return pattern.sub("", str(label)).strip() or "None"
+    return WINDOWS_FORBIDDEN.sub("", str(label)).strip() or "None"
 
 
 def strip_caption_chars(text: str) -> str:

@@ -77,8 +77,9 @@ def test_caption_cleanup_space_replacer_and_fansly(clean_settings):
         ("", "None"),
         ("emoji 🔥", "emoji 🔥"),
         (unicodedata.normalize("NFD", "café"), unicodedata.normalize("NFD", "café")),
-        # Drift pinned before fixing in a separate change (#856):
-        ("a\x7fb", "a\x7fb"),
+        # DEL (\x7f) is stripped consistently with name_safe and file_cleanup (#856):
+        ("a\x7fb", "ab"),
+        ("\x7f", "None"),
     ],
 )
 def test_label_cleanup(label, expected):
