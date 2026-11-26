@@ -136,6 +136,7 @@ def story(post_id, date=DAY1, **changes):
         archived=False,
         date=date,
         responsetype="stories",
+        highlight_id=None,
     )
     values.update(changes)
     return SimpleNamespace(**values)

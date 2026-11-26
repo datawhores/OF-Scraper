@@ -63,6 +63,7 @@ from ofscraper.db.operations_.profile import (
     rebuild_profiles_table,
 )
 from ofscraper.db.operations_.stories import (
+    add_column_stories_highlight_id,
     add_column_stories_ID,
     rebuild_stories_table,
 )
@@ -269,6 +270,13 @@ async def add_column_tables(model_id=None, username=None, db_path=None, **kwargs
         )
         await add_flag_schema(
             "profiles_seen_at", model_id=model_id, username=username, db_path=db_path
+        )
+    if "stories_highlight_id" in missing:
+        await add_column_stories_highlight_id(
+            model_id=model_id, username=username, db_path=db_path
+        )
+        await add_flag_schema(
+            "stories_highlight_id", model_id=model_id, username=username, db_path=db_path
         )
 
 

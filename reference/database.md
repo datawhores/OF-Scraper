@@ -314,6 +314,7 @@ Flag names:
 - `messages_group_id`: `messages.group_id` column added.
 - `media_skip_permanent`: `medias.skip_permanent` column added.
 - `profiles_seen_at`: `profiles.first_seen_at` and `profiles.last_seen_at` columns added.
+- `stories_highlight_id`: `stories.highlight_id` column added.
 - `stories_model_id`: `stories.model_id` column added.
 - `labels_model_id`: `labels.model_id` column added.
 - `products_model_id`: `products.model_id` column added.
@@ -348,14 +349,16 @@ One row per story or highlight story seen for the creator.
 | `archived` | **Type:** `BOOLEAN`. The archived flag from the API (normally 0). |
 | `created_at` | **Type:** `TIMESTAMP`. The story date. |
 | `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
+| `highlight_id` | **Type:** `INTEGER`. The id of the highlight the story was scraped from, so a highlight's stories can be grouped. A story in several highlights keeps the first one saved. `NULL` for a story seen only in the Stories area, and for rows saved before the column existed; the next highlights scan that sees the story fills it in. |
 
 <details>
 <summary>Write and migration details</summary>
 
 **Written by:** `make_stories_table_changes` (`ofscraper/db/operations_/stories.py`) runs when the Stories or Highlights areas are scraped (`ofscraper/data/posts/post.py`). Manual/url mode and the check command also run it.
 
-- **New and existing rows:** new ids are inserted. Existing rows are updated only under the `metadata` command.
-- **Migration and merge:** migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
+- **New and existing rows:** new ids are inserted. Existing rows are updated only under the `metadata` command. On every scan, an existing row whose `highlight_id` is still `NULL` gets the highlight the scan found; the metadata update doesn't change it.
+- **Migration and merge:** `stories_highlight_id` adds `highlight_id` (empty) to older databases. Migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in, `highlight_id` included.
+- **PostgreSQL:** a database made before `highlight_id` gets it when the scraper next starts (`ADDED_COLUMNS` in `ofscraper/db/postgres.py`).
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, model_id)`. The application inserts ids that are not already present.
 

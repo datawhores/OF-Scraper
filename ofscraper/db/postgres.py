@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS stories (
     archived BOOLEAN,
     created_at TIMESTAMPTZ,
     model_id BIGINT NOT NULL,
+    highlight_id BIGINT,
     UNIQUE (post_id, model_id)
 )""",
     "others": """
@@ -228,6 +229,7 @@ CREATOR_INDEXES = ("medias", "posts", "messages", "stories", "others", "products
 # PostgresBackend._add_columns); a new one is made with them
 ADDED_COLUMNS = (
     ("profiles_seen_at", "profiles", ("first_seen_at", "last_seen_at")),
+    ("stories_highlight_id", "stories", ("highlight_id",)),
 )
 
 

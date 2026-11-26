@@ -180,6 +180,11 @@ async def scrape_highlights_from_list(c, id):
             stories = (
                 resp_data.get("stories", []) if isinstance(resp_data, dict) else []
             )
+            # a story doesn't name its highlight: keep the one it was asked
+            # for under, for the stories table (#728)
+            stories = [
+                dict(story, highlightId=id) for story in stories if isinstance(story, dict)
+            ]
             if stories:
                 yield stories
     except Exception as E:
