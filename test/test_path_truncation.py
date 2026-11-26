@@ -78,6 +78,18 @@ def test_an_extension_with_digits_is_kept(ext):
     assert out.name.endswith(ext)
 
 
+@pytest.mark.parametrize("char", ["é", "я", "日", "’"])
+def test_a_non_ascii_name_is_cut_by_windows_own_count(char):
+    # one UTF-16 unit each, like a letter: as much fits as of "a"
+    out = cut(f"{FOLDER}\\{char * 300}.txt")
+    assert windows_chars(out) == 259
+
+
+def test_an_emoji_counts_as_two_windows_units():
+    out = cut(f"{FOLDER}\\{'💀' * 300}.txt")
+    assert 258 <= windows_chars(out) <= 259
+
+
 @pytest.mark.parametrize("name", ["💀" * 200 + ".txt", "💀" * 200])
 def test_a_folder_that_leaves_no_room_for_a_character_says_so(name):
     # room for 2 bytes after the folder: not one emoji (4), so nothing of the
@@ -140,3 +152,12 @@ def test_a_long_dotted_tail_is_not_taken_for_an_extension():
     assert paths._split_ext(name) == (name, "")
     assert str(cut(f"{FOLDER}\\{name}").parent) == FOLDER
     assert paths._linux_truncateHelper(f"/data/{name}").name.startswith("2026-10-31")
+
+
+@pytest.mark.parametrize("encoding", ["utf-8", "ascii"])
+def test_utf_does_not_change_how_windows_counts_a_path(monkeypatch, encoding):
+    # the limit is 2 bytes a UTF-16 unit: measured in UTF-8, a path of up to
+    # 518 characters would pass, twice what MAX_PATH allows
+    monkeypatch.setenv("UTF", encoding)
+    out = cut(f"{FOLDER}\\{'a' * 400}.txt")
+    assert windows_chars(out) == 259

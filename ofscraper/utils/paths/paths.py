@@ -191,32 +191,19 @@ def get_string_byte_size_unix(text):
 
 def get_string_byte_size_windows(text):
     """
-    This function estimates the byte size of a string considering ASCII characters.
+    The size of a string as Windows counts a path: 2 bytes for each UTF-16
+    code unit, so 4 for a character outside the Basic Multilingual Plane
+    (an emoji) and 2 for any other. `UTF` isn't used here: the limit,
+    WINDOWS_MAX_PATH_BYTES, is in these units, so any other count would let
+    a path past MAX_PATH.
 
     Args:
         text: The string to analyze.
 
     Returns:
-        The estimated byte size of the string.
+        The byte size of the string.
     """
-    total_size = 0
-    text = str(text)
-    normal_char_size = of_env.getattr("NORMAL_CHAR_SIZE_WINDOWS")
-    special_char_size = of_env.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
-    utf = of_env.getattr("UTF")
-    if utf:
-        return len(text.encode(utf))
-    for char in text:
-        try:
-            if ord(char) < 128:
-                total_size += normal_char_size  # 2 bytes for ASCII characters
-            else:
-                total_size += special_char_size
-        except ValueError:
-            total_size += (
-                special_char_size  # 4 bytes for non-ASCII characters (assumption)
-            )
-    return total_size
+    return len(str(text).encode("utf-16-le"))
 
 
 def cleanDB():

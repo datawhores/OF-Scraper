@@ -11,11 +11,11 @@ def load_path_bytes_config():
     config = {}
 
     # --- Bytes for Paths Configuration ---
-    # NORMAL_CHAR_SIZE_WINDOWS: Estimated byte size per ASCII character when measuring path length on Windows (used when `UTF` is unset).
+    # NORMAL_CHAR_SIZE_WINDOWS: Defined but not read anywhere. Windows path length is counted in UTF-16 units, 2 bytes each.
     # Default: 2
     config["NORMAL_CHAR_SIZE_WINDOWS"] = int(os.getenv("NORMAL_CHAR_SIZE_WINDOWS", "2"))
 
-    # SPECIAL_CHAR_SIZE_WINDOWS: Estimated byte size per non-ASCII character when measuring path length on Windows (used when `UTF` is unset).
+    # SPECIAL_CHAR_SIZE_WINDOWS: Defined but not read anywhere. Windows path length is counted in UTF-16 units, 2 bytes each.
     # Default: 4
     config["SPECIAL_CHAR_SIZE_WINDOWS"] = int(
         os.getenv("SPECIAL_CHAR_SIZE_WINDOWS", "4")
@@ -29,7 +29,7 @@ def load_path_bytes_config():
     # Default: 2
     config["NORMAL_CHAR_SIZE_UNIX"] = int(os.getenv("NORMAL_CHAR_SIZE_UNIX", "2"))
 
-    # UTF: Encoding name (for example `utf-8`) used to measure exact path byte length instead of the `*_CHAR_SIZE_*` estimates.
+    # UTF: Encoding name (for example `utf-8`) used to measure exact path byte length on Linux, instead of the `*_CHAR_SIZE_UNIX` estimates. Not used on Windows, where path length is always counted in UTF-16 units.
     #
     # If set via environment, it will be a string; otherwise, it remains None.
     config["UTF"] = os.getenv("UTF", None)
