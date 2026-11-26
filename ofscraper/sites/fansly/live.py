@@ -174,11 +174,12 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
     """``{save_location}/Fansly/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live``"""
     import ofscraper.classes.placeholder as placeholder
 
-    username = folder_name(username)
-    return placeholder.live_recording_base(
-        save_location, username, utc_start(started_at), site_name="Fansly", ext="mp4",
-        model_id=model_id
+    path = placeholder.live_recording_path(
+        save_location, folder_name(username), utc_start(started_at),
+        site_name="Fansly", ext="mp4", model_id=model_id,
     )
+    # part_path adds .mp4, or _part<n>.mp4
+    return path.with_name(path.stem)
 
 
 def part_path(base: pathlib.Path, n: int) -> pathlib.Path:

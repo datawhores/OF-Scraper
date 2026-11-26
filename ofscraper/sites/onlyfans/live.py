@@ -401,9 +401,9 @@ def recording_path(
     import ofscraper.classes.placeholder as placeholder
 
     when = when or datetime.datetime.now(datetime.timezone.utc)
-    username = shared.folder_name(username)
     return placeholder.live_recording_path(
-        save_location, username, when, site_name="OnlyFans", ext="webm", model_id=model_id
+        save_location, shared.folder_name(username), when,
+        site_name="OnlyFans", ext="webm", model_id=model_id,
     )
 
 

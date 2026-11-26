@@ -1217,3 +1217,12 @@ def test_old_folders_spelt_in_another_case_than_the_save_location_are_removed(mo
     removed = tool._remove_emptied([r"C:\Media\alice\Posts\a.jpg"], r"c:\media")
 
     assert removed == fs.removed == [r"C:\Media\alice\Posts", r"C:\Media\alice"]
+
+def test_emptied_folders_are_removed_under_a_type_options_root(tmp_path):
+    # a file moved out of a type_options save_location leaves its folders
+    # empty there, outside the main save location
+    old = tmp_path / "videos" / "alice" / "Posts" / "a.mp4"
+    old.parent.mkdir(parents=True)
+    removed = tool._remove_emptied([str(old)], str(tmp_path / "downloads"), str(tmp_path / "videos"))
+    assert removed == [str(old.parent), str(old.parent.parent)]
+    assert (tmp_path / "videos").is_dir()

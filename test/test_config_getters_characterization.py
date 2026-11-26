@@ -35,9 +35,9 @@ import ofscraper.utils.paths.common as common_paths
 # getter -> the config paths it reads ("section.key" for a nested key)
 GETTER_PATHS = {
     "get_main_profile": ["main_profile"],
-    "get_live_save_location": ["live_save_location", "live_options.save_location"],
-    "get_live_dirformat": ["live_dir_format", "live_options.dir_format"],
-    "get_live_fileformat": ["live_file_format", "live_options.file_format"],
+    "get_live_save_location": ["live_options.save_location"],
+    "get_live_dirformat": ["live_options.dir_format"],
+    "get_live_fileformat": ["live_options.file_format"],
     "get_type_options": ["type_options"],
     "get_filesize_max": [
         "file_size_max",
@@ -328,9 +328,9 @@ EXPECTED_GETTERS = {
     # a note, not a setting: the same text whatever the file holds
     "get_database_url_note": (166, "547aefc30f48fa7d"),
     # added with live_options and type_options (#850)
-    "get_live_save_location": (166, "71ad2d44d23efd1c"),
-    "get_live_dirformat": (166, "5cb832c35dab01fa"),
-    "get_live_fileformat": (166, "1eb5b55fd981e92a"),
+    "get_live_save_location": (31, "9f4c03d1961c2578"),
+    "get_live_dirformat": (31, "3a8ad22d76cefd20"),
+    "get_live_fileformat": (31, "ed12a60e2493a1df"),
     "get_type_options": (25, "fd67cb0746bdf8e6"),
     "get_filesize_max": (712, "b813936078f849ae"),
     "get_filesize_min": (403, "fba4568c65171252"),
@@ -405,8 +405,6 @@ def test_every_getter_is_pinned():
         if isinstance(node, ast.FunctionDef)
         and not node.name.startswith("_")
         and node.name != "strip_path_quotes"
-        # a lookup by media type over get_type_options, which is pinned
-        and node.name != "get_type_option"
     }
     assert public == set(GETTER_PATHS)
 

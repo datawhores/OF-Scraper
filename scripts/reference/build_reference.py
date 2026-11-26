@@ -590,7 +590,8 @@ def render_argparse(module, usage):
 
 def flatten(d, prefix=""):
     for key, value in d.items():
-        if isinstance(value, dict) and key != "main_profile":
+        # an empty dict (type_options) is a key of its own, not an empty section
+        if isinstance(value, dict) and value and key != "main_profile":
             yield from flatten(value, f"{prefix}{key}.")
         else:
             yield f"{prefix}{key}", value

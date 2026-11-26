@@ -796,7 +796,7 @@ def get_verify_all_integrity(config=None):
 def get_live_save_location(config=None):
     if not config:
         return ""
-    val = _first_set(config, "live_save_location", "live_options.save_location")
+    val = _lookup(config, "live_options.save_location")
     return strip_path_quotes(val) if isinstance(val, str) else ""
 
 
@@ -804,7 +804,7 @@ def get_live_save_location(config=None):
 def get_live_dirformat(config=None):
     if not config:
         return ""
-    val = _first_set(config, "live_dir_format", "live_options.dir_format")
+    val = _lookup(config, "live_options.dir_format")
     return val if isinstance(val, str) else ""
 
 
@@ -812,7 +812,7 @@ def get_live_dirformat(config=None):
 def get_live_fileformat(config=None):
     if not config:
         return ""
-    val = _first_set(config, "live_file_format", "live_options.file_format")
+    val = _lookup(config, "live_options.file_format")
     return val if isinstance(val, str) else ""
 
 
@@ -832,20 +832,3 @@ def get_type_options(config=None):
                 if v is not None
             }
     return cleaned
-
-
-def get_type_option(type_keys, field: str, config=None) -> str:
-    """Return the first non-empty string override for ``field`` across ``type_keys``."""
-    opts = get_type_options(config=config)
-    if not opts:
-        return ""
-    lowered = {str(k).strip().lower(): v for k, v in opts.items() if isinstance(v, dict)}
-    for key in type_keys:
-        if not key:
-            continue
-        section = lowered.get(str(key).strip().lower())
-        if isinstance(section, dict):
-            val = section.get(field)
-            if isinstance(val, str) and val.strip():
-                return strip_path_quotes(val) if field == "save_location" else val
-    return ""

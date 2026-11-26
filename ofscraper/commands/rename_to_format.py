@@ -431,11 +431,12 @@ def plan(conn, settings, username=None, path_root=None):
         site, settings.space_replacer or " ",
     ))
 
-    root = os.path.abspath(placeholder.default_media_root())
+    # the save location first: it's the one the report shows
+    roots = [os.path.abspath(root) for root in placeholder.media_roots()]
     result = {
         "database": None, "creator": {"site": site, "model_id": model_id}, "username": name, "why": why,
         "file_format": config_data.get_fileformat(), "dir_format": config_data.get_dirformat(),
-        "save_location": root, "files": 0, "unchanged": 0, "to_rename": 0, "already_there": 0,
+        "save_location": roots[0], "files": 0, "unchanged": 0, "to_rename": 0, "already_there": 0,
         "left": [], "renames": [], "renamed": 0, "rows_changed": 0, "folders_removed": [],
         "undo_file": None,
     }
@@ -510,7 +511,7 @@ def plan(conn, settings, username=None, path_root=None):
         else:
             result["already_there"] += 1
             to_do.append(("there", old, new, changes))
-    return result, to_do, root
+    return result, to_do, roots
 
 
 def _by_post(media):
@@ -660,12 +661,13 @@ def _is_there(path):
     return f"{path} is there already"
 
 
-def _remove_emptied(moved, root):
-    """Remove the old folders the renames left empty, up to `root`."""
+def _remove_emptied(moved, *roots):
+    """Remove the old folders the renames left empty, up to the root they
+    are in: the save location or a type_options one."""
     removed = []
     for old in sorted({os.path.dirname(old) for old in moved}, key=len, reverse=True):
         folder = old
-        while _inside(folder, root):
+        while any(_inside(folder, root) for root in roots):
             try:
                 os.rmdir(folder)
             except OSError:
@@ -708,7 +710,7 @@ def rename(database, apply=False, username=None, path_root=None, config=None, pr
     database = Path(database).resolve(strict=True)
     with closing(_connect(database, apply)) as conn:
         with scraper_settings(config, profile, _site(conn)) as settings:
-            result, to_do, root = plan(conn, settings, username, path_root)
+            result, to_do, roots = plan(conn, settings, username, path_root)
         result["database"] = str(database)
         result["applied"] = apply
         result["renames"] = [{"from": old, "to": new} for _what, old, new, _rows in to_do
@@ -772,7 +774,7 @@ def rename(database, apply=False, username=None, path_root=None, config=None, pr
         with contextlib.suppress(OSError):
             undo_file.unlink()
             result["undo_file"] = None
-    result["folders_removed"] = _remove_emptied([old for old, _new in moved], root)
+    result["folders_removed"] = _remove_emptied([old for old, _new in moved], *roots)
     return result
 
 

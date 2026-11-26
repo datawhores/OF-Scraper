@@ -38,6 +38,18 @@ DIR_PLACEHOLDERS = _with_aliases(
 # file_format has {ext} too
 FILE_PLACEHOLDERS = DIR_PLACEHOLDERS | {"ext"}
 
+# the type_options names livestream recordings use
+LIVE_TYPE_KEYS = ("livestreams", "live")
+# what livestream templates can use: the names placeholder._live_path fills
+LIVE_PLACEHOLDERS = _with_aliases(
+    {
+        "config_path", "profile", "site_name", "save_location", "my_id",
+        "my_username", "root", "user_name", "username", "model_username",
+        "model_id", "first_letter", "response_type", "media_type", "date",
+        "timestamp", "year", "month", "day", "ext", "config", "args",
+    }
+)
+
 
 def text_type(value):
     """letter or word, matched without regard to case; None for anything else"""
@@ -72,7 +84,11 @@ def space_replacer_ok(value):
     return isinstance(value, str) and not NOT_IN_A_NAME.search(value)
 
 
-def template_problem(template, known):
+DOWNLOAD_EFFECT = "Each file will fail to download until it's fixed"
+LIVE_EFFECT = "Livestreams are recorded under the default name until it's fixed"
+
+
+def template_problem(template, known, effect=DOWNLOAD_EFFECT):
     """why a dir_format or file_format template can't be used, or None"""
     try:
         fields = [
@@ -92,9 +108,30 @@ def template_problem(template, known):
     if unknown:
         return (
             f"has {'unknown placeholders' if len(unknown) > 1 else 'an unknown placeholder'}:"
-            f" {', '.join(unknown)}. Each file will fail to download until it's fixed"
+            f" {', '.join(unknown)}. {effect}"
         )
     return None
+
+
+def _templates():
+    """(setting, template, placeholders it can use, what happens when it
+    can't be filled in) for every folder and file name template"""
+    import ofscraper.utils.config.data as data
+
+    out = [
+        ("file_options.dir_format", data.get_dirformat(), DIR_PLACEHOLDERS, DOWNLOAD_EFFECT),
+        ("file_options.file_format", data.get_fileformat(), FILE_PLACEHOLDERS, DOWNLOAD_EFFECT),
+        ("live_options.dir_format", data.get_live_dirformat(), LIVE_PLACEHOLDERS, LIVE_EFFECT),
+        ("live_options.file_format", data.get_live_fileformat(), LIVE_PLACEHOLDERS, LIVE_EFFECT),
+    ]
+    for name, section in data.get_type_options().items():
+        live = name.strip().lower() in LIVE_TYPE_KEYS
+        for key, known in (("dir_format", DIR_PLACEHOLDERS), ("file_format", FILE_PLACEHOLDERS)):
+            out.append((
+                f"type_options.{name}.{key}", section.get(key) or "",
+                LIVE_PLACEHOLDERS if live else known, LIVE_EFFECT if live else DOWNLOAD_EFFECT,
+            ))
+    return out
 
 
 def problems():
@@ -131,13 +168,10 @@ def problems():
             f"{setting} is {json.dumps(chosen)}, which {why},"
             " so a space is used"
         )
-    for key, template, known in (
-        ("dir_format", data.get_dirformat(), DIR_PLACEHOLDERS),
-        ("file_format", data.get_fileformat(), FILE_PLACEHOLDERS),
-    ):
-        problem = template_problem(str(template), known)
+    for setting, template, known, effect in _templates():
+        problem = template_problem(str(template), known, effect)
         if problem:
-            out.append(f"file_options.{key} {json.dumps(template)} {problem}")
+            out.append(f"{setting} {json.dumps(template)} {problem}")
     dir_format = data.get_dirformat()
     if isinstance(dir_format, str) and FULL_PATH.match(dir_format):
         out.append(
