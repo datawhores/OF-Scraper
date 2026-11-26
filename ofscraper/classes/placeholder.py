@@ -259,8 +259,11 @@ def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, mode
         stem = stem[: -(len(ext) + 1)]
     if not live_names_apart(dir_fmt, file_fmt):
         stem = f"{stem}_{stamp}"
-    # Resolve parent components against the folder's root before dropping it.
     folder_path = pathlib.Path(folder)
+    # Give drive-relative folders a root so leading ".." stays on that drive.
+    if folder_path.drive and not folder_path.root:
+        folder_path = pathlib.Path(f"{folder_path.drive}/", *folder_path.parts[1:])
+    # Normalize against the folder's root before dropping its anchor.
     if folder_path.anchor:
         normalized_folder = pathlib.Path(os.path.normpath(folder_path))
         folder_path = pathlib.Path(*normalized_folder.parts[1:])

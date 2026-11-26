@@ -900,6 +900,7 @@ def test_type_options_names_for_the_same_type_are_named(path_options):
 
 @pytest.mark.parametrize("dir_format", [
     "/streams/{username}", "D:/streams/{username}", "D:/../streams/{username}",
+    "D:../streams/{username}",
 ])
 def test_a_full_path_live_folder_stays_under_the_save_location(path_options, tmp_path, monkeypatch, dir_format):
     import datetime
