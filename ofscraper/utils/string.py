@@ -60,3 +60,19 @@ def parse_safe(value):
         except StopIteration:
             break
     return file_format
+
+
+_BLOCK = r"(?:p|div|li|h[1-6])\b"
+
+
+def html_lines(text):
+    """An HTML caption's text with its line breaks: a <br>, and the start or
+    end of a paragraph, div, list item or heading, is a line break, and the
+    other tags are removed. The start of a block that begins a line already
+    adds no empty line. Entities are left encoded."""
+    text = re.sub(rf"<br\s*/?>|</{_BLOCK}[^>]*>", "\n", text, flags=re.I)
+    # tags that aren't a block's start go first, so "</b><ul><li>" is
+    # read as the start of a line
+    text = re.sub(rf"<(?!{_BLOCK})[^>]*>", "", text, flags=re.I)
+    text = re.sub(rf"(?<=[^\s])([ \t]*)<{_BLOCK}[^>]*>", "\\1\n", text, flags=re.I)
+    return re.sub(r"<[^>]*>", "", text)

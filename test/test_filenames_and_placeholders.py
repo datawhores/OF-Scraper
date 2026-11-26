@@ -387,22 +387,24 @@ LONG = (
 
 def _rerun_over_older_file(naming, monkeypatch, tmp_path, caption, data):
     """Saves data where the post's text file goes, as a version before #133
-    did, runs again, and returns the folder's files: name -> bytes."""
+    did, runs again, and returns the folder's files: name -> text."""
     _write_texts(naming, monkeypatch, [caption])
     (path,) = (tmp_path / "data").rglob("*.txt")
     path.write_bytes(data)
     _write_texts(naming, monkeypatch, [caption])
-    return {p.name: p.read_bytes() for p in path.parent.iterdir()}
+    return {p.name: p.read_text(encoding="utf-8") for p in path.parent.iterdir()}
 
 
-def test_a_text_file_from_before_133_is_the_posts_own(naming, monkeypatch, tmp_path):
+def test_a_text_file_from_before_133_is_rewritten_in_place(
+    naming, monkeypatch, tmp_path
+):
     # versions before #133 ran the wrapped lines together
     older = "".join(textwrap.wrap(LONG, width=70)).encode()
     files = _rerun_over_older_file(naming, monkeypatch, tmp_path, LONG, older)
-    assert files == {"Good morning.txt": older}
+    assert files == {"Good morning.txt": text.file_text(LONG)}
 
 
-def test_a_windows_text_file_from_before_133_is_the_posts_own(
+def test_a_windows_text_file_from_before_133_is_rewritten_in_place(
     naming, monkeypatch, tmp_path
 ):
     # written in the Windows code page, and stopped at the line with an
@@ -413,7 +415,7 @@ def test_a_windows_text_file_from_before_133_is_the_posts_own(
     older = lines[0].encode("cp1252")
     monkeypatch.setattr("locale.getpreferredencoding", lambda *a: "cp1252")
     files = _rerun_over_older_file(naming, monkeypatch, tmp_path, caption, older)
-    assert files == {"Good morning.txt": older}
+    assert files == {"Good morning.txt": text.file_text(caption)}
 
 def test_caption_with_emoji_is_written(monkeypatch, tmp_path):
     post, path = _write(monkeypatch, tmp_path, "new set out now \U0001f525✨")
