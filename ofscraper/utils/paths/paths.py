@@ -5,6 +5,7 @@ import pathlib
 import platform
 import re
 import shutil
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -130,17 +131,27 @@ def _windows_truncateHelper(path):
 
 
 def _mac_truncateHelper(path):
+    # macOS limits each name, not the path, to 255 bytes of UTF-8
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path)) <= of_env.getattr("MAC_MAX_PATH"):
-        return path
     dir = path.parent
     file, ext = _split_ext(path.name)
-    maxlength = of_env.getattr("MAC_MAX_PATH") - len(ext)
-    newFile = f"{file[:maxlength]}{ext}"
-    final = pathlib.Path(dir, newFile)
-    log.debug(f"path: {final} path size: {len(str(final))}")
-    log.debug(f"path: {final} filename size: {len(str(final.name))}")
+    max_bytes = of_env.getattr("MAC_MAX_PATH") - _mac_name_size(ext)
+    name = _longest_fitting(file, _mac_name_size, max_bytes)
+    if (file and not name) or max_bytes < 0:
+        raise ValueError(f"the name limit leaves no room for any of the name: {path}")
+    newFile = f"{name}{ext}"
+    log.debug(f"path: {path} filename bytesize: {_mac_name_size(newFile)}")
     return pathlib.Path(dir, newFile)
+
+
+def _mac_name_size(text):
+    """A name's size by both macOS file systems' limits: APFS counts bytes of
+    UTF-8; HFS+ (still used on external drives) counts UTF-16 units of the
+    name decomposed (NFD), where "ǖ" is 3 units but 2 bytes. The larger of
+    the two, so a name that fits fits on either."""
+    text = str(text)
+    decomposed = unicodedata.normalize("NFD", text)
+    return max(len(text.encode("utf-8")), len(decomposed.encode("utf-16-le")) // 2)
 
 
 def _linux_truncateHelper(path):

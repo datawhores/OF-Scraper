@@ -302,7 +302,7 @@ Defined in `ofscraper/utils/of_env/values/path/length.py`.
 |---|---|
 | <a id="max_text_length"></a>`OFSC_MAX_TEXT_LENGTH`<br>Key: `MAX_TEXT_LENGTH` | **Default:** `70`. Wrap width, in characters, when writing downloaded post text files. |
 | <a id="windows_max_path_bytes"></a>`OFSC_WINDOWS_MAX_PATH_BYTES`<br>Key: `WINDOWS_MAX_PATH_BYTES` | **Default:** `518`. Maximum full path length, in bytes, before truncation on Windows (2 bytes a UTF-16 unit, 4 for an emoji; 518 is MAX_PATH's 259 units). |
-| <a id="mac_max_path"></a>`OFSC_MAC_MAX_PATH`<br>Key: `MAC_MAX_PATH` | **Default:** `255`. Maximum full path length, in characters, before truncation on macOS. |
+| <a id="mac_max_path"></a>`OFSC_MAC_MAX_PATH`<br>Key: `MAC_MAX_PATH` | **Default:** `255`. Maximum file name length, in bytes of UTF-8, before truncation on macOS; a name must also fit in this many UTF-16 units decomposed (NFD), as HFS+ counts. The folder's length isn't counted. |
 | <a id="linux_max_file_name_bytes"></a>`OFSC_LINUX_MAX_FILE_NAME_BYTES`<br>Key: `LINUX_MAX_FILE_NAME_BYTES` | **Default:** `254`. Maximum filename length, in bytes, before truncation on Linux. |
 
 ### Character sizes
