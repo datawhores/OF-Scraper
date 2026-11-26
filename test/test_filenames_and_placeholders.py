@@ -192,6 +192,7 @@ def test_no_count_when_the_name_is_already_unique(naming, name):
 # ----------------------------------------------------------------------
 
 import asyncio
+import textwrap
 from types import SimpleNamespace
 
 import aiofiles
@@ -243,6 +244,176 @@ def _write(monkeypatch, tmp_path, caption):
     asyncio.run(text.get_text_process("model", post))
     return post, path
 
+
+# Two posts whose text files get the same name both keep their text (#746):
+# real settings, real posts and the real placeholder classes.
+
+from naming_helpers import make_post, naming, text_files  # noqa: F401  (fixture)
+
+
+def _write_texts(naming, monkeypatch, captions, *options, collision="media_id"):
+    async def no_script(path):
+        pass
+
+    naming("{filename}.{ext}", "x", "--text-type", "word", "--textlength", "2", *options)
+    monkeypatch.setattr(text, "after_download_script", no_script)
+    monkeypatch.setattr(
+        text.config_data, "get_filename_collision", lambda *a, **k: collision
+    )
+    posts = [make_post(caption, 0, post_id=n) for n, caption in enumerate(captions, 8)]
+    asyncio.run(text.get_text("u", posts))
+
+
+CAPTIONS = ["Good morning everyone", "Good morning to my fans"]
+
+
+def test_a_taken_text_file_name_gets_the_post_id(naming, monkeypatch, tmp_path):
+    _write_texts(naming, monkeypatch, CAPTIONS)
+    both = {"Good morning.txt": CAPTIONS[0], "Good morning_9.txt": CAPTIONS[1]}
+    assert text_files(tmp_path) == both
+    # a second run finds each post's own file, and writes nothing new
+    _write_texts(naming, monkeypatch, CAPTIONS)
+    assert text_files(tmp_path) == both
+    # --force-all rewrites each post's own file, not the other post's
+    _write_texts(naming, monkeypatch, CAPTIONS, "--force-all")
+    assert text_files(tmp_path) == both
+
+
+def _write_post_text(naming, monkeypatch, file_format, caption, post_id, *options):
+    async def no_script(path):
+        pass
+
+    naming(file_format, "x", *options)
+    monkeypatch.setattr(text, "after_download_script", no_script)
+    monkeypatch.setattr(
+        text.config_data, "get_filename_collision", lambda *a, **k: "media_id"
+    )
+    asyncio.run(text.get_text("u", [make_post(caption, 0, post_id=post_id)]))
+
+
+@pytest.mark.parametrize(
+    "file_format", ["{post_id}.{ext}", "{date}_{post_id}.{ext}", "{postid}.{ext}"]
+)
+def test_a_name_with_the_post_id_is_that_posts_own_file(
+    naming, monkeypatch, tmp_path, file_format
+):
+    _write_post_text(naming, monkeypatch, file_format, "old caption", 8)
+    (name,) = text_files(tmp_path)
+    # the creator edits the caption: a plain run keeps the file as it is,
+    # and --force-all rewrites it in place, not as name_8
+    _write_post_text(naming, monkeypatch, file_format, "new caption", 8)
+    assert text_files(tmp_path) == {name: "old caption"}
+    _write_post_text(
+        naming, monkeypatch, file_format, "new caption", 8, "--force-all"
+    )
+    assert text_files(tmp_path) == {name: "new caption"}
+
+
+@pytest.mark.parametrize("prefix", ["18", "2026-08", "80"])
+def test_a_number_that_only_contains_the_post_id_is_not_its_own(
+    naming, monkeypatch, tmp_path, prefix
+):
+    # another post's file holds the name post 8's text resolves to
+    file_format = prefix + " {text}.{ext}"
+    _write_post_text(naming, monkeypatch, file_format, "same", 18)
+    _write_post_text(naming, monkeypatch, file_format, "same here", 8, "-tt", "word", "-tl", "1")
+    assert text_files(tmp_path) == {
+        f"{prefix} same.txt": "same",
+        f"{prefix} same_8.txt": "same here",
+    }
+
+
+@pytest.mark.parametrize("file_format, post_id, other", [
+    # the post id is a number in the caption, or in the date
+    ("{text}.{ext}", 8, "Top 8"),
+    ("{date} {text}.{ext}", 31, "2026-10-31 Top 8"),
+])
+def test_a_number_in_the_name_that_is_not_from_post_id_is_not_its_own(
+    naming, monkeypatch, tmp_path, file_format, post_id, other
+):
+    options = ("-tt", "word", "-tl", "2")
+    _write_post_text(naming, monkeypatch, file_format, "Top 8 looks", 18, *options)
+    _write_post_text(naming, monkeypatch, file_format, "Top 8 picks", post_id, *options)
+    assert text_files(tmp_path) == {
+        f"{other}.txt": "Top 8 looks",
+        f"{other}_{post_id}.txt": "Top 8 picks",
+    }
+
+
+def test_a_hand_edited_text_file_is_kept_at_either_name(naming, monkeypatch, tmp_path):
+    _write_texts(naming, monkeypatch, CAPTIONS)
+    folder = next((tmp_path / "data").rglob("Good morning.txt")).parent
+    for name in ("Good morning.txt", "Good morning_9.txt"):
+        (folder / name).write_text("edited by hand", encoding="utf-8")
+    # a plain run writes over neither file
+    _write_texts(naming, monkeypatch, CAPTIONS)
+    edited = {name: text_files(tmp_path)[name] for name in ("Good morning.txt", "Good morning_9.txt")}
+    assert edited == {"Good morning.txt": "edited by hand", "Good morning_9.txt": "edited by hand"}
+
+
+def test_the_same_caption_twice_is_one_text_file(naming, monkeypatch, tmp_path):
+    _write_texts(naming, monkeypatch, ["Good morning", "Good morning"])
+    assert text_files(tmp_path) == {"Good morning.txt": "Good morning"}
+
+
+def test_a_fallback_name_that_is_another_posts_text_is_not_used(
+    naming, monkeypatch, tmp_path
+):
+    # post 9's caption gives it the name post 10 falls back to
+    captions = ["Good morning everyone", "Good morning_10 starts now", CAPTIONS[1]]
+    files = {
+        "Good morning.txt": captions[0],
+        "Good morning_10.txt": captions[1],
+        "Good morning_10_2.txt": captions[2],
+    }
+    _write_texts(naming, monkeypatch, captions)
+    assert text_files(tmp_path) == files
+    # a second run finds post 10's file, and --force-all rewrites only it
+    for options in ((), ("--force-all",)):
+        _write_texts(naming, monkeypatch, captions, *options)
+        assert text_files(tmp_path) == files
+
+
+def test_overwrite_mode_keeps_the_first_text_file(naming, monkeypatch, tmp_path):
+    _write_texts(naming, monkeypatch, CAPTIONS, collision="overwrite")
+    assert list(text_files(tmp_path)) == ["Good morning.txt"]
+
+
+LONG = (
+    "Good morning everyone, this caption is long enough to wrap onto a "
+    "second line in the text file"
+)
+
+
+def _rerun_over_older_file(naming, monkeypatch, tmp_path, caption, data):
+    """Saves data where the post's text file goes, as a version before #133
+    did, runs again, and returns the folder's files: name -> bytes."""
+    _write_texts(naming, monkeypatch, [caption])
+    (path,) = (tmp_path / "data").rglob("*.txt")
+    path.write_bytes(data)
+    _write_texts(naming, monkeypatch, [caption])
+    return {p.name: p.read_bytes() for p in path.parent.iterdir()}
+
+
+def test_a_text_file_from_before_133_is_the_posts_own(naming, monkeypatch, tmp_path):
+    # versions before #133 ran the wrapped lines together
+    older = "".join(textwrap.wrap(LONG, width=70)).encode()
+    files = _rerun_over_older_file(naming, monkeypatch, tmp_path, LONG, older)
+    assert files == {"Good morning.txt": older}
+
+
+def test_a_windows_text_file_from_before_133_is_the_posts_own(
+    naming, monkeypatch, tmp_path
+):
+    # written in the Windows code page, and stopped at the line with an
+    # emoji, which that code page can't encode
+    caption = "Good morning café " + LONG + " \U0001f525 now"
+    lines = textwrap.wrap(caption, width=70)
+    assert "\U0001f525" in lines[1]
+    older = lines[0].encode("cp1252")
+    monkeypatch.setattr("locale.getpreferredencoding", lambda *a: "cp1252")
+    files = _rerun_over_older_file(naming, monkeypatch, tmp_path, caption, older)
+    assert files == {"Good morning.txt": older}
 
 def test_caption_with_emoji_is_written(monkeypatch, tmp_path):
     post, path = _write(monkeypatch, tmp_path, "new set out now \U0001f525✨")
