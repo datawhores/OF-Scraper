@@ -6,8 +6,9 @@ It reads config.json as it is, changes nothing, makes no connection and
 never asks a question. Each line is PASS, WARN, FAIL or SKIP; the exit status
 is 1 when anything fails. No login value, password or key is printed.
 
---online also connects: to PostgreSQL, to the site to check the login (with
-the scraper's own session), to the signing rule sources and to Stash. It
+--online also connects: to PostgreSQL, to the site to check the login and
+OnlyFans' subscription count (with the scraper's own session), to the
+signing rule sources and to Stash. It
 isn't read-only: it starts the scraper as a run does, which may rewrite
 config.json and create folders, and the signing rule and Fansly's device id
 are kept as a run keeps them. It is skipped where the offline checks found
@@ -820,6 +821,68 @@ def check_login(report, site_name):
         report.add(WARN, f"{site_name} login", f"couldn't be checked: {message}")
 
 
+def _lists(value):
+    """User-list names as a run reads them: a list or a comma-separated
+    string, lowercased."""
+    if isinstance(value, str):
+        value = value.split(",")
+    if not isinstance(value, list):
+        return []
+    return [str(x).strip().lower() for x in value if str(x).strip()]
+
+
+def creator_filters(config):
+    """The config settings that leave out some of the subscriptions."""
+    import ofscraper.utils.config.data as data
+
+    def names(key):
+        return {of_env.getattr(key).lower(), of_env.getattr(f"{key}_ALT").lower()}
+
+    filters = []
+    user_lists = _lists(_get(data.get_default_userlist, config))
+    chosen = set(user_lists)
+    # active and expired together read every subscription, as main does
+    # (subscriptions.py activeHelper and expiredHelper)
+    every = names("OFSCRAPER_RESERVED_LIST") & chosen or (
+        names("OFSCRAPER_ACTIVE_LIST") & chosen and names("OFSCRAPER_EXPIRED_LIST") & chosen
+    )
+    # counted, never named: list names are often creator names, and the
+    # output goes into public issues
+    if user_lists and not every:
+        filters.append(f"default_user_list ({_count(user_lists)}) selects only those lists")
+    black_lists = _lists(_get(data.get_default_blacklist, config))
+    if black_lists:
+        filters.append(f"default_black_list ({_count(black_lists)}) leaves out their members")
+    return filters
+
+
+def _count(lists):
+    return f"{len(lists)} list" if len(lists) == 1 else f"{len(lists)} lists"
+
+
+def check_subscriptions(report, config):
+    """--online: the subscription count, as a run asks for it."""
+    import ofscraper.data.api.init as init
+    import ofscraper.data.api.me as me
+
+    try:
+        active, expired = me.parse_subscriber_count()
+    except Exception as error:
+        # a network or server failure in the words the start uses; anything
+        # else by its kind only, as its text could quote the reply
+        report.add(WARN, "subscriptions", init.unavailable_message(error) or f"the count couldn't be read: {type(error).__name__}")
+        return
+    counts = f"{active} active, {expired} expired"
+    if not active:
+        report.add(WARN, "subscriptions", f"{counts}: with no active subscriptions a run finds no current creators")
+    else:
+        report.add(PASS, "subscriptions", counts)
+    filters = creator_filters(config)
+    if filters:
+        report.add(WARN, "creator filters",
+                   f"{'; '.join(filters)}, so a run may list fewer creators than the count (set in config.json or the environment)")
+
+
 def check_signing_rules(report):
     import ofscraper.utils.auth.request as request
 
@@ -856,7 +919,7 @@ def check_stash(report):
     report.add(PASS, "Stash", f"{url}, {version}")
 
 
-def run_online(report, config=None, profile=None, site=None):
+def run_online(report, config=None, profile=None, site=None, settings=None):
     """--online: the checks that connect, each skipped with its reason when
     an offline check found what it needs broken."""
     import ofscraper.sites as sites
@@ -877,6 +940,8 @@ def run_online(report, config=None, profile=None, site=None):
             check_login(report, site_name)
         except (Exception, SystemExit) as error:
             report.add(FAIL, login, f"the start failed: {error}")
+        if site == sites.ONLYFANS and _status(report, login) == PASS:
+            check_subscriptions(report, settings)
         if site == sites.ONLYFANS:
             check_signing_rules(report)
     check_stash(report)
@@ -900,9 +965,10 @@ def run(config=None, profile=None, site=None, online=False):
     check_folders(settings, report)
     check_database(report)
     if online:
-        run_online(report, config, profile, site)
+        run_online(report, config, profile, site, settings)
     else:
-        report.add(SKIP, "login", "run with --online to check the login, PostgreSQL and Stash")
+        count = ", the subscription count" if site == sites.ONLYFANS else ""
+        report.add(SKIP, "login", f"run with --online to check the login{count}, PostgreSQL and Stash")
     return report
 
 
@@ -914,7 +980,7 @@ def main(argv=None):
     parser.add_argument("--profile", metavar="NAME", help="The profile to check (default: the config's main profile)")
     parser.add_argument("--site", choices=list(sites.SITES), help="Check this site's auth file, not the profile's site")
     parser.add_argument("--json", action="store_true", help="Print the results as JSON")
-    parser.add_argument("--online", action="store_true", help="Also connect: PostgreSQL, the login, the signing rules and Stash. Not read-only: it starts the scraper as a run does")
+    parser.add_argument("--online", action="store_true", help="Also connect: PostgreSQL, the login, the subscription count, the signing rules and Stash. Not read-only: it starts the scraper as a run does")
     args = parser.parse_args(argv)
     # with --json, what the start prints (a config made, log lines) goes to
     # stderr, so stdout is only the JSON
