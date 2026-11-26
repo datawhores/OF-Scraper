@@ -173,6 +173,19 @@ def make_auth(auth=None) -> dict:
     return auth
 
 
+def edit_auth() -> dict:
+    """Edit ``fansly_auth.json`` from the interactive menu."""
+    from rich.console import Console
+
+    try:
+        current = read_auth()
+    except (ValueError, OSError):
+        current = empty()
+    updated = make_auth(current)
+    Console().print("Your `fansly_auth.json` file has been edited.")
+    return updated
+
+
 def token_prompt(current):
     from InquirerPy.validator import EmptyInputValidator
 

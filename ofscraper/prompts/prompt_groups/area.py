@@ -17,8 +17,36 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.sites as sites
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.settings as settings
+
+
+def _area_choices(include_extra: bool = True) -> list:
+    if sites.is_fansly():
+        return [
+            Choice("Timeline"),
+            Choice("Messages"),
+            Choice("Purchased"),
+        ]
+    if not include_extra:
+        return [
+            Choice("Timeline"),
+            Choice("Pinned"),
+            Choice("Archived"),
+            Choice("Streams"),
+        ]
+    return [
+        Choice("Profile"),
+        Choice("Timeline"),
+        Choice("Pinned"),
+        Choice("Archived"),
+        Choice("Highlights"),
+        Choice("Stories"),
+        Choice("Messages"),
+        Choice("Purchased"),
+        Choice("Streams"),
+    ]
 
 
 def areas_prompt() -> list:
@@ -51,17 +79,7 @@ def areas_prompt() -> list:
                     prompt_validators.emptyListValidator(),
                     prompt_validators.like_area_validator_posts(),
                 ),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
+                "choices": _area_choices(include_extra=True),
             }
         ]
     )
@@ -81,12 +99,7 @@ def like_areas_prompt(like=True) -> list:
                 "name": name,
                 "message": f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Streams"),
-                ],
+                "choices": [Choice("Timeline")] if sites.is_fansly() else _area_choices(include_extra=False),
             }
         ]
     )
@@ -104,17 +117,7 @@ def download_areas_prompt() -> list:
                 "name": name,
                 "message": "Which area(s) would you to perform download actions on",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
+                "choices": _area_choices(include_extra=True),
             }
         ]
     )
@@ -133,17 +136,7 @@ def metadata_areas_prompt() -> list:
                 "name": name,
                 "message": "Which area(s) would you to perform metadata actions on",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
+                "choices": _area_choices(include_extra=True),
             }
         ]
     )
@@ -162,17 +155,7 @@ def db_areas_prompt() -> list:
                 "name": name,
                 "message": "Which area(s) would you to database  information from",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
+                "choices": _area_choices(include_extra=True) + ([Choice("Labels")] if sites.is_fansly() else []),
             }
         ]
     )
@@ -222,6 +205,8 @@ def scrape_labels_prompt():
 
 
 def scrape_paid_prompt():
+    if sites.is_fansly():
+        return False
     name = "value"
     answer = promptClasses.batchConverter(
         *[
