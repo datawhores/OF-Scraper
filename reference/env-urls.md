@@ -71,7 +71,7 @@ Defined in `ofscraper/utils/of_env/values/url/other_url.py`.
 
 **Environment variable:** `OFSC_CDRM_URL` · **Default:** `'https://cdrm-project.com/api/decrypt'`
 
-URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is sent the request headers, cookies included. The default, `cdrm-project.com`, isn't contacted: protected videos are skipped before download, with a message to use `manual` key mode. Set it only to a server you run yourself.
+URL of a self-hosted decryption server for the deprecated `cdrm` key mode. It is sent the request headers, cookies included. The default, `cdrm-project.com`, isn't contacted: protected videos are skipped before download, with a message to use `manual` key mode. The same happens when the value isn't an http or https address with a host (it isn't printed). Set it only to a server you run yourself.
 
 ### Bad URL Host
 
