@@ -1330,3 +1330,20 @@ def test_every_table_matches_the_scan_first_path_with_files_in_two_areas(
 
 async def _no_known(found, model_id, username):
     return {}
+
+
+def test_media_the_filters_leave_out_is_reported_once(harness, settings_stub, caplog):
+    # page by page, the run never builds the full list; it still says once,
+    # at the end, what the filters left out and by which setting
+    settings_stub.mediatypes = ["Images"]
+    harness.areas = ["Timeline"]
+    harness.pages["Timeline"] = [
+        page(post_dict(1, [101, 102], kinds={102: "video"})),
+        page(post_dict(2, [103], kinds={103: "video"})),
+    ]
+    with caplog.at_level("INFO"):
+        harness.run()
+    assert harness.downloads == [101]
+    assert [r.getMessage() for r in caplog.records if "left out by" in r.getMessage()] == [
+        f"[{NAME}] 2 media left out by filters: 2 by --mediatype or download_options.filter"
+    ]
