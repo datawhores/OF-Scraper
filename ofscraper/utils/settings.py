@@ -99,6 +99,14 @@ def allow_dupes():
     return bool(getattr(get_settings(), "allow_dupe_downloads", False))
 
 
+def skip_purchased_dupes():
+    """True when, with allow-dupes on, a Purchased copy of media that's in
+    another post isn't downloaded (--skip-purchased-dupes)."""
+    return allow_dupes() and bool(
+        getattr(get_settings(), "skip_purchased_dupes", False)
+    )
+
+
 def resetUserFilters():
     global settings
     write_args.setArgs(resetUserFiltersArgs())
@@ -271,6 +279,7 @@ def merged_settings():
         if allow_dupe_downloads is None
         else allow_dupe_downloads
     )
+    merged.skip_purchased_dupes = bool(getattr(args, "skip_purchased_dupes", False))
 
     # --- CLI Overrides ---
     merged.text = args.text or args.text_only

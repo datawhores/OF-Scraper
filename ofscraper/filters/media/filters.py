@@ -16,6 +16,7 @@ from ofscraper.db.operations_.media import (
 )
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.scripts.skip_download_script import retry_permanent_skips
+from ofscraper.utils.args.accessors.areas import get_download_area
 
 log = logging.getLogger("shared")
 
@@ -30,9 +31,21 @@ def sort_by_date(media):
     return sorted(media, key=lambda x: undated_first(x.date))
 
 
+def is_purchased_copy(item):
+    """Whether the media is a Purchased copy (OnlyFans or Fansly): found in
+    Purchased, and its post wasn't also found in another area under the same
+    id (``PostCollection`` keeps one post per id, from whichever area came
+    first)."""
+    return str(item.responsetype).lower() == "paid" and not getattr(
+        item.post, "found_outside_purchased", False
+    )
+
+
 def media_key(item):
-    """What makes a media one download: its id, or with allow-dupes its id
-    and post, so each post gets its own copy."""
+    """What makes a media one download and one database row: its id, or with
+    allow-dupes its id and post, so each post gets its own copy (Purchased
+    copies too; --skip-purchased-dupes is applied by
+    ``skip_purchased_copies`` when picking downloads, not here)."""
     return (item.id, item.post_id) if settings.allow_dupes() else item.id
 
 
@@ -42,20 +55,90 @@ def dupefiltermedia(media):
     media = sorted(
         media, key=lambda item: (undated_first(item.post.date), item.id, item.count)
     )
-    if settings.allow_dupes():
-        for item in media:
-            if not output[(item.id, item.post_id)]:
-                output[(item.id, item.post_id)] = item
-    else:
-        for item in media:
-            if not output[item.id]:
-                output[item.id] = item
-            elif item.canview and not output[item.id].canview:
-                output[item.id] = item
+    for item in media:
+        key = media_key(item)
+        if not output[key]:
+            output[key] = item
+        elif item.canview and not output[key].canview:
+            output[key] = item
     log.debug(
         f"Number of media after removing duplicated media_ids {len(output.values())}"
     )
     return list(output.values())
+
+
+def skip_purchased_copies(media, username=None, model_id=None):
+    """--skip-purchased-dupes, when picking what to download.
+
+    A Purchased copy and the media's first other copy (the oldest post) are
+    one download, whichever was found or saved first:
+    - a Purchased copy is left out when another post in the list has the
+      media, or a copy of it was downloaded before;
+    - media only in Purchased keeps one Purchased copy (a viewable one);
+    - the first other copy is left out when a Purchased copy of the media was
+      downloaded before. Later copies (reposts) still get their own.
+    Whether a copy is a Purchased one goes by its area, and for saved copies
+    by the area recorded in its row, not by the order areas were scanned.
+    Rows are still saved for every copy (``dupefiltermedia``)."""
+    if not settings.skip_purchased_dupes():
+        return media
+    media = sorted(
+        media, key=lambda item: (undated_first(item.post.date), item.id, item.count)
+    )
+    others = {(item.id, item.post_id) for item in media if not is_purchased_copy(item)}
+    elsewhere = {media_id for media_id, _ in others}
+    downloaded = downloaded_media_ids(username=username, model_id=model_id)
+    if downloaded is None:  # --force-all
+        saved, purchase_saved = set(), set()
+    else:
+        saved = {media_id for media_id, _ in downloaded}
+        # a row saved from Purchased whose post is in another area this run
+        # is that post, not a Purchased copy
+        purchase_saved = {
+            media_id
+            for media_id, post_id in downloaded_purchased_pairs(
+                username=username, model_id=model_id
+            )
+            if (media_id, post_id) not in others
+        }
+    kept = {}
+    for item in media:
+        if not is_purchased_copy(item) or item.id in elsewhere or item.id in saved:
+            continue
+        current = kept.get(item.id)
+        if current is None or (item.canview and not current.canview):
+            kept[item.id] = item
+    out, first_seen, held = [], set(), 0
+    for item in media:
+        if is_purchased_copy(item):
+            if kept.get(item.id) is item:
+                out.append(item)
+            continue
+        if item.id not in first_seen:
+            first_seen.add(item.id)
+            if item.id in purchase_saved:
+                held += (item.id, item.post_id) not in downloaded
+                continue
+        out.append(item)
+    log_held_back(username, held, get_download_area())
+    return out
+
+
+def log_held_back(username, held, scanned):
+    """--skip-purchased-dupes: a downloaded Purchased copy counts for the
+    first other copy a run finds. When a run didn't scan Messages, that copy
+    may be a repost of a bought message; say so, as it downloads only once a
+    run includes Messages."""
+    if not held or "Messages" in scanned:
+        return
+    copies = "1 copy" if held == 1 else f"{held} copies"
+    they = "it downloads" if held == 1 else "they download"
+    log.info(
+        f"[{username}] --skip-purchased-dupes held back {copies} of media bought "
+        "earlier: the downloaded Purchased file counts for the first copy this "
+        "run found. Messages wasn't scanned; if the bought message is there, "
+        f"{they} once a run includes Messages"
+    )
 
 
 def dupefilterPost(post):
@@ -262,6 +345,21 @@ def downloaded_media_ids(username=None, model_id=None):
             f"Number of unique media ids in database for all models: {len(media_ids)}"
         )
     return media_ids
+
+
+def downloaded_purchased_pairs(username=None, model_id=None):
+    """(media id, post id) of the downloaded copies saved from Purchased (the
+    row's api_type), for --skip-purchased-dupes. The same pool of rows as
+    ``downloaded_media_ids`` with allow-dupes."""
+    return set(
+        get_media_post_ids_downloaded(
+            model_id=model_id,
+            username=username,
+            model_only=per_creator(),
+            without_permanent_skips=retry_permanent_skips(),
+            purchased_only=True,
+        )
+    )
 
 
 def media_id_filter(media):

@@ -124,6 +124,9 @@ class PostCollection:
         log.info("Applying final 'download' mode filters to media list...")
         all_media = helpers.seperate_self(all_media)
         all_media = helpers.dupefiltermedia(all_media)
+        all_media = helpers.skip_purchased_copies(
+            all_media, username=self.username, model_id=self.model_id
+        )
         all_media = helpers.previous_download_filter(
             all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
@@ -349,6 +352,15 @@ class PostCollection:
             self._posts_map[post_id] = post_object
 
         existing_post = self._posts_map[post_id]
+        # a post found in Purchased and in another area is that post, not a
+        # Purchased copy, whichever area was added first
+        # (--skip-purchased-dupes, filters.is_purchased_copy)
+        if (
+            isinstance(post_to_process, Post)
+            and post_to_process is not existing_post
+            and str(post_to_process.responsetype).lower() != "paid"
+        ):
+            existing_post.found_outside_purchased = True
 
         # Set eligibility flags
         if "like" in actions:
