@@ -111,9 +111,9 @@ The Discord webhook URL that log messages are posted to. Nothing is sent unless 
 
 ### `type_options`
 
-**Default:** `{}` · **Read by:** `get_type_options()` in `ofscraper/utils/config/data.py`
+**Default:** `{}` · **Also reads:** `save_location` · **Read by:** `get_type_options()` in `ofscraper/utils/config/data.py`
 
-Per-type folder and file name overrides, at the top level of `config.json`. Each key is a post area (`timeline`, `messages`, `archived`, `stories`, ...), a media type (`videos`, `images`, `audios`, `text`) or `livestreams`, matched without regard to case; each value is an object with any of `save_location`, `dir_format` and `file_format`. A media file is looked up by its area, then its area as `responsetype` names it, then its media type, and the first entry that sets a value wins; a `--text` file by its area, then `text`. A value left out comes from `file_options` (for livestreams, from `live_options`, then the built-in livestream pattern). On Fansly a `Fansly` folder is added to an override `save_location` as to `file_options.save_location`, unless the templates use `{site_name}` (or `{sitename}`). Templates with unknown placeholders are logged at startup, naming the entry. Example: `{"videos": {"save_location": "E:/videos"}, "text": {"file_format": "{post_id}.{ext}"}}`.
+Per-type folder and file name overrides, at the top level of `config.json`. Each key is a post area (`timeline`, `messages`, `archived`, `stories`, ...), a media type (`videos`, `images`, `audios`, `text`) or `livestreams`, matched without regard to case; each value is an object with any of `save_location`, `dir_format` and `file_format`. A media file is looked up by its area, then its area as `responsetype` names it, then its media type, and the first entry that sets a value wins; a `--text` file by its area, then `text`. A value left out comes from `file_options` (for livestreams, from `live_options`, then the built-in livestream pattern). On Fansly a `Fansly` folder is added to an override `save_location` as to `file_options.save_location`, unless the templates use `{site_name}` (or `{sitename}`). Templates with unknown placeholders, an entry named for no area or type, and an entry that isn't an object (which is removed) or has another field (which is removed) are logged at startup, naming the entry. `ofscraper doctor` checks each override save folder as it checks `save_location`. Example: `{"videos": {"save_location": "E:/videos"}, "text": {"file_format": "{post_id}.{ext}"}}`.
 
 ## `file_options`
 
@@ -209,7 +209,7 @@ When true, a leftover `.part` file is resumed with an HTTP range request. When f
 
 **Default:** `0` · **CLI override:** `system_free_min` · **Env default:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
 
-The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location`, or on `OFSC_DISK_SPACE_CHECK_PATH` when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
+The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location` and on the disk of each `live_options` or `type_options` save location, and the fullest one counts, or on `OFSC_DISK_SPACE_CHECK_PATH` alone when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
 
 ### `download_options.max_post_count`
 

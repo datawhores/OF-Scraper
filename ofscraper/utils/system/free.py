@@ -6,44 +6,48 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 
 
-# config.json's save_location, keyed on the file and its modification time:
+# config.json's save locations, keyed on the file and its modification time:
 # the check runs often, and the file is read again only once it changes.
 # One (key, value) tuple, replaced whole, so a thread reading it never finds
 # the value of another key or none at all
-_save_location = (None, None)
+_save_locations = (None, None)
 
 
-def _get_save_location():
-    global _save_location
+def _get_save_locations():
+    global _save_locations
     config = pathlib.Path(common_paths.get_config_path())
     try:
         key = (str(config), config.stat().st_mtime_ns)
     except OSError:
         key = (str(config), None)
-    cached = _save_location
+    cached = _save_locations
     if cached[0] != key:
-        cached = (key, common_paths.get_save_location())
-        _save_location = cached
+        cached = (key, tuple(dict.fromkeys(common_paths.get_save_locations().values())))
+        _save_locations = cached
     return cached[1]
 
 
-def get_check_path():
-    """OFSC_DISK_SPACE_CHECK_PATH when set, else the disk that holds
-    save_location. A save location not made yet is measured on its nearest
-    existing folder, which is on the same disk; a link is followed first, even
-    to a folder that's missing, so the disk is the target's."""
+def get_check_paths():
+    """OFSC_DISK_SPACE_CHECK_PATH when set, else the disk of each folder files
+    are saved under: save_location and the live_options and type_options
+    ones. A folder not made yet is measured on its nearest existing folder,
+    which is on the same disk; a link is followed first, even to a folder
+    that's missing, so the disk is the target's."""
     path = of_env.getattr("DISK_SPACE_CHECK_PATH")
     if path:
-        return path
-    path = pathlib.Path(_get_save_location()).resolve()
-    while not path.exists() and path.parent != path:
-        path = path.parent
-    return path
+        return [path]
+    out = []
+    for location in _get_save_locations():
+        path = pathlib.Path(location).resolve()
+        while not path.exists() and path.parent != path:
+            path = path.parent
+        out.append(path)
+    return list(dict.fromkeys(out))
 
 
 def get_free():
-    total, used, free = shutil.disk_usage(get_check_path())
-    return free
+    """The free space on the fullest of those disks"""
+    return min(shutil.disk_usage(path).free for path in get_check_paths())
 
 
 def space_checker(func):

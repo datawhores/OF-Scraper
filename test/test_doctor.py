@@ -1133,3 +1133,22 @@ def test_offline_hint_names_the_subscription_count(home):
     assert status == "SKIP" and "subscription count" in detail
     status, detail = result(doctor.run(site="fansly"), "login")
     assert status == "SKIP" and "subscription count" not in detail
+
+
+def test_each_override_save_folder_is_checked(home, tmp_path):
+    save, live = tmp_path / "library", tmp_path / "live"
+    save.mkdir()
+    write_config(home, {
+        "file_options": {"save_location": str(save)},
+        "live_options": {"save_location": str(live)},
+        "type_options": {"videos": {"save_location": str(save)}, "text": {"dir_format": "x"}},
+        "download_options": {"system_free_min": 1000},
+    })
+    report = doctor.run()
+    assert result(report, "save folder")[0] == "PASS"
+    assert result(report, "save folder (live_options)") == (
+        "WARN", f"{doctor.redact(str(live))} isn't there yet: a run makes it")
+    assert result(report, "save folder (type_options.videos)")[0] == "PASS"
+    assert result(report, "free-space limit (live_options)")[1].startswith("1000 bytes, measured at")
+    # an entry that doesn't move the save folder adds no check
+    assert not [r for r in report.results if "type_options.text" in r["check"]]

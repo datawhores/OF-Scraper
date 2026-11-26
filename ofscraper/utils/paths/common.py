@@ -129,6 +129,21 @@ def get_save_location(config=None):
     )
 
 
+def get_save_locations(config=None):
+    """{setting: folder} for every folder files are saved under: the save
+    location, then each live_options and type_options save_location set"""
+    if config is None:
+        config = config_file.open_config()
+    out = {"file_options.save_location": get_save_location(config)}
+    overrides = {"live_options.save_location": data.get_live_save_location(config=config)}
+    overrides.update(
+        (f"type_options.{name}.save_location", section.get("save_location"))
+        for name, section in data.get_type_options(config=config).items()
+    )
+    out.update((k, v) for k, v in overrides.items() if isinstance(v, str) and v.strip())
+    return out
+
+
 def get_config_folder():
     out = get_config_path().parent
     out.mkdir(exist_ok=True, parents=True)

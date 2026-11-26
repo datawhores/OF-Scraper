@@ -255,3 +255,36 @@ def test_notes_from_before_the_log_is_set_up_are_written_once_it_is(config_path,
     assert "database_url in config.json is not read" in said[0]
     assert '"file_size_mx"' in said[1]
     assert "s3cr3t" not in " ".join(handler.lines)
+
+
+def test_type_options_entries_are_kept_without_a_note(config_path, logged):
+    config = defaults()
+    config["type_options"] = {
+        "videos": {"save_location": "E:/videos", "dir_format": "{model_username}"},
+        "text": {},
+    }
+    # something else makes the start rewrite the file
+    config["file_size_mx"] = "1GB"
+
+    saved = start_with(config_path, config)
+
+    assert [note for note in notes(logged) if "type_options" in note] == []
+    assert saved["type_options"] == config["type_options"]
+
+
+def test_type_options_entries_it_cant_use_are_named(config_path, logged):
+    config = defaults()
+    config["type_options"] = {
+        "videos": {"save_location": "E:/videos", "dirformat": "{model_username}"},
+        "images": "E:/images",
+    }
+
+    saved = start_with(config_path, config)
+
+    assert notes(logged) == [
+        'config.json: "type_options.videos.dirformat" isn\'t read (not a setting, or an older'
+        " name for one that's set under its current name), so it was removed from the file",
+        'config.json: "type_options.images" should hold settings (save_location, dir_format,'
+        " file_format) but holds a string, so it was removed",
+    ]
+    assert saved["type_options"] == {"videos": {"save_location": "E:/videos"}}

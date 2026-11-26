@@ -133,9 +133,9 @@ def test_a_lookup_that_another_thread_replaces_mid_call_still_answers(
 
     first, second = tmp_path / "first", tmp_path / "second"
     measured.write_config(first, mtime=1_700_000_000)
-    assert free._get_save_location() == str(first)
+    assert free._get_save_locations() == (str(first),)
 
-    lines, start = inspect.getsourcelines(free._get_save_location)
+    lines, start = inspect.getsourcelines(free._get_save_locations)
     returns = {
         start + i
         for i, line in enumerate(lines)
@@ -144,19 +144,49 @@ def test_a_lookup_that_another_thread_replaces_mid_call_still_answers(
     switched = []
 
     def other_thread(frame, event, arg):
-        if frame.f_code is not free._get_save_location.__code__:
+        if frame.f_code is not free._get_save_locations.__code__:
             return None
         if event == "line" and frame.f_lineno in returns and not switched:
             switched.append(1)
             measured.write_config(second, mtime=1_700_000_100)
-            assert free._get_save_location() == str(second)
+            assert free._get_save_locations() == (str(second),)
         return other_thread
 
     measured.write_config(first, mtime=1_700_000_050)
     previous = sys.gettrace()
     sys.settrace(other_thread)
     try:
-        got = free._get_save_location()
+        got = free._get_save_locations()
     finally:
         sys.settrace(previous)
-    assert switched and got == str(first)
+    assert switched and got == (str(first),)
+
+
+def _write_overrides(tmp_path, save, live, videos):
+    config = tmp_path / "home" / ".config" / "ofscraper" / "config.json"
+    config.write_text(json.dumps({
+        "file_options": {"save_location": str(save)},
+        "live_options": {"save_location": str(live)},
+        "type_options": {"videos": {"save_location": str(videos)}},
+    }), encoding="utf-8")
+
+
+def test_override_save_locations_are_measured_too(measured, tmp_path):
+    folders = [tmp_path / name for name in ("downloads", "live", "videos")]
+    for folder in folders:
+        folder.mkdir()
+    _write_overrides(tmp_path, *folders)
+
+    assert free.check_free_size()
+    assert measured.calls == [folder.resolve() for folder in folders]
+
+
+def test_the_fullest_save_disk_counts(measured, tmp_path, monkeypatch):
+    save, live, videos = (tmp_path / name for name in ("downloads", "live", "videos"))
+    for folder in (save, live, videos):
+        folder.mkdir()
+    _write_overrides(tmp_path, save, live, videos)
+    monkeypatch.setattr(free.shutil, "disk_usage", lambda path: SimpleNamespace(
+        free=0 if pathlib.Path(path) == videos.resolve() else 10**12))
+
+    assert not free.check_free_size()

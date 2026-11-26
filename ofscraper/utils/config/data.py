@@ -816,19 +816,28 @@ def get_live_fileformat(config=None):
     return val if isinstance(val, str) else ""
 
 
+TYPE_OPTION_FIELDS = ("save_location", "dir_format", "file_format")
+
+
 @wrapper.config_reader
 def get_type_options(config=None):
+    """{type: {field: value}} with only the fields an entry takes; an entry
+    that isn't an object is left out. What it reads is recorded, as
+    _lookup records, for the notes on what the rewrite of config.json drops."""
     if not config:
         return {}
     raw = config.get("type_options")
     if not isinstance(raw, dict):
         return {}
     cleaned = {}
-    for key, val in raw.items():
-        if isinstance(val, dict):
-            cleaned[str(key)] = {
-                k: (strip_path_quotes(v) if k == "save_location" and isinstance(v, str) else v)
-                for k, v in val.items()
-                if v is not None
-            }
+    for name, section in raw.items():
+        if not isinstance(section, dict):
+            continue
+        entry = {field: section[field] for field in TYPE_OPTION_FIELDS if section.get(field) is not None}
+        if isinstance(entry.get("save_location"), str):
+            entry["save_location"] = strip_path_quotes(entry["save_location"])
+        if _reads is not None:
+            _reads.add(f"type_options.{name}")
+            _reads.update(f"type_options.{name}.{field}" for field in entry)
+        cleaned[str(name)] = entry
     return cleaned

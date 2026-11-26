@@ -786,3 +786,34 @@ def test_unique_name_warning_checks_type_file_formats(path_options):
     config["type_options"] = {"livestreams": {"file_format": "{date}"}}
     save()
     assert prepare.check_uniquename() is True
+
+
+def test_startup_check_covers_full_paths_dates_and_type_names(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["file_options"]["date"] = "YYYY/MM"
+    config["responsetype"] = {"timeline": "Wall"}
+    config["type_options"] = {
+        "videos": {"dir_format": "E:/videos/{model_username}"},
+        "images": {"dir_format": "{date}"},
+        "video": {"file_format": "{media_id}.{ext}"},
+        "wall": {"file_format": "{media_id}.{ext}"},
+    }
+    save()
+    lines = naming_check.problems()
+    assert (
+        'type_options.videos.dir_format "E:/videos/{model_username}" is a full path, but'
+        " dir_format is always placed under save_location. Set"
+        " type_options.videos.save_location to choose where downloads go"
+    ) in lines
+    assert any(line.startswith('file_options.date "YYYY/MM" has a folder separator') for line in lines)
+    assert "type_options.video isn't a post area, media type or livestreams, so it's never used" in lines
+    # a responsetype folder name is a name an entry can match
+    assert not any(line.startswith("type_options.wall") for line in lines)
+
+    # livestream folders take the start time, not the date setting
+    config["type_options"] = {}
+    config["live_options"] = {"dir_format": "{date}"}
+    save()
+    assert not any(line.startswith("file_options.date") for line in naming_check.problems())

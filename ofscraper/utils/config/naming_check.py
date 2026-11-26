@@ -172,28 +172,61 @@ def problems():
         problem = template_problem(str(template), known, effect)
         if problem:
             out.append(f"{setting} {json.dumps(template)} {problem}")
-    dir_format = data.get_dirformat()
-    if isinstance(dir_format, str) and FULL_PATH.match(dir_format):
-        out.append(
-            f"file_options.dir_format {json.dumps(dir_format)} is a full path, but"
-            " dir_format is always placed under save_location. Set save_location"
-            " to choose where downloads go"
-        )
     # before, a "/" in the date (and "\" on Windows) made nested folders
     date = data.get_date()
     separators = "/\\" if on_windows() else "/"
-    if (
-        isinstance(dir_format, str)
-        and isinstance(date, str)
-        and re.search(r"\{date[}:!]", dir_format)
-        and any(sep in date for sep in separators)
-    ):
+    date_nests = isinstance(date, str) and any(sep in date for sep in separators)
+    dated = False
+    for setting, template, known, _effect in _templates():
+        if not setting.endswith(".dir_format") or not isinstance(template, str):
+            continue
+        if FULL_PATH.match(template):
+            section = setting.rsplit(".", 1)[0]
+            where = "save_location" if section == "file_options" else f"{section}.save_location"
+            out.append(
+                f"{setting} {json.dumps(template)} is a full path, but"
+                f" dir_format is always placed under save_location. Set {where}"
+                " to choose where downloads go"
+            )
+        # livestream folders take the start time, not the date setting
+        if known is not LIVE_PLACEHOLDERS and re.search(r"\{date[}:!]", template):
+            dated = True
+    if date_nests and dated:
         out.append(
             f"file_options.date {json.dumps(date)} has a folder separator, but {{date}}"
             " in dir_format now fills one folder, so dates no longer nest. Use"
             " {year}/{month}/{day} in dir_format for nested date folders"
         )
+    names = _type_names()
+    for name in data.get_type_options():
+        if name.strip().lower() not in names:
+            out.append(
+                f"type_options.{name} isn't a post area, media type or livestreams,"
+                " so it's never used"
+            )
     return out
+
+
+# what a type_options entry can be named: a post's area as Post.responsetype
+# gives it (and its older spellings), a media type, or livestreams
+POST_AREAS = {
+    "timeline", "post", "posts", "pinned", "archived", "message", "messages",
+    "paid", "purchased", "stories", "highlights", "profile", "streams", "labels",
+}
+MEDIA_TYPES = {"images", "videos", "audios", "text"}
+
+
+def _type_names():
+    """the names a type_options entry can match, lowercased: also the folder
+    names the responsetype section gives each area"""
+    import ofscraper.utils.config.file as config_file
+    import ofscraper.utils.config.schema as schema
+
+    folders = schema.get_current_config_schema(config_file.open_config())["responsetype"]
+    return (
+        POST_AREAS | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
+        | {str(folder).strip().lower() for folder in folders.values() if folder}
+    )
 
 
 def report():
