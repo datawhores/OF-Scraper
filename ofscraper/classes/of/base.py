@@ -1,8 +1,10 @@
+import html
 import importlib
 import re
 
 from bs4 import BeautifulSoup
 
+import ofscraper.sites as sites
 import ofscraper.utils.settings as settings
 
 html_parser = "lxml" if importlib.util.find_spec("lxml") else "html.parser"
@@ -39,14 +41,45 @@ class base:
 
     def file_cleanup(self, text):
         text = str(text)
-        text = re.sub("<[^>]*>", "", text)
+        # OnlyFans captions are HTML; Fansly captions are plain text, so a
+        # "<3 you >" or an "&amp;" there is what was written
+        if not sites.is_fansly():
+            # a <br> or the end of a paragraph separates words too
+            text = re.sub(
+                r"<br\s*/?>|</?(?:p|div|li|h[1-6])\b[^>]*>",
+                " ",
+                text,
+                flags=re.IGNORECASE,
+            )
+            text = re.sub("<[^>]*>", "", text)
+            # OnlyFans sends text HTML-escaped ("Tom &amp; Jerry"), as it
+            # does label names (labels.decode_label_name). Decoded after the
+            # tags are gone, so a decoded "<" isn't read as one. Only an
+            # entity ending in ";" is decoded: a cleaned name has none left,
+            # so cleaning it again decodes nothing twice. A decoded "\" or
+            # "/" would be a folder in the name ("&#92;..&#92;" climbs out of
+            # the save folder on Windows), so it's removed, as is a decoded
+            # control character other than a line break or tab.
+            text = re.sub(
+                r"&(?:#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);",
+                lambda m: re.sub(
+                    r"[\\/\x00-\x08\x0b\x0c\x0e-\x1f\x7f]",
+                    "",
+                    html.unescape(m[0]),
+                ),
+                text,
+            )
+        # a line break or a tab, written or decoded ("&#10;"), separates
+        # words: removing it would join the words on either side
+        text = re.sub(r"[\r\n\t]+", " ", text)
+        text = text.replace("\xa0", " ")
         # Fansly text is plain already (normalize._item_dict); removing the
         # codes again would drop an escaped "\[s:lg\]", shown as "[s:lg]"
         # a backslash is a folder separator on Windows, and control characters
         # (tab, carriage return) can't be in a Windows file name
         text = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*;]+', "", text)
         text = re.sub("-+", "_", text)
-        text = re.sub(" +", " ", text)
+        text = re.sub(" +", " ", text).strip(" ")
         text = re.sub(" ", settings.get_settings().space_replacer, text)
         return text
 

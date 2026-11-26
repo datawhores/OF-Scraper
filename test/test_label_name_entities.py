@@ -94,3 +94,86 @@ def test_label_placeholder_is_safe_in_a_path(name, folder):
     from ofscraper.classes.placeholder import path_safe_label
 
     assert path_safe_label(name) == folder
+
+
+# --- captions in file names ---------------------------------------------------
+# A caption reads in a file name as it does on the site (#748): OnlyFans sends
+# it HTML-escaped too, and a line break or a <br> separates words.
+
+from naming_helpers import naming  # noqa: F401  (fixture)
+
+
+@pytest.mark.parametrize(
+    "caption, expected",
+    [
+        ("first line\nsecond line\n\n#tag1 #tag2", "first line second line #tag1 #tag2"),
+        ("<p>first line<br />second line</p><p>third</p>", "first line second line third"),
+        ("a tab\there, a return\r\nthere", "a tab here, a return there"),
+        ("Tom &amp; Jerry don&#039;t", "Tom & Jerry don't"),
+        ("non&nbsp;breaking\u00a0space", "non breaking space"),
+        # decoded, then what a name can't hold is removed, as for {label}
+        ("Q&amp;A &lt;3 &quot;best&quot;", "Q&A 3 best"),
+        ("<b>bold</b> and <i>italic</i>", "bold and italic"),
+    ],
+)
+def test_a_caption_reads_in_a_name_as_on_the_site(naming, caption, expected):
+    text, (media,) = naming("{text}.{ext}", caption)
+    assert (text, media) == (f"{expected}.txt", f"{expected}.jpg")
+
+
+def test_words_on_separate_lines_count_as_separate_words(naming):
+    text, (media,) = naming(
+        "{text}.{ext}", "one\ntwo three", "--text-type", "word", "--textlength", "2"
+    )
+    assert (text, media) == ("one two.txt", "one two.jpg")
+
+
+def test_a_caption_with_nothing_for_a_name_is_the_post_id(naming):
+    # the text file's name; a media file falls back to its own file name,
+    # then the date (test_textlength.py)
+    text, _ = naming("{text}.{ext}", "???")
+    assert text == "8.txt"
+    # a text file's {filename} is its caption too
+    assert naming("{filename}.{ext}", "???")[0] == "8.txt"
+
+
+@pytest.mark.parametrize(
+    "caption, expected",
+    [
+        # an encoded line break or tab separates words, as a written one does
+        ("first&#10;second", "first second"),
+        ("first&#13;&#10;second&#9;third", "first second third"),
+        ("first&#x0A;second", "first second"),
+    ],
+)
+def test_an_encoded_line_break_separates_words(naming, caption, expected):
+    text, (media,) = naming("{text}.{ext}", caption)
+    assert (text, media) == (f"{expected}.txt", f"{expected}.jpg")
+
+
+@pytest.mark.parametrize(
+    "caption, expected",
+    [
+        # a decoded "\" or "/" would be a folder in the name: "\..\" climbs
+        # out of the save folder on Windows
+        ("a&#92;..&#92;b", "a..b"),
+        ("&#47;etc&#47;passwd", "etcpasswd"),
+        ("a&bsol;b&sol;c&#x5C;d", "abcd"),
+    ],
+)
+def test_a_decoded_path_separator_is_removed(naming, caption, expected):
+    text, (media,) = naming("{text}.{ext}", caption)
+    assert (text, media) == (f"{expected}.txt", f"{expected}.jpg")
+
+
+@pytest.mark.parametrize(
+    "caption",
+    # an entity written in the caption ("&amp;" typed) reaches OnlyFans'
+    # text escaped once more: decoded once, it's the entity, as typed
+    ["Tom &amp;amp; Jerry", "&amp;copy; 2026", "a &amp;lt;3 b", "&amp;#39;x"],
+)
+def test_a_media_name_and_a_text_name_read_a_caption_the_same(naming, caption):
+    # a media file's {text} is cleaned from the post's cleaned caption: a
+    # second clean mustn't decode the caption again
+    text, (media,) = naming("{text}.{ext}", caption)
+    assert text[: -len(".txt")] == media[: -len(".jpg")]
