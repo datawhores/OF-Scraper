@@ -143,6 +143,48 @@ def profile_folder(config, profile, path):
     return path.parent / profile_tools.profile_name_fixer(name)
 
 
+CONFIG_AUTH_KEYS = ["sess", "auth_id", "x-bc", "x_bc"]
+
+
+def _auth_value_findings(auth):
+    """What's wrong with each auth value after a run's own clean-up; the
+    fields are named, their values never shown."""
+    import ofscraper.utils.auth.data as auth_data
+
+    findings = []
+    for key in OF_AUTH_KEYS:
+        value = auth.get(key)
+        if not isinstance(value, str):
+            continue
+        value = auth_data.fix_val(value)
+        if key == "sess" and value.lower() == "deleted":
+            findings.append('sess is "deleted": the browser session had logged out, so log in and copy it again')
+            continue
+        found = []
+        if any(c in value for c in "\"'"):
+            found.append("quotes")
+        # a user agent has ;, = and spaces of its own
+        if key != "user_agent":
+            if " " in value:
+                found.append("spaces")
+            found += [c for c in ";=" if c in value]
+        if any(not (" " <= c <= "~") for c in value):
+            found.append("characters outside printable ASCII")
+        if found:
+            findings.append(f"{key} has {', '.join(found)}")
+    return findings
+
+
+def check_config_auth(config, report):
+    """Auth values put in config.json, which a run never reads from there."""
+    if not isinstance(config, dict):
+        return
+    sections = [config] + [v for v in config.values() if isinstance(v, dict)]
+    found = [k for k in CONFIG_AUTH_KEYS if any(section.get(k) not in (None, "") for section in sections)]
+    if found:
+        report.add(WARN, "auth in config", f"config.json has {', '.join(found)}: these belong in auth.json, and a run doesn't read them from config.json")
+
+
 def check_onlyfans_auth(folder, report):
     import ofscraper.utils.auth.utils.dict as auth_dict
     import ofscraper.utils.encoding as encoding
@@ -176,6 +218,9 @@ def check_onlyfans_auth(folder, report):
         report.add(FAIL, "OnlyFans auth", f"blank in {path}: {', '.join(blank)}")
     else:
         report.add(PASS, "OnlyFans auth", f"{path} (every field set; the login itself is checked with --online)")
+    findings = _auth_value_findings(auth)
+    if findings:
+        report.add(WARN, "OnlyFans auth values", f"a run would send these as they are, and the site may reject them: {'; '.join(findings)}")
 
 
 def check_fansly_auth(folder, report):
@@ -205,6 +250,8 @@ def check_auth(config, folder, site, report):
         label = "OnlyFans auth" if name == sites.ONLYFANS else "Fansly auth"
         if name == site:
             check(folder, report)
+            if name == sites.ONLYFANS:
+                check_config_auth(config, report)
         else:
             report.add(SKIP, label, f"not used: the profile is for {sites.SITE_NAMES[site]}")
 
