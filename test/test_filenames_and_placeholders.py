@@ -151,6 +151,43 @@ def test_placeholder_model_has_no_avatar_or_header():
     assert placeholder.avatar is None and placeholder.header is None
 
 # ----------------------------------------------------------------------
+# A post's media are told apart by a count before the extension when the
+# file_format has nothing unique per media (#743).
+# ----------------------------------------------------------------------
+
+import re
+
+from naming_helpers import naming  # noqa: F401  (fixture)
+
+
+def test_the_count_goes_before_the_extension_only(naming, monkeypatch):
+    monkeypatch.setattr(placeholder.data, "get_date", lambda *a, **k: "DD.MM.YYYY")
+    _, media = naming(
+        "{date} {text}.{ext}", "Hello there. How are you... fine", media=2
+    )
+    assert media == [
+        "31.10.2026 Hello there. How are you... fine_1.jpg",
+        "31.10.2026 Hello there. How are you... fine_2.jpg",
+    ]
+
+
+def test_the_count_ends_a_name_with_no_extension(naming):
+    _, media = naming("{post_id}", "hello", media=2)
+    assert media == ["8_1", "8_2"]
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["filename", "file_name", "only_filename", "only_file_name", "onlyfilename",
+     "original_filename", "originalfilename", "media_id", "mediaid"],
+)
+def test_no_count_when_the_name_is_already_unique(naming, name):
+    # every spelling of a placeholder that differs per media, not only some
+    _, media = naming("{%s}.{ext}" % name, "hello", media=2, text=False)
+    assert not any(re.search(r"_[12]\.jpg$", item) for item in media), media
+    assert len(set(media)) == 2
+
+# ----------------------------------------------------------------------
 # From test_text_file.py
 # ----------------------------------------------------------------------
 
