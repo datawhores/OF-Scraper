@@ -101,6 +101,7 @@ minversion = "6.0"
 addopts = "-ra -q"
 # a warning is a bug to fix or a filter to justify here
 filterwarnings = ["error"]
+pythonpath = [".", "test"]
 testpaths = ["test"]
 # test/legacy targets the pre-3.12 module layout and no longer imports
 norecursedirs = ["legacy"]

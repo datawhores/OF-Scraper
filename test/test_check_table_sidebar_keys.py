@@ -15,6 +15,8 @@ import pytest
 
 import ofscraper.classes.table.app as table_app
 
+pytestmark = pytest.mark.slow
+
 
 class _Settings(SimpleNamespace):
     def __getattr__(self, name):

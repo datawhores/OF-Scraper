@@ -223,6 +223,12 @@ def _client_hello(host):
     seen = _fingerprint(out["hello"])
     names = seen["extensions"].pop(0)
     assert host.encode() in names
+    # RFC 7685 padding (ext 21) pads the ClientHello to 512 bytes, so its
+    # length varies with the SNI hostname length; extension_order still pins
+    # whether padding was sent.
+    padding = seen["extensions"].pop(21, None)
+    if padding is not None:
+        assert set(padding) <= {0}
     del seen["length"]
     return seen
 
