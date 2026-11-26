@@ -2148,12 +2148,15 @@ def test_live_path_uses_stream_account_id_without_cached_models(monkeypatch, tmp
 
 
 @pytest.mark.parametrize("system", ["Linux", "Darwin"])
-def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(tmp_path, monkeypatch, fansly_settings, system):
+@pytest.mark.parametrize("prefix", ["a" * 300 + "_", "a" * 229], ids=["shortened-base", "shortened-part"])
+def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(
+    tmp_path, monkeypatch, fansly_settings, system, prefix,
+):
     import ofscraper.utils.config.file as config_file
     import ofscraper.utils.paths.paths as paths
 
     fansly_settings(trunicate=True)
-    config = {"live_options": {"dir_format": "recordings", "file_format": "a" * 300 + "_{date}"}}
+    config = {"live_options": {"dir_format": "recordings", "file_format": prefix + "{date}"}}
     monkeypatch.setattr(config_file, "open_config", lambda: config)
     # Exercise both production truncators on every test host.
     limit = 255
@@ -2163,7 +2166,7 @@ def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(tmp_path,
     monkeypatch.setattr(paths.of_env, "getattr", lambda key, *a, **kw:
                         overrides[key] if key in overrides else real_getenv(key, *a, **kw))
     base = live.recording_base(tmp_path, "test_creator", STARTED_MS)
-    later = live.recording_base(tmp_path, "test_creator", STARTED_MS + 86_400_000)
+    later = live.recording_base(tmp_path, "test_creator", STARTED_MS + 1_000)
     assert live.sidecar_path(base) != live.sidecar_path(later)
     assert live.chat_path(base) != live.chat_path(later)
     assert len(live.chat_path(base).name.encode("utf-8")) == limit

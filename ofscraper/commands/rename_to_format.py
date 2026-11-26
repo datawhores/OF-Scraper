@@ -464,7 +464,9 @@ def plan(conn, settings, username=None, path_root=None):
     for row in recorded:
         old = mover._full(Path(row["directory"], row["filename"]), path_root)
         files[key(old)].append((old, row))
-    taken_by_rows = set(files)
+    recorded_spellings = defaultdict(list)
+    for recorded_key in files:
+        recorded_spellings[unicodedata.normalize("NFC", recorded_key)].append(recorded_key)
     planned = []
     folders = {}
     for found in sorted(files.values(), key=lambda found: min(old for old, _row in found)):
@@ -501,9 +503,16 @@ def plan(conn, settings, username=None, path_root=None):
     to_do = []
     for old, new, changes in planned:
         at_old, at_new = _where(old, new)
-        if targets[key(new)] > 1:
+        old_key, new_key = key(old), key(new)
+        # If both spellings are absent, the disk cannot show that they are
+        # distinct. Keep the other row's reservation.
+        missing_alias = not at_new and any(
+            recorded_key not in (old_key, new_key) and not os.path.lexists(files[recorded_key][0][0])
+            for recorded_key in recorded_spellings.get(unicodedata.normalize("NFC", new_key), ())
+        ) and not os.path.lexists(new)
+        if targets[new_key] > 1:
             result["left"].append({"file": old, "why": SAME_TARGET, "new_place": new})
-        elif key(new) in taken_by_rows and key(new) != key(old):
+        elif (new_key in files and new_key != old_key) or missing_alias:
             result["left"].append({"file": old, "why": RECORDED, "new_place": new})
         elif at_old and not _is_file(old):
             # a folder (on a disk that doesn't tell case apart, perhaps one

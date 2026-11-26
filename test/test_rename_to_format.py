@@ -977,13 +977,14 @@ def test_a_case_only_rename_already_made_on_a_disk_that_ignores_case_is_already_
 
 
 @pytest.mark.parametrize("owner_uses_nfd", [False, True], ids=["owner-nfc", "owner-nfd"])
-def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, owner_uses_nfd):
+@pytest.mark.parametrize("owner_on_disk", [True, False], ids=["present", "missing"])
+def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, owner_uses_nfd, owner_on_disk):
     library = Library(tmp_path)
     composed = "caf\N{LATIN SMALL LETTER E WITH ACUTE}.jpg"
     decomposed = unicodedata.normalize("NFD", composed)
     recorded_name, target_name = (decomposed, composed) if owner_uses_nfd else (composed, decomposed)
-    gone = library.add("missing.jpg", on_disk=False, content=b"same size")
-    owner = library.add(recorded_name, area="Messages", content=b"same size")
+    source = library.add("source.jpg", on_disk=not owner_on_disk, content=b"same size")
+    owner = library.add(recorded_name, area="Messages", on_disk=owner_on_disk, content=b"same size")
     library.formats(OLD_DIRS, target_name)
     config = json.loads(library.config.read_text(encoding="utf-8"))
     config["type_options"] = {"messages": {"dir_format": "alice/Posts/Images", "file_format": recorded_name}}
@@ -993,10 +994,11 @@ def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, own
 
     result = library.run(apply=True)
 
-    assert result["already_there"] == result["rows_changed"] == 0
-    assert result["left"] == [{"file": str(gone), "why": tool.RECORDED,
+    assert result["already_there"] == result["renamed"] == result["rows_changed"] == 0
+    assert result["left"] == [{"file": str(source), "why": tool.RECORDED,
                                "new_place": str(owner.with_name(target_name))}]
-    assert owner.read_bytes() == b"same size"
+    assert (owner if owner_on_disk else source).read_bytes() == b"same size"
+    assert not (source if owner_on_disk else owner).exists()
     assert library.rows() == rows
 
 

@@ -187,7 +187,7 @@ _CHAT_SUFFIX = "_chat.jsonl"
 def _base_with_suffix_room(base: pathlib.Path, suffix: str) -> pathlib.Path:
     import ofscraper.classes.placeholder as placeholder
 
-    stamp = re.search(r"_\d{8}_\d{6}$", base.name)
+    stamp = re.search(r"_?\d{8}_\d{6}$", base.name)
     keep = (stamp.group() if stamp else "") + suffix
     fitted = placeholder.final_path(base.with_name(base.name + suffix), keep_suffix=keep)
     return fitted.with_name(fitted.name.removesuffix(suffix))
