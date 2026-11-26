@@ -188,3 +188,140 @@ def test_wrapped_caption_keeps_line_breaks(monkeypatch, tmp_path):
     written = path.read_text(encoding="utf-8")
     assert written.replace("\n", " ") == caption
     assert "wordword" not in written
+
+# ----------------------------------------------------------------------
+# A caption can't change the folder a file is saved in (#739). A backslash
+# is a folder separator on Windows, and a tab or a carriage return can't be
+# in a Windows file name.
+# ----------------------------------------------------------------------
+
+import ntpath
+import re
+
+from naming_helpers import naming  # noqa: F401  (fixture)
+
+FOLDER = r"C:\data\a_creator\Posts"
+
+
+@pytest.mark.parametrize(
+    "caption",
+    [r"me \ you", r"up\..\..\..\and out", "a tab\there", "a return\r\nhere"],
+)
+def test_a_caption_cannot_name_another_folder(naming, caption):
+    text, (media,) = naming("{date} {filename} {text}.{ext}", caption)
+    for name in (text, media):
+        assert not re.search(r"[\\\x00-\x1f]", name)
+        # as Windows reads it: still a file in the folder it was meant for
+        assert ntpath.dirname(ntpath.normpath(ntpath.join(FOLDER, name))) == FOLDER
+
+
+def test_a_text_file_named_by_its_caption_stays_in_its_folder(naming):
+    # the default file_format: a text file's {filename} is its caption
+    text, _ = naming("{filename}.{ext}", r"..\..\..\elsewhere")
+    assert ntpath.dirname(ntpath.normpath(ntpath.join(FOLDER, text))) == FOLDER
+
+
+# A caption or name can't be "." or "..", or a name Windows keeps for a
+# device (CON, NUL, COM1, ...), as a whole folder or file name.
+import asyncio
+
+from naming_helpers import make_post
+
+
+@pytest.mark.parametrize("caption", [".", "..", "..."])
+def test_a_caption_of_dots_is_not_a_folder_name(naming, caption):
+    # "{text}/" makes the caption a folder: ".." would be the folder above
+    text, (media,) = naming("{text}/{filename}.{ext}", caption)
+    for name in (text, media):
+        assert not any(re.fullmatch(r"\.+", part) for part in re.split(r"[/\\]", name))
+        assert ntpath.dirname(ntpath.normpath(ntpath.join(FOLDER, name))).startswith(FOLDER + "\\")
+
+
+def test_a_caption_of_dots_does_not_name_another_save_folder(naming, monkeypatch, tmp_path):
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: "{text}")
+    naming("{filename}.{ext}", "..", text=False)
+    post = make_post("..")
+    folder = asyncio.run(placeholder.Placeholders(post.all_media[0], "jpg").getmediadir(create=False))
+    assert folder.parent == tmp_path / "data"
+
+
+@pytest.mark.parametrize("caption", ["CON", "nul", "Aux", "PRN", "COM1", "lpt9", "con.backup"])
+@pytest.mark.parametrize("file_format", ["{text}.{ext}", "{filename}.{ext}", "{text}/{date}.{ext}"])
+def test_a_windows_device_name_is_not_a_file_name(naming, monkeypatch, caption, file_format):
+    monkeypatch.setattr(placeholder, "_on_windows", lambda: True)
+    text, (media,) = naming(file_format, caption)
+    names = [text] if file_format == "{filename}.{ext}" else [text, media]
+    for name in names:
+        for part in re.split(r"[/\\]", name):
+            stem = part.split(".")[0].rstrip(" ")
+            assert stem.upper() not in WINDOWS_DEVICES, name
+
+
+@pytest.mark.parametrize("cls", ["Placeholders", "Textholders"])
+def test_a_device_name_is_kept_outside_windows(naming, monkeypatch, tmp_path, cls):
+    # Linux and macOS have no device names: a creator folder named "aux" or
+    # a caption "CON" keeps the name it had
+    monkeypatch.setattr(placeholder, "_on_windows", lambda: False)
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: "aux/{text}")
+    text, (media,) = naming("{text}.{ext}", "CON")
+    assert (text, media) == ("CON.txt", "CON.jpg")
+    post = make_post("CON")
+    ele = post.all_media[0] if cls == "Placeholders" else post
+    path = asyncio.run(getattr(placeholder, cls)(ele, "jpg").getmediadir(create=False))
+    assert path == tmp_path / "data" / "aux" / "CON"
+
+
+@pytest.mark.parametrize(
+    "system, windows", [("Windows", True), ("Linux", False), ("Darwin", False)]
+)
+def test_on_windows_follows_the_system(monkeypatch, system, windows):
+    monkeypatch.setattr(placeholder.platform, "system", lambda: system)
+    assert placeholder._on_windows() is windows
+
+
+def test_a_name_that_only_starts_like_a_device_is_unchanged(naming):
+    text, (media,) = naming("{text}.{ext}", "Contest")
+    assert (text, media) == ("Contest.txt", "Contest.jpg")
+
+
+WINDOWS_DEVICES = {"CON", "PRN", "AUX", "NUL"} | {
+    f"{d}{n}" for d in ("COM", "LPT") for n in range(1, 10)
+}
+
+
+@pytest.mark.parametrize("cls", ["Placeholders", "Textholders"])
+@pytest.mark.parametrize("dir_format,folder", [(".", ""), ("./{text}/.", "a caption")])
+def test_a_dir_format_of_a_dot_still_saves_in_the_save_location(naming, monkeypatch, tmp_path, cls, dir_format, folder):
+    # dir_format "." is how a user saves straight into save_location
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: dir_format)
+    naming("{filename}.{ext}", "a caption", text=False)
+    post = make_post("a caption")
+    ele = post.all_media[0] if cls == "Placeholders" else post
+    path = asyncio.run(getattr(placeholder, cls)(ele, "jpg").getmediadir(create=False))
+    assert path == tmp_path / "data" / folder
+
+
+@pytest.mark.parametrize("caption", [". ", ".. ", ". .", "..  ", " .", " .. "])
+def test_a_caption_of_dots_and_spaces_is_not_a_folder_name(naming, caption):
+    # Windows drops the trailing spaces and dots, leaving "." or ".." or nothing
+    text, (media,) = naming("{text}/{filename}.{ext}", caption)
+    for name in (text, media):
+        assert not any(re.fullmatch(r"\s*\.[.\s]*", part) for part in re.split(r"[/\\]", name))
+
+
+def test_a_file_format_of_a_dot_folder_is_kept(naming):
+    # "./" written in file_format is the folder itself, not a caption's dots
+    text, (media,) = naming("./{text}.{ext}", "a caption")
+    assert (text, media) == ("./a caption.txt", "./a caption.jpg")
+
+
+def test_a_dot_folder_file_format_is_kept_when_the_name_is_not_the_template_filled_in():
+    # a text file's name built otherwise than by filling in file_format (#738
+    # leaves {filename} out beside {text}): the "./" file_format writes before
+    # any placeholder is still its own, not a caption's dots
+    variables = {"text": "a caption", "filename": "a caption", "ext": "txt"}
+    out = placeholder._safe_name("./a caption.txt", "./{text} {filename}.{ext}", variables)
+    assert out == "./a caption.txt"
+    # a caption's own dots after it are still not a folder
+    out = placeholder._safe_name("./../a.txt", "./{text}/{filename}.{ext}", variables)
+    assert out == "./_/a.txt"

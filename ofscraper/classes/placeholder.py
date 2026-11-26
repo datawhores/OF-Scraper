@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import platform
 import re
 import string
 import arrow
@@ -247,6 +248,76 @@ class databasePlaceholder(basePlaceholder):
         self._metadata = input
 
 
+# names Windows keeps for devices, with or without an extension ("con.txt")
+_WINDOWS_DEVICE = re.compile(r"(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?=\s*(\.|$))")
+
+
+def _on_windows():
+    return platform.system() == "Windows"
+
+
+def _safe_parts(path, literal=None):
+    """path with no folder or file name that is only dots ("." or ".." would
+    be this folder or the one above; Windows drops trailing spaces and dots,
+    so ". " is "." and " ." nothing) or, on Windows, a device name ("CON"
+    gets "CON_"): a caption or a name can be either. literal marks each character the template itself wrote: a
+    name made only of those (dir_format ".", to save in save_location) is
+    kept."""
+    path = str(path)
+    literal = literal or [False] * len(path)
+    out, start = [], 0
+    for part in re.split(r"([/\\])", path):
+        own = all(literal[start : start + len(part)])
+        start += len(part)
+        if len(out) % 2:
+            pass
+        elif re.fullmatch(r"\s*\.[.\s]*", part) and not own:
+            part = "_"
+        elif _on_windows():
+            # only Windows has device names: elsewhere "aux" is a name
+            part = _WINDOWS_DEVICE.sub(r"\1_", part)
+        out.append(part)
+    return "".join(out)
+
+
+def _safe_format(template, variables):
+    """template.format(**variables) through _safe_parts, which keeps a "." the
+    template writes but not one a value (a caption) makes"""
+    text, literal = "", []
+    for lit, field, spec, conv in string.Formatter().parse(template):
+        text += lit
+        literal += [True] * len(lit)
+        if field is None:
+            continue
+        value = ("{" + field + (f"!{conv}" if conv else "") + f":{spec}}}").format(
+            **variables
+        )
+        text += value
+        literal += [False] * len(value)
+    return _safe_parts(text, literal)
+
+
+def _safe_name(out, template, variables):
+    """out through _safe_parts. When out is the template filled in, a "." the
+    template writes is kept, as in _safe_format. Otherwise the folders the
+    template writes before any placeholder ("./" in "./{text}.{ext}") are
+    kept when out starts with them."""
+    try:
+        same = out == template.format(**variables)
+    except Exception:
+        same = False
+    if same:
+        return _safe_format(template, variables)
+    try:
+        first = next(iter(string.Formatter().parse(template)), ("",))[0] or ""
+    except ValueError:
+        first = ""
+    prefix = first[: max(first.rfind("/"), first.rfind("\\")) + 1]
+    if prefix and out.startswith(prefix):
+        return _safe_parts(out, [True] * len(prefix) + [False] * (len(out) - len(prefix)))
+    return _safe_parts(out)
+
+
 class Placeholders(basePlaceholder):
     def __init__(self, ele, ext) -> None:
         super().__init__()
@@ -402,7 +473,9 @@ class Placeholders(basePlaceholder):
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
+        downloadDir = pathlib.Path(
+            _safe_format(data.get_dirformat(), self._variables)
+        )
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -427,9 +500,9 @@ class Placeholders(basePlaceholder):
         )
         out = None
         if ele.responsetype.capitalize() == "Profile":
-            out = f"{await ele.final_filename}.{ext}"
+            out = _safe_parts(f"{await ele.final_filename}.{ext}")
         else:
-            out = data.get_fileformat().format(**self._variables)
+            out = _safe_format(data.get_fileformat(), self._variables)
         out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
@@ -608,7 +681,9 @@ class Textholders(basePlaceholder):
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
 
-        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
+        downloadDir = pathlib.Path(
+            _safe_format(data.get_dirformat(), self._variables)
+        )
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -637,8 +712,8 @@ class Textholders(basePlaceholder):
         else:
             out = data.get_fileformat().format(**self._variables)
         log.debug(f"final filename path {out}")
-        self._filename = out
-        return out
+        self._filename = _safe_name(out, data.get_fileformat(), self._variables)
+        return self._filename
 
     @property
     def filepath(self):
