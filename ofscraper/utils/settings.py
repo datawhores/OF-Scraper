@@ -20,6 +20,7 @@ import arrow
 import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.data as config_data  # <-- IMPORTING THE REAL DATA.PY
+import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -96,6 +97,14 @@ def allow_dupes():
     """True when media in several posts is downloaded once per post
     (`allow_dupe_downloads`, merged in merged_settings)."""
     return bool(getattr(get_settings(), "allow_dupe_downloads", False))
+
+
+def skip_purchased_dupes():
+    """True when, with allow-dupes on, a Purchased copy of media that's in
+    another post isn't downloaded (--skip-purchased-dupes)."""
+    return allow_dupes() and bool(
+        getattr(get_settings(), "skip_purchased_dupes", False)
+    )
 
 
 def resetUserFilters():
@@ -191,6 +200,9 @@ def merged_settings():
     # --- File & Download Settings ---
     merged.text_type = args.text_type or config_data.get_textType()
     merged.space_replacer = args.space_replacer or config_data.get_spacereplacer()
+    if not naming_check.space_replacer_ok(merged.space_replacer):
+        # "/" would make folders, and a backslash or ":" can't be in a name
+        merged.space_replacer = " "
     merged.text_length = (
         args.textlength
         if args.textlength is not None
@@ -228,6 +240,7 @@ def merged_settings():
     merged.client_id = args.client_id or config_data.get_client_id()
     merged.hash = config_data.get_hash()
     merged.post_script = args.post_script or config_data.get_post_script()
+    merged.alert_script = getattr(args, "alert_script", None) or config_data.get_alert_script()
     merged.after_action_script = (
         args.after_action_script or config_data.get_after_action_script()
     )
@@ -266,6 +279,7 @@ def merged_settings():
         if allow_dupe_downloads is None
         else allow_dupe_downloads
     )
+    merged.skip_purchased_dupes = bool(getattr(args, "skip_purchased_dupes", False))
 
     # --- CLI Overrides ---
     merged.text = args.text or args.text_only

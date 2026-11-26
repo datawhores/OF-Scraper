@@ -80,3 +80,185 @@ def test_table_time_field_accepts_decimal_seconds():
     assert [i.value for i in inputs] == ["1", "30", ""]
     field.update_table_min(90.7)
     assert [i.value for i in inputs] == ["", "1", "30"]
+
+
+# --original and truncation_default: false leave a long path as the template
+# gives it (#740).
+
+import asyncio
+
+import ofscraper.classes.placeholder as placeholder
+from naming_helpers import make_post, naming  # noqa: F401  (fixture)
+
+LONG_CAPTION = " ".join(["word"] * 120)  # 599 characters: over every system's limit
+
+
+def _long_paths(naming, *options):
+    """The path of a long-captioned post's media file and text file."""
+    naming("{text}.{ext}", LONG_CAPTION, *options)  # applies the settings
+    post = make_post(LONG_CAPTION)
+    return [
+        asyncio.run(holder.init(create=False)).filepath
+        for holder in (
+            placeholder.Placeholders(post.all_media[0], "jpg"),
+            placeholder.Textholders(post, "txt"),
+        )
+    ]
+
+
+def test_original_leaves_a_long_name_whole(naming):
+    media, text = _long_paths(naming, "--original")
+    assert (media.name, text.name) == (f"{LONG_CAPTION}.jpg", f"{LONG_CAPTION}.txt")
+
+
+def test_a_long_name_is_shortened_by_default(naming):
+    media, text = _long_paths(naming)
+    assert len(media.name) < len(LONG_CAPTION) and media.suffix == ".jpg"
+    assert len(text.name) < len(LONG_CAPTION) and text.suffix == ".txt"
+
+
+# A folder longer than Windows' MAX_PATH: shortening it can't work (#737), so
+# with --original nothing may try to.
+LONG_FOLDER = "{date}/" + "/".join(["d" * 60] * 5)
+
+
+def _long_paths_on_disk():
+    """Whether this system can create a path over 260 characters: on Windows
+    only with LongPathsEnabled set."""
+    import sys
+
+    if sys.platform != "win32":
+        return True
+    import winreg
+
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\FileSystem"
+        ) as key:
+            return winreg.QueryValueEx(key, "LongPathsEnabled")[0] == 1
+    except OSError:
+        return False
+
+
+needs_long_paths = pytest.mark.skipif(
+    not _long_paths_on_disk(), reason="Windows without LongPathsEnabled can't create these"
+)
+
+
+@pytest.fixture
+def on_windows(monkeypatch):
+    monkeypatch.setattr(placeholder.paths.platform, "system", lambda: "Windows")
+
+
+def test_original_leaves_the_folder_of_a_long_path_whole(naming, monkeypatch, on_windows):
+    naming("{text}.{ext}", "short", "--original")
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: LONG_FOLDER)
+    post = make_post("short")
+    media = asyncio.run(placeholder.Placeholders(post.all_media[0], "jpg").init(create=False))
+    text = asyncio.run(placeholder.Textholders(post, "txt").init(create=False))
+    assert media.trunicated_filedir == media.filepath.parent
+    assert text.filedir == text.filepath.parent
+    assert len(str(media.filepath)) > 300
+
+
+@needs_long_paths
+def test_original_leaves_a_temp_file_in_a_long_folder_whole(naming, monkeypatch, on_windows):
+    naming("{text}.{ext}", "short", "--original")
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: LONG_FOLDER)
+    post = make_post("short")
+    temp = asyncio.run(
+        placeholder.tempFilePlaceholder(post.all_media[0], "pic0.part").init()
+    )
+    assert temp.tempfilepath.name == "pic0.part"
+    assert temp.tempfilepath.parent.is_dir() and len(str(temp.tempfilepath)) > 300
+
+
+@pytest.mark.parametrize("options", [(), ("--original",)])
+def test_a_clashing_name_gets_its_media_id_whole_only_with_original(
+    naming, tmp_path, monkeypatch, options
+):
+    import ofscraper.commands.scraper.actions.utils.paths as action_paths
+
+    naming("{text}.{ext}", "short", *options)
+    # Linux's rules, which read the path as this system does, with a 100-byte
+    # name limit: the name fits it exactly, so with "_71" added it gets
+    # shortened, unless --original
+    monkeypatch.setattr(placeholder.paths.platform, "system", lambda: "Linux")
+    monkeypatch.setenv("UTF", "utf-8")
+    monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "100")
+    target = tmp_path / ("a" * 96 + ".jpg")
+    target.write_bytes(b"another file")
+    temp = tmp_path / "dl.part"
+    temp.write_bytes(b"this download")
+    media = SimpleNamespace(id=71, post_id=8, model_id=1, username="u")
+    got = action_paths.moveHelper(temp, target, media)
+    whole = target.with_name(f"{target.stem}_71.jpg")
+    assert (got == whole) == bool(options)
+    assert got.suffix == ".jpg" and got.read_bytes() == b"this download"
+
+
+def _default_settings(naming, monkeypatch):
+    """Settings as a run builds them from an empty config.json and no
+    options: trunicate is the bool True, as get_truncation gives it."""
+    naming("{text}.{ext}", "short")
+    assert placeholder.settings.get_settings().trunicate is True
+    monkeypatch.setattr(placeholder.paths.platform, "system", lambda: "Linux")
+
+
+def test_default_settings_shorten_a_long_path(naming, monkeypatch):
+    _default_settings(naming, monkeypatch)
+    out = placeholder.final_path(f"/data/{'a' * 400}.jpg")
+    assert out.suffix == ".jpg" and len(out.name) < 400
+
+
+@pytest.mark.parametrize("holder", ["Placeholders", "Textholders"])
+def test_default_settings_shorten_the_saved_path(naming, monkeypatch, holder):
+    # the path a download is saved at reads the flag the same way
+    _default_settings(naming, monkeypatch)
+    obj = getattr(placeholder, holder).__new__(getattr(placeholder, holder))
+    obj._filepath = f"/data/{'a' * 400}.jpg"
+    out = obj.trunicated_filepath
+    assert out.suffix == ".jpg" and len(out.name) < 400
+
+
+def _kept_by_block_ads(monkeypatch, texts):
+    """The texts --block-ads lets through, with the real settings and filter."""
+    from ofscraper.filters.media import filters
+    from ofscraper.utils.args.main import AutoDotDict
+
+    args = AutoDotDict(_parse(["--block-ads"]))
+    args.command = "OF-Scraper"
+    monkeypatch.setattr(settings.read_args, "retriveArgs", lambda *a, **k: args)
+    merged = settings.merged_settings()
+    monkeypatch.setattr(filters.settings, "get_settings", lambda: merged)
+    media = [SimpleNamespace(text=t) for t in texts]
+    return [m.text for m in filters.post_neg_text_filter(media)]
+
+
+@pytest.mark.parametrize("text", [
+    # a creator's own sign-off on ordinary posts
+    "new set 💦 I've got a special FREE trial for you 😘. Click the link",
+    # hashtags that only start with an ad word
+    "#adult #adorable #advent calendar",
+    # "user promo" in ordinary prose, not a promo line or a mention
+    "every user promo code I tried worked",
+    "thanks to each user promo-sharing their favourite set",
+])
+def test_block_ads_keeps_ordinary_posts(monkeypatch, text):
+    assert _kept_by_block_ads(monkeypatch, [text]) == [text]
+
+
+@pytest.mark.parametrize("text", [
+    "#ad go follow her", "#ads", "#AD", "check this out #sponsored", "#promotion!",
+    "huge giveaway this week", "shoutout to my friend", "paid endorsement",
+    # any case: an upper-case letter in the pattern made the whole filter
+    # case-sensitive, so these got through
+    "#Ad go follow her", "#Sponsored", "Giveaway time", "SHOUTOUT",
+    "user promo for a friend", "@someuser promo", "@user promo",
+    "new set!\nUser promo: go follow her",
+    # longer ad hashtags still count
+    "#advert", "#advertisement", "#advertising", "#sponsoredpost",
+    "#promotions",
+])
+def test_block_ads_still_blocks_ads(monkeypatch, text):
+    assert _kept_by_block_ads(monkeypatch, [text]) == []

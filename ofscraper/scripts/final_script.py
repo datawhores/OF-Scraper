@@ -5,16 +5,22 @@ import os
 import traceback
 
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.managers.manager as manager
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
 
 
-def final_script():
+def final_script(summary=None):
+    """Run post_script with the processed and unprocessed users per action,
+    and the run record (run_record.py) as ``summary``."""
     log = logging.getLogger("shared")
     script_path=settings.get_settings().post_script
     if not script_path:
         log.debug("Final script is disabled; skipping excution")
+        return
+    if dry_run.active():
+        log.info("Dry run: not running the post script")
         return
     elif not os.path.exists(script_path):
         log.info(
@@ -49,6 +55,7 @@ def final_script():
             "scrape_paid_unprocessed_users": list(
                 model_manager.get_unprocessed(scrape_paid_activity)
             ),
+            "summary": summary,
         }
         # Dump JSON to a string, no indent for efficiency, ensure_ascii=False for non-ASCII chars
         input_json_str = json.dumps(payload_data, indent=None, ensure_ascii=False)

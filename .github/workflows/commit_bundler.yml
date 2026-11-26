@@ -130,6 +130,40 @@ jobs:
           echo "one_file_path=dist/${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
           echo "one_file_name=${EXE_NAME}${EXE_EXT}" >> $GITHUB_OUTPUT
 
+      - name: Verify offline tools in One-File executable
+        if: steps.build_onefile.outcome == 'success'
+        shell: bash
+        timeout-minutes: 10
+        run: |
+          # The tool list comes from ofscraper/commands/tools.py, so a new tool is
+          # checked without editing this step. Every tool is tried before the step
+          # fails, so one log shows all the tools the bundle is missing.
+          # A throwaway HOME keeps --help away from any real config.
+          # tr drops the \r that Python on Windows writes before the newline, which
+          # $() would otherwise leave on the last tool name.
+          EXE="${{ steps.build_onefile.outputs.one_file_path }}"
+          TOOLS=$(PYTHONPATH=. .venv/${{ runner.os == 'Windows' && 'Scripts/python.exe' || 'bin/python' }} -c "import ofscraper.commands.tools as t; print(' '.join(t.TOOLS))" | tr -d '\r')
+          SMOKE_HOME="$RUNNER_TEMP/ofscraper-smoke-home"
+          mkdir -p "$SMOKE_HOME"
+          failed=""
+          for tool in $TOOLS; do
+            echo "::group::ofscraper $tool --help"
+            if HOME="$SMOKE_HOME" USERPROFILE="$SMOKE_HOME" "$EXE" "$tool" --help; then
+              echo "ok: $tool"
+            else
+              failed="$failed $tool"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -z "$TOOLS" ]; then
+            echo "::error::no offline tools found in ofscraper/commands/tools.py"
+            exit 1
+          fi
+          if [ -n "$failed" ]; then
+            echo "::error::offline tools failed in the one-file executable:$failed"
+            exit 1
+          fi
+
       - name: Upload One-File Artifact
         uses: actions/upload-artifact@v7
         with:

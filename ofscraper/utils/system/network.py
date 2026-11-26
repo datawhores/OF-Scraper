@@ -47,7 +47,15 @@ def check_cdm():
         import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 
         message = CDRM_DEPRECATED
-        if keyhelpers.cdrm_unavailable():
+        url = str(keyhelpers.of_env.getattr("CDRM") or "").strip()
+        if keyhelpers.cdrm_unreadable(url):
+            # an address that can't be read (#819): named without its value,
+            # which can hold a login
+            message = (
+                f"{keyhelpers.CDRM_UNREADABLE} DRM videos are skipped before "
+                f"download. {CDRM_DEPRECATED}"
+            )
+        elif keyhelpers.cdrm_unavailable():
             # the default address: nothing is sent, and the videos aren't
             # downloaded, as they can't get a key (#681)
             message = (

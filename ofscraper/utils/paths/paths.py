@@ -1,9 +1,11 @@
 import logging
+import ntpath
 import os
 import pathlib
 import platform
 import re
 import shutil
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -12,6 +14,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 
 console = console_.get_shared_console()
 homeDir = pathlib.Path.home()
@@ -43,6 +46,8 @@ def temp_cleanup():
 
     if stop.requested.is_set():
         return
+    if dry_run.active():
+        return  # a dry run deletes nothing
     if not of_env.getattr("BATCH_TEMPFILE_CLEANUP"):
         return
     if not settings.get_settings().auto_resume:
@@ -73,80 +78,96 @@ def truncate(path):
         return pathlib.Path(path)
 
 
-def _windows_truncateHelper(path):
-    path = pathlib.Path(os.path.normpath(path))
-    if get_string_byte_size_windows(path) <= of_env.getattr("WINDOWS_MAX_PATH_BYTES"):
-        return path
-    path = pathlib.Path(path)
-    dir = path.parent
-    file = path.name
-    match = re.search(r"_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
-        r"\.[a-z4]*$", path.name, re.IGNORECASE
+def _split_ext(name):
+    """The name without its extension, and the extension (with a "_1"-style
+    number before it, which a cut must keep). Taken off the end only, and
+    at most 10 characters long, so a caption's ".word..." tail isn't one."""
+    match = re.search(r"_[0-9]+\.[a-z0-9]{1,10}$", name, re.IGNORECASE) or re.search(
+        r"\.[a-z0-9]{1,10}$", name, re.IGNORECASE
     )
-    if match:
-        ext = match.group(0)
-    else:
-        ext = ""
-    file = re.sub(ext, "", path.name)
-    max_bytes = (
-        of_env.getattr("WINDOWS_MAX_PATH_BYTES")
-        - get_string_byte_size_windows(ext)
-        - get_string_byte_size_windows(dir)
-    )
-    if max_bytes <= 0:
-        raise (f"dir to larger then max bytes {path}")
-    low, high = 0, len(file)
+    ext = match.group(0) if match else ""
+    return (name[: -len(ext)] if ext else name), ext
+
+
+def _longest_fitting(text, size, max_size):
+    """The longest start of `text` whose `size` is at most `max_size`."""
+    low, high = 0, len(text)
     while low < high:
-        mid = (low + high) // 2
-        if get_string_byte_size_windows(file[:mid]) <= max_bytes:
-            low = mid + 1
+        mid = (low + high + 1) // 2
+        if size(text[:mid]) <= max_size:
+            low = mid
         else:
-            high = mid
-    newFile = f"{file[:high]}{ext}"
-    final_path = pathlib.Path(dir, newFile)
+            high = mid - 1
+    return text[:low]
+
+
+def _windows_truncateHelper(path):
+    # read by Windows' rules whatever system this runs on (the same thing on
+    # Windows), so the tests check it on Linux too
+    path = pathlib.PureWindowsPath(ntpath.normpath(path))
+    limit = of_env.getattr("WINDOWS_MAX_PATH_BYTES")
+    if get_string_byte_size_windows(path) <= limit:
+        return pathlib.Path(str(path))
+    dir = path.parent
+    file, ext = _split_ext(path.name)
+    # the whole path counts: the folder, the separator after it (a drive or
+    # share root such as C:\ already ends with one), the extension
+    sep = "" if str(dir).endswith(ntpath.sep) else ntpath.sep
+    max_bytes = (
+        limit
+        - get_string_byte_size_windows(dir)
+        - get_string_byte_size_windows(sep)
+        - get_string_byte_size_windows(ext)
+    )
+    name = _longest_fitting(file, get_string_byte_size_windows, max_bytes)
+    if not ext:
+        # Windows drops trailing spaces and dots from a name
+        name = name.rstrip(" .")
+    if not name:
+        raise ValueError(f"the folder is too long for any file name to fit: {path}")
+    newFile = f"{name}{ext}"
+    final_path = pathlib.PureWindowsPath(dir, newFile)
     log.debug(
         f"path: {path} filepath bytesize: {get_string_byte_size_windows(final_path)}"
     )
-    return final_path
+    return pathlib.Path(str(final_path))
 
 
 def _mac_truncateHelper(path):
+    # macOS limits each name, not the path, to 255 bytes of UTF-8
     path = pathlib.Path(os.path.normpath(path))
-    if len(str(path)) <= of_env.getattr("MAC_MAX_PATH"):
-        return path
     dir = path.parent
-    match = re.search(r"_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
-        r"\.[a-z4]*$", path.name, re.IGNORECASE
-    )
-    ext = match.group(0) if match else ""
-    file = re.sub(ext, "", path.name)
-    maxlength = of_env.getattr("MAC_MAX_PATH") - len(ext)
-    newFile = f"{file[:maxlength]}{ext}"
-    final = pathlib.Path(dir, newFile)
-    log.debug(f"path: {final} path size: {len(str(final))}")
-    log.debug(f"path: {final} filename size: {len(str(final.name))}")
+    file, ext = _split_ext(path.name)
+    max_bytes = of_env.getattr("MAC_MAX_PATH") - _mac_name_size(ext)
+    name = _longest_fitting(file, _mac_name_size, max_bytes)
+    if (file and not name) or max_bytes < 0:
+        raise ValueError(f"the name limit leaves no room for any of the name: {path}")
+    newFile = f"{name}{ext}"
+    log.debug(f"path: {path} filename bytesize: {_mac_name_size(newFile)}")
     return pathlib.Path(dir, newFile)
+
+
+def _mac_name_size(text):
+    """A name's size by both macOS file systems' limits: APFS counts bytes of
+    UTF-8; HFS+ (still used on external drives) counts UTF-16 units of the
+    name decomposed (NFD), where "ǖ" is 3 units but 2 bytes. The larger of
+    the two, so a name that fits fits on either."""
+    text = str(text)
+    decomposed = unicodedata.normalize("NFD", text)
+    return max(len(text.encode("utf-8")), len(decomposed.encode("utf-16-le")) // 2)
 
 
 def _linux_truncateHelper(path):
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
-    match = re.search(r"_[0-9]+\.[a-z4]*$", path.name, re.IGNORECASE) or re.search(
-        r"\.[a-z4]*$", path.name, re.IGNORECASE
-    )
-    ext = match.group(0) if match else ""
-    file = re.sub(ext, "", path.name)
+    file, ext = _split_ext(path.name)
     max_bytes = of_env.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size_unix(
         ext
     )
-    low, high = 0, len(file)
-    while low < high:
-        mid = (low + high) // 2
-        if get_string_byte_size_unix(file[:mid]) <= max_bytes:
-            low = mid + 1
-        else:
-            high = mid
-    newFile = f"{file[:high]}{ext}"
+    name = _longest_fitting(file, get_string_byte_size_unix, max_bytes)
+    if (file and not name) or max_bytes < 0:
+        raise ValueError(f"the name limit leaves no room for any of the name: {path}")
+    newFile = f"{name}{ext}"
     log.debug(f"path: {path} filename bytesize: {get_string_byte_size_unix(newFile)}")
     return pathlib.Path(dir, newFile)
 
@@ -184,35 +205,24 @@ def get_string_byte_size_unix(text):
 
 def get_string_byte_size_windows(text):
     """
-    This function estimates the byte size of a string considering ASCII characters.
+    The size of a string as Windows counts a path: 2 bytes for each UTF-16
+    code unit, so 4 for a character outside the Basic Multilingual Plane
+    (an emoji) and 2 for any other. `UTF` isn't used here: the limit,
+    WINDOWS_MAX_PATH_BYTES, is in these units, so any other count would let
+    a path past MAX_PATH.
 
     Args:
         text: The string to analyze.
 
     Returns:
-        The estimated byte size of the string.
+        The byte size of the string.
     """
-    total_size = 0
-    text = str(text)
-    normal_char_size = of_env.getattr("NORMAL_CHAR_SIZE_WINDOWS")
-    special_char_size = of_env.getattr("SPECIAL_CHAR_SIZE_WINDOWS")
-    utf = of_env.getattr("UTF")
-    if utf:
-        return len(text.encode(utf))
-    for char in text:
-        try:
-            if ord(char) < 128:
-                total_size += normal_char_size  # 2 bytes for ASCII characters
-            else:
-                total_size += special_char_size
-        except ValueError:
-            total_size += (
-                special_char_size  # 4 bytes for non-ASCII characters (assumption)
-            )
-    return total_size
+    return len(str(text).encode("utf-16-le"))
 
 
 def cleanDB():
+    if dry_run.active():
+        return  # a dry run deletes nothing
     try:
         pathlib.Path(common_paths.get_profile_path() / "db.lock").unlink(
             missing_ok=True

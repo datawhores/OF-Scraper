@@ -175,8 +175,12 @@ def with_media_id(path, media_id, n=1):
 def _candidates(path, media_id):
     yield path
     for n in range(1, MAX_CANDIDATES):
+        candidate = with_media_id(path, media_id, n)
+        if not getattr(settings.get_settings(), "trunicate", True):
+            yield candidate  # --original: left whole, like the name it clashed with
+            continue
         # a trailing _<digits> survives truncation, but check the result anyway
-        yield pathlib.Path(path_utils.truncate(with_media_id(path, media_id, n)))
+        yield pathlib.Path(path_utils.truncate(candidate))
 
 
 def _same_content(a, b):

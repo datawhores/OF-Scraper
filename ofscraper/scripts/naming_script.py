@@ -5,6 +5,7 @@ import subprocess
 import traceback
 import arrow
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.utils.config.data as config_data
 from ofscraper.utils.system.subprocess import async_run # Changed to async_run
 import ofscraper.utils.of_env.of_env as env
@@ -21,6 +22,8 @@ async def naming_script(dir, file, ele): # Made async
             "naming script is disabled via settings; skipping excution"
         )
         return
+    if dry_run.active():
+        return  # a dry run runs no scripts; its paths say so
 
     elif not os.path.exists(script_path):
         log.info(

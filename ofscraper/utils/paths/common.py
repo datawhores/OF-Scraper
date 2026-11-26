@@ -16,6 +16,11 @@ def getcachepath():
     name = "cache_json" if data.cache_mode_helper() == "json" else "cache_sql"
     path = profile / f"{name}"
     path = pathlib.Path(os.path.normpath(path))
+    import ofscraper.utils.dry_run as dry_run
+
+    if dry_run.active():
+        # a dry run reads and writes a throwaway copy (utils/dry_run.py)
+        return dry_run.redirect(path, folder=True)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -118,13 +123,8 @@ def get_save_location(config=None):
     if config is False:
         return of_env.getattr("SAVE_PATH_DEFAULT")
     config = config or config_file.open_config()
-    # a file_options that isn't a dict, e.g. a hand-edited null, is empty
-    file_options = config.get("file_options")
-    if not isinstance(file_options, dict):
-        file_options = {}
     return data.strip_path_quotes(
-        config.get("save_location")
-        or file_options.get("save_location")
+        data._first(config, "save_location", "file_options.save_location")
         or of_env.getattr("SAVE_PATH_DEFAULT")
     )
 

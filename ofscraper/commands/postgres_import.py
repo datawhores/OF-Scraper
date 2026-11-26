@@ -2,7 +2,8 @@
 
     python -m ofscraper.commands.postgres_import FOLDER [--apply]
 
-FOLDER is searched for user_data.db files (for example <profile>/.data). The
+FOLDER is searched for user_data.db files (for example <profile>/.data), or
+is one database file, such as the one Merge Databases writes. The
 PostgreSQL database is the one OFSC_DATABASE_URL names, as for the scraper
 itself (see POSTGRESQL.md).
 
@@ -17,6 +18,7 @@ import argparse
 import asyncio
 import contextlib
 import math
+import os
 import re
 import shutil
 import sqlite3
@@ -666,20 +668,28 @@ def run(folder, apply=False, skip_bad=False, staging=None, target=None, out=prin
     """The command. Returns its exit code: 0 when everything found was (or
     could be) brought in."""
     folder = Path(folder)
-    if not folder.is_dir():
-        out(f"There is no folder at {folder}.")
+    if folder.is_file():
+        # one file, such as the one Merge Databases writes
+        paths = [folder]
+    elif folder.is_dir():
+        paths = find(folder)
+    else:
+        out(f"There is no file or folder at {folder}.")
         return 2
-    paths = find(folder)
     if not paths:
         out(f"No user_data.db files were found under {folder}.")
         return 2
+    # one file (as Merge Databases writes) is spoken of as one
+    one = len(paths) == 1
+    the_files = "the file" if one else "the files"
     if apply and not (target or postgres.enabled()):
         out(
             f"{postgres.URL_KEY} isn't set, so there is no PostgreSQL database"
-            " to bring the files into. See POSTGRESQL.md."
+            f" to bring {the_files} into. See POSTGRESQL.md."
         )
         return 2
-    out(f"Found {_many(len(paths), 'user_data.db file')} under {folder}.")
+    if folder.is_dir():
+        out(f"Found {_many(len(paths), 'user_data.db file')} under {folder}.")
     # a new folder of this run's own, so that nothing already in the staging
     # folder is touched, and nothing of this run is left
     if staging is not None:
@@ -693,7 +703,11 @@ def run(folder, apply=False, skip_bad=False, staging=None, target=None, out=prin
             target.check()
             # the driver's own errors, now that it is known to be installed
             refusals += tuple(target.errors)
-        out("Copying each file and checking the copy (the files aren't opened)...")
+        out(
+            "Copying the file and checking the copy (the file isn't opened)..."
+            if one
+            else "Copying each file and checking the copy (the files aren't opened)..."
+        )
         sources = examine(paths, staging)
         if target:
             target.open(read_only=True)
@@ -704,8 +718,8 @@ def run(folder, apply=False, skip_bad=False, staging=None, target=None, out=prin
         good, bad = report(sources, out)
         if not target:
             out(
-                f"\n{postgres.URL_KEY} isn't set: the files were checked, and"
-                " PostgreSQL wasn't."
+                f"\n{postgres.URL_KEY} isn't set: {the_files}"
+                f" {'was' if one else 'were'} checked, and PostgreSQL wasn't."
             )
         if not good:
             out("\nThere is nothing to bring in.")
@@ -745,7 +759,11 @@ def run(folder, apply=False, skip_bad=False, staging=None, target=None, out=prin
                 f" {'is' if len(bad) == 1 else 'are'} still only in SQLite."
             )
         else:
-            out("Done. The user_data.db files are unchanged and are no longer used.")
+            out(
+                "Done. The user_data.db file is unchanged and is no longer used."
+                if one
+                else "Done. The user_data.db files are unchanged and are no longer used."
+            )
         return 1 if bad else 0
     except Unconfirmed:
         out(
@@ -762,12 +780,24 @@ def run(folder, apply=False, skip_bad=False, staging=None, target=None, out=prin
         shutil.rmtree(staging, ignore_errors=True)
 
 
+def migrate(path):
+    """``ofscraper --migrate-sqlite-to-postgres PATH``: bring a database file
+    (or a folder of them) into PostgreSQL in one step, as ``--apply`` does.
+    Exits with the command's code when anything stood in the way."""
+    code = run(path, apply=True)
+    if code:
+        raise SystemExit(code)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(
-        "folder", type=Path, help="folder to search for user_data.db files"
+        "folder",
+        type=Path,
+        help="folder to search for user_data.db files, or one database file",
     )
     parser.add_argument(
         "--apply",

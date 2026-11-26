@@ -21,6 +21,7 @@ class MetadataStats:
         self.changed_audio = 0
         self.changed_photo = 0
         self.unchanged_count = 0
+        self.skipped_count = 0
         self.failed_count = 0
 
     @property
@@ -55,6 +56,11 @@ class MetadataStats:
             if self.unchanged_count > 0
             else "0 items unchanged"
         )
+        skipped_str = (
+            f"[bold yellow]{self.skipped_count} skipped[/bold yellow]"
+            if self.skipped_count > 0
+            else "0 skipped"
+        )
         failed_str = (
             f"[bold red]{self.failed_count} failed[/bold red]"
             if self.failed_count > 0
@@ -64,7 +70,7 @@ class MetadataStats:
         return (
             f"({self.total_changed} changed media item total "
             f"[{videos_str}, {audios_str}, {photos_str}], "
-            f"{unchanged_str}, {failed_str})"
+            f"{unchanged_str}, {skipped_str}, {failed_str})"
         )
 
 
@@ -522,40 +528,83 @@ class StatsManager:
 
         return self._stats[username][activity_enum]
     
+    def failed_count(self) -> int:
+        """Total failed items recorded across all users and activities."""
+        total = 0
+        for activity_dict in self._stats.values():
+            for stat_obj in activity_dict.values():
+                total += getattr(stat_obj, "failed_count", 0)
+                total += getattr(stat_obj, "posts_failed", 0)
+        return total
+
+    def totals(self, per_creator=False) -> dict:
+        """The run's totals across all creators and activities, as a plain dict.
+
+        ``downloads``: videos, audios, photos, skipped, failed, stopped and
+        bytes; ``metadata``: videos, audios and photos changed, unchanged and
+        failed; ``text``: saved, skipped and failed; ``creators_active``: how
+        many creators had any activity. With per_creator, ``per_creator`` also
+        lists each creator's downloads (username, new_files, bytes, failed),
+        in name order.
+        """
+        downloads = dict.fromkeys(
+            ("videos", "audios", "photos", "skipped", "failed", "stopped", "bytes"), 0
+        )
+        metadata = dict.fromkeys(("videos", "audios", "photos", "unchanged", "failed"), 0)
+        text = dict.fromkeys(("saved", "skipped", "failed"), 0)
+        active = set()
+        creators = {}
+        for username, activity_dict in self._stats.items():
+            for stat_obj in activity_dict.values():
+                if stat_obj.has_changes:
+                    active.add(username)
+                if isinstance(stat_obj, DownloadStats):
+                    downloads["videos"] += stat_obj.video_count
+                    downloads["audios"] += stat_obj.audio_count
+                    downloads["photos"] += stat_obj.photo_count
+                    downloads["skipped"] += stat_obj.skipped_count
+                    downloads["failed"] += stat_obj.failed_count
+                    downloads["stopped"] += stat_obj.stopped_count
+                    downloads["bytes"] += stat_obj.total_bytes
+                    mine = creators.setdefault(
+                        username,
+                        {"username": username, "new_files": 0, "bytes": 0, "failed": 0},
+                    )
+                    mine["new_files"] += stat_obj.total_count
+                    mine["bytes"] += stat_obj.total_bytes
+                    mine["failed"] += stat_obj.failed_count
+                elif isinstance(stat_obj, MetadataStats):
+                    metadata["videos"] += stat_obj.changed_video
+                    metadata["audios"] += stat_obj.changed_audio
+                    metadata["photos"] += stat_obj.changed_photo
+                    metadata["unchanged"] += stat_obj.unchanged_count
+                    metadata["failed"] += stat_obj.failed_count
+                elif isinstance(stat_obj, TextStats):
+                    text["saved"] += stat_obj.text_count
+                    text["skipped"] += stat_obj.skipped_count
+                    text["failed"] += stat_obj.failed_count
+        result = {
+            "downloads": downloads,
+            "metadata": metadata,
+            "text": text,
+            "creators_active": len(active),
+        }
+        if per_creator:
+            result["per_creator"] = [creators[name] for name in sorted(creators)]
+        return result
+
     def print_global_summary(self):
         """Builds and logs a grand total summary across all models and activities."""
         if not self._stats:
             return
 
-        # 1. Setup Aggregators
-        dl_vids = dl_auds = dl_pics = dl_skip = dl_fail = dl_stop = dl_bytes = 0
-        meta_vids = meta_auds = meta_pics = meta_unchanged = meta_fail = 0
-        text_count = text_skip = text_fail = 0
-
-        # 2. Accumulate Totals from all users in the defaultdict 
-        for _username, activity_dict in self._stats.items():
-            for _activity, stat_obj in activity_dict.items():
-                
-                if isinstance(stat_obj, DownloadStats):
-                    dl_vids += stat_obj.video_count
-                    dl_auds += stat_obj.audio_count
-                    dl_pics += stat_obj.photo_count
-                    dl_skip += stat_obj.skipped_count
-                    dl_fail += stat_obj.failed_count
-                    dl_stop += stat_obj.stopped_count
-                    dl_bytes += stat_obj.total_bytes
-                    
-                elif isinstance(stat_obj, MetadataStats):
-                    meta_vids += stat_obj.changed_video
-                    meta_auds += stat_obj.changed_audio
-                    meta_pics += stat_obj.changed_photo
-                    meta_unchanged += stat_obj.unchanged_count
-                    meta_fail += stat_obj.failed_count
-                    
-                elif isinstance(stat_obj, TextStats):
-                    text_count += stat_obj.text_count
-                    text_skip += stat_obj.skipped_count
-                    text_fail += stat_obj.failed_count
+        totals = self.totals()
+        d, m, t = totals["downloads"], totals["metadata"], totals["text"]
+        dl_vids, dl_auds, dl_pics = d["videos"], d["audios"], d["photos"]
+        dl_skip, dl_fail, dl_stop, dl_bytes = d["skipped"], d["failed"], d["stopped"], d["bytes"]
+        meta_vids, meta_auds, meta_pics = m["videos"], m["audios"], m["photos"]
+        meta_unchanged, meta_fail = m["unchanged"], m["failed"]
+        text_count, text_skip, text_fail = t["saved"], t["skipped"], t["failed"]
 
 
         # 4. Build the Output String
@@ -577,7 +626,14 @@ class StatsManager:
             output_lines.append(f" ➜ FAILED:      {dl_fail} overall")
             output_lines.append(f" ➜ STOPPED:     {dl_stop} overall")
 
-        if any([meta_vids, meta_auds, meta_pics, meta_unchanged, meta_fail]):
+        # metadata not attempted, summed apart from the totals above
+        meta_skip = sum(
+            stat_obj.skipped_count
+            for activity_dict in self._stats.values()
+            for stat_obj in activity_dict.values()
+            if isinstance(stat_obj, MetadataStats)
+        )
+        if any([meta_vids, meta_auds, meta_pics, meta_unchanged, meta_skip, meta_fail]):
             total_meta = meta_vids + meta_auds + meta_pics
             output_lines.append("\n--- METADATA UPDATES ---")
             output_lines.append(f" ➜ TOTAL CHANGED: {total_meta}")
@@ -585,6 +641,7 @@ class StatsManager:
             output_lines.append(f" ➜ AUDIOS:        {meta_auds} changed")
             output_lines.append(f" ➜ IMAGES:        {meta_pics} changed")
             output_lines.append(f" ➜ UNCHANGED:     {meta_unchanged} overall")
+            output_lines.append(f" ➜ SKIPPED:       {meta_skip} overall")
             output_lines.append(f" ➜ FAILED:        {meta_fail} overall")
 
         if any([text_count, text_skip, text_fail]):

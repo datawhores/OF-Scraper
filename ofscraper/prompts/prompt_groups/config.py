@@ -53,7 +53,7 @@ def funct(prompt_):
     [File Options]:
     save_location: root directory for files
     dir_format: format of directories
-    textlength: max length of text placeholder
+    textlength: max length of text placeholder, in letters or words (see text_type_default)
     space_replacer: space replacement for filenames
     date: date format for placeholders
     text_type_default: toggle for word count type
@@ -76,6 +76,7 @@ def funct(prompt_):
     after_action_script: A script that runs after an action for each model has completed.
    
     post_script: A script that runs after all actions for all models have completed.
+    alert_script: A script that runs when something needs a person (login rejected, disk full, daemon pass failing).
     naming_script: A script that provides custom logic for generating the final filename. 
     It outputs the desired filename or path.
 
@@ -238,7 +239,7 @@ def file_config():
                 "type": "number",
                 "name": "textlength",
                 "message": "textlength: ",
-                "option_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
+                "option_instruction": "Enter the max length to extract for post text, in letters or words (see text type below), 0 means unlimited\n",
                 "default": data.get_textlength(),
                 "min_allowed": 0,
                 "validate": EmptyInputValidator(),
@@ -330,6 +331,13 @@ def script_config():
                 "message": "Script to run after all model actions complete",
                 "default": data.get_post_script() or "",
                 "option_instruction": "Leave empty to skip post download script",
+            },
+            {
+                "type": "input",
+                "name": "alert_script",
+                "message": "Script to run when something needs a person (login rejected, disk full)",
+                "default": data.get_alert_script() or "",
+                "option_instruction": "Leave empty to skip the alert script",
             },
             {
                 "type": "input",

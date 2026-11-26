@@ -483,7 +483,7 @@ def on_postgres(database_url, creator, site=None, undo_file=None, apply=False, p
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
     parser.add_argument("database", type=Path, nargs="?", help="One model's user_data.db")
     parser.add_argument("--apply", action="store_true", help="Apply the previewed recovery or undo operation")
     parser.add_argument("--undo", help="Preview restoring flags from a recovery undo file")

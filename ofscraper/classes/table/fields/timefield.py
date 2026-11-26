@@ -1,9 +1,29 @@
-import arrow
+import math
+
 from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
+
+
+def hms_to_seconds(value) -> float:
+    """Seconds in a table length; "N/A" or empty is 0."""
+    if value in (None, "", "N\\A", "N/A"):
+        return 0.0
+    # str(timedelta): "1 day, 1:00:00" from 24 hours, "0:01:30.500000"
+    # for a fraction of a second
+    days = 0
+    text = str(value)
+    if "day" in text:
+        day_part, _, text = text.partition(",")
+        days = int(day_part.split()[0])
+    parts = [float(p) for p in text.strip().split(":")]
+    if len(parts) == 3:
+        return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if len(parts) == 2:
+        return parts[0] * 60 + parts[1]
+    return parts[0]
 
 
 class TimeField(Container):
@@ -60,7 +80,8 @@ class TimeField(Container):
 
     def update_table_val(self, val):
         self.update_table_min(val)
-        self.update_table_max(val)
+        # Integer boxes must enclose the selected cell's fractional duration.
+        self._fill("#maxContainer", val, round_up=True)
 
     def update_table_min(self, val):
         self._fill("#minContainer", val)
@@ -68,15 +89,13 @@ class TimeField(Container):
     def update_table_max(self, val):
         self._fill("#maxContainer", val)
 
-    def _fill(self, container, val):
+    def _fill(self, container, val, *, round_up=False):
         inputs = list(self.query_one(container).query(IntegerInput))
-        if isinstance(val, (int, float)) or str(val).isnumeric():
-            val = int(val)
-            parts = [val // 3600, (val % 3600) // 60, val % 60]
-        elif val != "N/A" and val != "N\\A":
-            parts = [int(x) for x in str(val).split(":")]
-        else:
-            parts = [0, 0, 0]
+        if str(val).count(":") == 1:
+            val = f"{val}:0"  # "1:30" fills hours and minutes
+        seconds = hms_to_seconds(val)
+        val = math.ceil(seconds) if round_up else math.floor(seconds)
+        parts = [val // 3600, (val % 3600) // 60, val % 60]
         for box, part in zip(inputs, parts):
             box.value = str(part) if part else ""
 
@@ -85,34 +104,27 @@ class TimeField(Container):
             ele.value = ""
 
     def compare(self, value):
-        max_val = arrow.get(
-            "{hour}:{minute}:{second}".format(
-                hour=self.query_one("#max_hour").value or 0,
-                minute=self.query_one("#max_minute").value or 0,
-                second=self.query_one("#max_second").value or 0,
-            ),
-            ["h:m:s"],
+        min_sec = (
+            int(self.query_one("#min_hour").value or 0) * 3600
+            + int(self.query_one("#min_minute").value or 0) * 60
+            + int(self.query_one("#min_second").value or 0)
         )
-        min_val = arrow.get(
-            "{hour}:{minute}:{second}".format(
-                hour=self.query_one("#min_hour").value or 0,
-                minute=self.query_one("#min_minute").value or 0,
-                second=self.query_one("#min_second").value or 0,
-            ),
-            ["h:m:s"],
+        max_sec = (
+            int(self.query_one("#max_hour").value or 0) * 3600
+            + int(self.query_one("#max_minute").value or 0) * 60
+            + int(self.query_one("#max_second").value or 0)
         )
-        compare_value = arrow.get(
-            "0:0:0" if value in {"N\\A", "N/A"} else value, ["h:m:s"]
-        )
-
-        if min_val == max_val and min_val == arrow.get("0:0:0", ["h:m:s"]):
+        if min_sec == 0 and max_sec == 0:
             return True
-        elif max_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value >= min_val
-        elif min_val == arrow.get("0:0:0", ["h:m:s"]):
-            return compare_value <= max_val
-        else:
-            return compare_value.is_between(min_val, max_val, bounds="[]")
+        try:
+            cur_sec = hms_to_seconds(value)
+        except (TypeError, ValueError):
+            return False
+        if max_sec == 0:
+            return cur_sec >= min_sec
+        if min_sec == 0:
+            return cur_sec <= max_sec
+        return min_sec <= cur_sec <= max_sec
 
     @property
     def key(self):

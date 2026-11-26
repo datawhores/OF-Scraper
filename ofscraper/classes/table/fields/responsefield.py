@@ -80,7 +80,7 @@ class ResponseField(SelectField):
 
     def update_table_val(self, val):
         self.query_one(SelectionList).deselect_all()
-        val = val.capitalize()
+        val = self._normalize(val)
         if val == "Pinned":
             self.query_one(SelectionList).select(self._pinned)
         elif val == "Archived":
@@ -95,3 +95,18 @@ class ResponseField(SelectField):
             self.query_one(SelectionList).select(self._streams)
         elif val == "Messages":
             self.query_one(SelectionList).select(self._messages)
+
+    @staticmethod
+    def _normalize(value):
+        normalized = str(value or "").strip().capitalize()
+        aliases = {
+            "Stream": "Streams",
+            "Message": "Messages",
+            "Highlight": "Highlights",
+            "Story": "Stories",
+        }
+        return aliases.get(normalized, normalized)
+
+    def compare(self, value):
+        return self._normalize(value) in self.query_one(SelectionList).selected
+

@@ -118,6 +118,8 @@ class Harness:
         self.areas = list(pipeline.ORDER)
         self.download_area = set(pipeline.ORDER)
         self.downloaded = set()
+        # (media id, post id) of downloaded Purchased copies (--skip-purchased-dupes)
+        self.downloaded_purchased = set()
         m = monkeypatch
 
         def area_gen(area):
@@ -294,6 +296,12 @@ class Harness:
         m.setattr(post, "clean_stray_media", strays)
         m.setattr(post, "get_final_posts_area", lambda: self.areas)
         m.setattr(filters, "downloaded_media_ids", lambda **k: set(self.downloaded))
+        m.setattr(
+            filters,
+            "downloaded_purchased_pairs",
+            lambda **k: set(self.downloaded_purchased),
+            raising=False,
+        )
         m.setattr(filters, "seperate_self", lambda media: media)
         m.setattr(separate, "seperate_avatars", lambda media: media)
         stop.clear()
@@ -743,7 +751,10 @@ def test_the_pipeline_scans_the_areas_the_scan_first_path_would(
         pipeline_lines = [m for m in caplog.messages]
     assert set(areas) == set(scanned)
     assert areas == [a for a in pipeline.ORDER if a in scanned]
-    assert pipeline_lines == [m for m in scan_first_lines if "skipping" in m.lower()]
+    # the same skip lines, and the same note about an inactive subscription
+    assert pipeline_lines == [
+        m for m in scan_first_lines if "skipping" in m.lower() or "not active" in m
+    ]
 
 
 # ------------------------------------------------------------------ same files, same folders
@@ -1330,3 +1341,37 @@ def test_every_table_matches_the_scan_first_path_with_files_in_two_areas(
 
 async def _no_known(found, model_id, username):
     return {}
+
+
+def test_media_the_filters_leave_out_is_reported_once(harness, settings_stub, caplog):
+    # page by page, the run never builds the full list; it still says once,
+    # at the end, what the filters left out and by which setting
+    settings_stub.mediatypes = ["Images"]
+    harness.areas = ["Timeline"]
+    harness.pages["Timeline"] = [
+        page(post_dict(1, [101, 102], kinds={102: "video"})),
+        page(post_dict(2, [103], kinds={103: "video"})),
+    ]
+    with caplog.at_level("INFO"):
+        harness.run()
+    assert harness.downloads == [101]
+    assert [r.getMessage() for r in caplog.records if "media left out" in r.getMessage()] == [
+        f"[{NAME}] 2 media left out: 2 by --mediatype or download_options.filter"
+    ]
+
+
+def test_media_already_downloaded_is_reported_once(harness, caplog):
+    # page by page, media the database marks as downloaded is counted too
+    harness.areas = ["Timeline"]
+    harness.downloaded = {101, 103}
+    harness.pages["Timeline"] = [
+        page(post_dict(1, [101, 102])),
+        page(post_dict(2, [103])),
+    ]
+    with caplog.at_level("INFO"):
+        harness.run()
+    assert harness.downloads == [102]
+    assert [r.getMessage() for r in caplog.records if "media left out" in r.getMessage()] == [
+        f"[{NAME}] 2 media left out: 2 already downloaded"
+        " (--force-all downloads them again, or manual --url for one post)"
+    ]

@@ -49,8 +49,10 @@ def read_auth():
         except (FileNotFoundError, json.JSONDecodeError) as e:
             result = auth_error.handle_auth_errors(e)
             if result =="quit":
+                import ofscraper.main.close.exit_status as exit_status
+
                 logging.getLogger("shared").info("unable to read auth file")
-                quit()
+                raise SystemExit(exit_status.AUTH)
     hide_secrets(auth)
     return auth
 

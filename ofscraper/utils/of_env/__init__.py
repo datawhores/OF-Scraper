@@ -44,6 +44,7 @@ from .values.req.cdm import load_cdm_config  # From req/cdm.py
 from .values.req.discord import load_discord_config  # From req/discord.py
 from .values.req.git import load_git_config  # From req/git.py
 from .values.req.mpd import load_mpd_config  # From req/mpd.py
+from .values.req.live import load_req_live_config
 from .values.req.req import (
     load_network_config,
 )  # From req/req.py (the "big one" with timeouts, semaphores etc.)
@@ -111,6 +112,7 @@ def get_all_configs(forced=False):
     all_settings.update(load_discord_config())
     all_settings.update(load_git_config())
     all_settings.update(load_mpd_config())
+    all_settings.update(load_req_live_config())
     all_settings.update(load_network_config())
     all_settings.update(load_ratelimit_config())
     all_settings.update(load_auth_config())

@@ -9,6 +9,7 @@ import logging
 from rich.console import Console
 from ofscraper.utils.markup import escape_text
 
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.auth.utils.dict as auth_dict
@@ -25,7 +26,7 @@ console = Console()
 def make_auth(auth=None,include_main_menu=False):
     if settings.get_settings().auth_fail:
         logging.getLogger("shared").info("auth failed quitting on error")
-        quit()
+        raise SystemExit(exit_status.AUTH)
     while True:
         authwarning(common_paths.get_auth_file())
         browserSelect = prompts.prompt_for_browser_auth(include_main_menu=include_main_menu)

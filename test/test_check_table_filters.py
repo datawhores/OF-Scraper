@@ -75,7 +75,8 @@ def test_username_cell_semicolon_copies_to_filter():
 
 @pytest.mark.parametrize(
     "response",
-    ["Timeline", "Archived", "Pinned", "Streams", "Stories", "Highlights", "Messages"],
+    ["Timeline", "Archived", "Pinned", "Streams", "Stories", "Highlights", "Messages",
+     "Stream", "Story", "Highlight", "Message"],
 )
 @pytest.mark.usefixtures("_stub_settings")
 def test_response_cell_semicolon_selects_its_option(response):
@@ -86,7 +87,10 @@ def test_response_cell_semicolon_selects_its_option(response):
         app.table.focus()
         await pilot.press(";")
         selected = app.query_one("#responsetype").query_one(SelectionList).selected
-        assert selected == [response]
+        expected = {"Stream": "Streams", "Story": "Stories", "Highlight": "Highlights", "Message": "Messages"}.get(response, response)
+        assert selected == [expected]
+        app.set_filtered_rows()
+        assert [r["index"] for r in app._filtered_rows] == [1]
 
     _drive_f419([_row_f419(1, responsetype=response)], steps)
 
@@ -638,3 +642,232 @@ def test_a_picked_length_leaves_zero_parts_empty(start_lenunits):
         assert not field.compare("0:02:00")
 
     _drive_lenunits(steps)
+
+
+def test_a_two_part_length_fills_hours_and_minutes(start_lenunits):
+    # "1:30" has always filled the boxes as 1 hour 30 minutes
+    async def steps(app, pilot, field):
+        field.update_table_val("1:30")
+        await _settle_lenunits(pilot)
+        assert _values(app, *MIN) == ["1", "30", ""]
+        assert _values(app, *MAX) == ["1", "30", ""]
+
+    _drive_lenunits(steps)
+
+
+# ----------------------------------------------------------------------
+# Check table date and length filters: unreadable bounds, an earliest
+# date alone, and day-long or fractional lengths.
+# ----------------------------------------------------------------------
+
+import asyncio
+import queue
+from types import SimpleNamespace
+
+import pytest
+
+import ofscraper.classes.table.app as table_app
+import ofscraper.classes.table.utils.post_metrics as post_metrics
+
+
+class _Settings_hf(SimpleNamespace):
+    def __getattr__(self, name):
+        return None
+
+
+@pytest.fixture
+def stub_env_hf(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_settings",
+        lambda *a, **k: _Settings_hf(db_sort="number", desc=False),
+    )
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_args",
+        lambda *a, **k: SimpleNamespace(text=False, text_only=False),
+    )
+    monkeypatch.setattr(table_app.settings, "update_args", lambda *a, **k: None)
+    monkeypatch.setattr(table_app, "row_queue", queue.Queue())
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+
+
+def _media_row_hf(index, **values):
+    row = {
+        "index": index,
+        "number": index,
+        "download_cart": "[]",
+        "username": "creator_a",
+        "downloaded": False,
+        "unlocked": True,
+        "download_type": "normal",
+        "other_posts_with_media": [],
+        "post_media_count": 1,
+        "mediatype": "Videos",
+        "post_date": "2024-05-01 12:00:00",
+        "length": "0:01:00",
+        "responsetype": "Timeline",
+        "price": "Free",
+        "post_id": 100 + index,
+        "media_id": 1000 + index,
+        "text": "post",
+    }
+    row.update(values)
+    return row
+
+
+def _app_hf(media_rows, post_rows):
+    app = table_app.InputApp()
+    app.table_data = media_rows
+    app.post_data = post_rows
+    app._sortkey = None
+    app._reverse = False
+    return app
+
+
+@pytest.mark.parametrize("field", ["#minDate", "#maxDate"])
+@pytest.mark.parametrize("bound", ["2025.13.45", "01/02/2025", "soon"])
+def test_an_unreadable_date_bound_does_not_hide_rows(stub_env_hf, field, bound):
+    media_rows = [
+        _media_row_hf(1, post_date="2024-05-01 12:00:00"),
+        _media_row_hf(2, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one(field).value = bound
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1, 2]
+
+    asyncio.run(drive())
+
+
+def test_a_readable_date_bound_still_filters(stub_env_hf):
+    media_rows = [
+        _media_row_hf(1, post_date="2024-05-01 12:00:00"),
+        _media_row_hf(2, post_date="2026-05-01 12:00:00"),
+        _media_row_hf(3, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2025.01.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [2]
+
+    asyncio.run(drive())
+
+
+def test_post_date_filter_excludes_undated_posts_only_with_a_bound(stub_env_hf):
+    post_rows = [
+        _media_row_hf(1, post_date="2026-05-01"),
+        _media_row_hf(2, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf([], post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            assert [row["index"] for row in app._filtered_post_rows] == [1, 2]
+            app.query_one("#post_post_date_minDate").value = "2025.01.01"
+            app.filter_post_table()
+            assert [row["index"] for row in app._filtered_post_rows] == [1]
+
+    asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "now, posted",
+    [
+        # east of UTC in the afternoon: today's local midnight is yesterday in UTC
+        ("2026-03-10T15:00:00+10:00", "2026-03-10 03:00:00"),
+        # west of UTC in the evening: the post's UTC date is already tomorrow
+        ("2026-03-10T20:00:00-05:00", "2026-03-11 00:30:00"),
+    ],
+)
+def test_an_earliest_date_alone_keeps_todays_posts(stub_env_hf, monkeypatch, now, posted):
+    import ofscraper.classes.table.fields.datefield as datefield
+
+    fixed = datefield.arrow.get(now)
+    monkeypatch.setattr(datefield.arrow, "now", lambda *a, **k: fixed)
+    media_rows = [_media_row_hf(1, post_date=posted)]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#minDate").value = "2026.03.01"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
+
+
+@pytest.mark.parametrize(
+    "length",
+    ["1 day, 1:00:00", "2 days, 0:00:05", "1:30:00.500000"],
+)
+def test_long_and_fractional_lengths_pass_a_length_filter(stub_env_hf, length):
+    # str(timedelta) adds "N day(s), " from 24 hours and a fraction for
+    # non-whole seconds; neither was read, so any length filter hid the row
+    media_rows = [_media_row_hf(1, length=length), _media_row_hf(2, length="0:10:00")]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#length").query_one("#min_hour").value = "1"
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
+
+
+def test_fractional_lengths_above_maximum_are_excluded(stub_env_hf):
+    rows = [
+        _media_row_hf(1, length="0:01:30"),
+        _media_row_hf(2, length="0:01:30.900000"),
+    ]
+
+    async def drive():
+        app = _app_hf(rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            field = app.query_one("#length")
+            field.update_table_max("0:01:30")
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
+
+
+def test_fractional_length_fills_integer_inputs(start_lenunits):
+    async def steps(app, pilot, field):
+        field.update_table_val("0:01:30.900000")
+        await _settle_lenunits(pilot)
+        assert _values(app, *MIN) == ["", "1", "30"]
+        assert _values(app, *MAX) == ["", "1", "31"]
+        assert field.compare("0:01:30.900000")
+
+    _drive_lenunits(steps)
+
+
+@pytest.mark.parametrize("length", ["0:01:30.900000", "0:00:59.900000", "1 day, 23:59:59.900000"])
+@pytest.mark.usefixtures("_stub_settings")
+def test_fractional_length_cell_filter_keeps_its_source_row(length):
+    async def steps(app, pilot):
+        app.table.move_cursor(row=0, column=app.table.ordered_columns_keys.index("length"))
+        app.table.focus()
+        await pilot.press(";")
+        app.set_filtered_rows()
+        assert [r["index"] for r in app._filtered_rows] == [1]
+
+    _drive_f419([_row_f419(1, length=length)], steps)

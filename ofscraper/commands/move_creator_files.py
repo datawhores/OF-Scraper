@@ -346,7 +346,7 @@ def on_postgres(database_url, creator, site=None, apply=False, to=None, path_roo
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__.split("\n\n")[0])
     parser.add_argument("database", type=Path, nargs="?", help="One creator's user_data.db")
     parser.add_argument("--apply", action="store_true", help="Move the files and change the rows; without it, only report")
     parser.add_argument("--to", metavar="NAME", help="The recorded name whose folder the files go to (default: the name seen last)")

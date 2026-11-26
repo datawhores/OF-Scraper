@@ -7,7 +7,10 @@ from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
-from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.checkers import check_auth, LoginRejected
+import ofscraper.main.close.alerts as alerts
+import ofscraper.main.close.exit_status as exit_status
+import ofscraper.main.close.status_file as status_file
 from ofscraper.main.close.final.final import final_action
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.commands.scraper.actions.download.download import downloader
@@ -33,6 +36,7 @@ import ofscraper.utils.menu as menu
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 from ofscraper.__version__ import __version__
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 from ofscraper.scripts.after_download_action_script import after_download_action_script
 from ofscraper.scripts.after_like_action_script import after_like_action_script
 from ofscraper.managers.postcollection import PostCollection
@@ -58,7 +62,7 @@ class scraperManager(CommandManager):
             try:
                 self._runner(menu=menu)
             except stop.DownloadsStopped:
-                final_action()
+                final_action("stopped")
                 if not menu:
                     raise SystemExit(130)
 
@@ -159,6 +163,9 @@ class scraperManager(CommandManager):
                         )
                         if stop.requested.is_set():
                             raise stop.DownloadsStopped
+                    elif action in {"like", "unlike"} and dry_run.active():
+                        log.info(f"Dry run: not {action}ing posts for {username}")
+                        continue
                     elif action == "like":
                         like_action.process_like(
                             ele=ele,
@@ -206,11 +213,22 @@ def main():
     with progress_utils.stop_live_screen(clear="all"):
         try:
             print_start()
+            if dry_run.active() and dry_run.refuse_reason():
+                log.error(dry_run.refuse_reason())
+                raise SystemExit(2)
             paths.temp_cleanup()
             paths.cleanDB()
             network.check_cdm()
 
-            scrapper()
+            try:
+                scrapper()
+            finally:
+                # each finished scan reported itself (dry_run.finish); a scan
+                # that failed or was stopped has no report, only copies and
+                # counts, which a later report mustn't include
+                if dry_run.active():
+                    dry_run.reset()
+                    dry_run.cleanup()
             paths.temp_cleanup()
             paths.cleanDB()
         except KeyboardInterrupt:
@@ -235,6 +253,7 @@ def main():
 
 def daemon_process():
     exit.sigterm_as_keyboard_interrupt()
+    status_file.set_mode("daemon")
     checkers.check_auth()
     worker_thread = None
     scrapingManager = scraperManager()
@@ -265,18 +284,33 @@ def daemon_process():
         while True:
             # outside the try: a signal while idle here has no job to mark done
             job_func = jobqueue.get()
+            exit_status.reset()
+            pass_done = False
             try:
                 job_func()
+                pass_done = True
             except interactive.NoConsoleError:
                 # a prompt no one can answer won't be answered next pass,
                 # so end the daemon with the error instead (#286)
                 raise
             except Exception as E:
                 # the daemon carries on with the next pass (#379)
+                if not isinstance(E, LoginRejected):  # already "login failed"
+                    exit_status.record(exit_status.ERROR)
+                pass_done = True
                 log.warning(f"Daemon pass failed: {type(E).__name__}: {E}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
             finally:
+                outcome = exit_status.reset()
+                if pass_done:
+                    if outcome != exit_status.OK:
+                        log.warning(
+                            f"Daemon pass finished with status {outcome} ({exit_status.label(outcome)})"
+                        )
+                    else:
+                        log.info("Daemon pass finished with status 0 (ok)")
+                    alerts.after_pass(outcome)
                 jobqueue.task_done()
     except (KeyboardInterrupt, Exception, SystemExit) as exc:
         wakeup.stopped = True
@@ -296,13 +330,14 @@ def daemon_process():
             if live_interrupted:
                 raise
             pass  # stop with the original error, not the Ctrl+C during cleanup
-        if live_interrupted:
+        if live_interrupted and not isinstance(exc, exit.SigtermInterrupt):
             raise SystemExit(130)
         raise
     finally:
         if live_thread:
             live_thread.stop()
         wakeup.restore()
+        status_file.stop_daemon()
 
 
 def process_prompts():
@@ -317,6 +352,8 @@ def process_selected_areas():
     log.debug("[bold deep_sky_blue2] Running Action Mode [/bold deep_sky_blue2]")
     scrapingManager = scraperManager()
     scrapingManager.runner()
+    if dry_run.active():
+        dry_run.finish()
     while True:
         if not data.get_InfiniteLoop() or prompts.continue_prompt() == "No":
             break
@@ -333,6 +370,8 @@ def process_selected_areas():
             else:
                 menu.get_count() > 0 and menu.reset_menu_helper()
                 scrapingManager.runner()
+                if dry_run.active():
+                    dry_run.finish()
                 menu.update_count()
 
 

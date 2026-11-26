@@ -7,6 +7,7 @@ which CI runs with a PostgreSQL container.
 import asyncio
 import builtins
 import contextlib
+import importlib.util
 import logging
 import sqlite3
 from types import SimpleNamespace
@@ -164,11 +165,14 @@ def test_an_address_written_in_config_json_is_said_to_be_unused(
     monkeypatch, caplog, config, said
 ):
     monkeypatch.setattr(config_file, "write_config", lambda config: None)
+    monkeypatch.setattr(config_file, "_notes", [])
 
     with caplog.at_level(logging.WARNING, logger="shared"):
         config_file.auto_update_config(config)
+        # kept until the log is set up, then written
+        config_file.log_notes()
 
-    assert ("advanced_options.database_url in config.json is not read" in caplog.text) is said
+    assert ("database_url in config.json is not read" in caplog.text) is said
     assert "OFSC_DATABASE_URL" in caplog.text or not said
     # the address isn't repeated: it holds a password
     assert "s3cr" not in caplog.text
@@ -424,7 +428,18 @@ def state(name):
         ("UniqueViolation", False),
     ],
 )
-def test_only_an_error_a_retry_can_fix_is_retried(name, again):
+def test_only_an_error_a_retry_can_fix_is_retried(name, again, monkeypatch):
+    # With the driver installed, the wrapper knows PostgreSQL's errors once a
+    # run picks PostgreSQL. Pick it here as a run does, so this test doesn't
+    # rely on an earlier one having done it, and put the wrapper's engine list
+    # back afterwards. Without the driver there is nothing to pick.
+    if importlib.util.find_spec("psycopg"):
+        monkeypatch.setattr(wrapper, "_BACKENDS", list(wrapper._BACKENDS))
+        monkeypatch.setattr(wrapper, "DB_ERRORS", wrapper.DB_ERRORS)
+        monkeypatch.setattr(wrapper, "OPERATIONAL_ERRORS", wrapper.OPERATIONAL_ERRORS)
+        monkeypatch.setenv(postgres.URL_KEY, URL)
+        assert wrapper.backend_for({}) is postgres.POSTGRES
+
     assert postgres.POSTGRES.retryable(state(name)) is again
     assert wrapper._retryable(state(name)) is again
 
@@ -785,6 +800,7 @@ def test_every_step_added_since_reaches_a_database_made_before():
             )
     assert postgres.ADDED_COLUMNS == (
         ("profiles_seen_at", "profiles", ("first_seen_at", "last_seen_at")),
+        ("stories_highlight_id", "stories", ("highlight_id",)),
     )
 
 
@@ -817,10 +833,13 @@ STEP_DONE = (
     " ON CONFLICT (flag_name) DO NOTHING",
     ["profiles_seen_at"],
 )
+ASK_FOR_STORY_COLUMNS = (ASK_FOR_COLUMNS[0], ["stories"])
+# a stories table that already has the column the stories step adds (#728)
+STORIES_NOW = {"stories": postgres.TABLE_COLUMNS["stories"]}
 
 
 def test_tables_made_before_get_the_columns_added_since():
-    cur = ColumnsCursor({"profiles": ["id", "user_id", "username"]})
+    cur = ColumnsCursor({"profiles": ["id", "user_id", "username"], **STORIES_NOW})
 
     postgres.POSTGRES._add_columns(cur)
 
@@ -829,20 +848,39 @@ def test_tables_made_before_get_the_columns_added_since():
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ", None),
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
+    ]
+
+
+def test_a_stories_table_made_before_gets_the_highlight_column():
+    stories = [c for c in postgres.TABLE_COLUMNS["stories"] if c != "highlight_id"]
+    cur = ColumnsCursor(
+        {"profiles": postgres.TABLE_COLUMNS["profiles"], "stories": stories}
+    )
+
+    postgres.POSTGRES._add_columns(cur)
+
+    assert cur.asked == [
+        ASK_FOR_COLUMNS,
+        ASK_FOR_STORY_COLUMNS,
+        ("ALTER TABLE stories ADD COLUMN IF NOT EXISTS highlight_id BIGINT", None),
+        (STEP_DONE[0], ["stories_highlight_id"]),
     ]
 
 
 def test_tables_that_have_the_columns_are_only_asked():
     # every start after the first: nothing is changed, and nothing locked
-    cur = ColumnsCursor({"profiles": postgres.TABLE_COLUMNS["profiles"]})
+    cur = ColumnsCursor({"profiles": postgres.TABLE_COLUMNS["profiles"], **STORIES_NOW})
 
     postgres.POSTGRES._add_columns(cur)
 
-    assert cur.asked == [ASK_FOR_COLUMNS]
+    assert cur.asked == [ASK_FOR_COLUMNS, ASK_FOR_STORY_COLUMNS]
 
 
 def test_a_column_that_is_missing_alone_is_added_alone():
-    cur = ColumnsCursor({"profiles": ["id", "user_id", "username", "first_seen_at"]})
+    cur = ColumnsCursor(
+        {"profiles": ["id", "user_id", "username", "first_seen_at"], **STORIES_NOW}
+    )
 
     postgres.POSTGRES._add_columns(cur)
 
@@ -850,6 +888,7 @@ def test_a_column_that_is_missing_alone_is_added_alone():
         ASK_FOR_COLUMNS,
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
     ]
 
 
@@ -892,14 +931,19 @@ def started(monkeypatch, columns):
 def test_a_start_brings_tables_made_before_up_to_date(monkeypatch):
     asked = started(
         monkeypatch,
-        {"schema_flags": ["flag_name"], "profiles": ["id", "user_id", "username"]},
+        {
+            "schema_flags": ["flag_name"],
+            "profiles": ["id", "user_id", "username"],
+            **STORIES_NOW,
+        },
     )
 
-    assert asked[-5:] == [
+    assert asked[-6:] == [
         ASK_FOR_COLUMNS,
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ", None),
         ("ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ", None),
         STEP_DONE,
+        ASK_FOR_STORY_COLUMNS,
         # all of it kept, or none
         "commit",
     ]

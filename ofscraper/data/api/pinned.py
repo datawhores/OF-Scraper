@@ -16,6 +16,7 @@ import logging
 import traceback
 
 
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
@@ -76,6 +77,7 @@ async def scrape_pinned_posts(c, model_id, offset=0):
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Pinned API Error: {r.status}")
+                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
                     break
 
                 data = await r.json_()
@@ -98,6 +100,7 @@ async def scrape_pinned_posts(c, model_id, offset=0):
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+            incomplete.mark_incomplete(model_id, API, f"{type(E).__name__}: {E}")
             break
         finally:
             if task:

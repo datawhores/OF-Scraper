@@ -372,7 +372,7 @@ def test_list_users_merge_without_fetch_tracking(rec, monkeypatch):
         SimpleNamespace(session=SimpleNamespace(aget_subscription_session=session)),
     )
     workers = iter(post_workers())
-    monkeypatch.setattr(lists, "scrape_list_members", lambda c, entry: next(workers))
+    monkeypatch.setattr(lists, "scrape_list_members", lambda c, entry, **kwargs: next(workers))
 
     data = run(lists.get_list_users([{"id": 1}, {"id": 2}, {"id": 3}]))
 

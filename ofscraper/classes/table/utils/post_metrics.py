@@ -44,7 +44,7 @@ def _fmt_new_cost(
     if all_denominator <= 0:
         return "N/A"
     if is_unlocked:
-        return "Unlocked"
+        return "Free" if price <= 0 else "Unlocked"
     if new_denominator <= 0:
         return "All Dupes"
     return f"${price / new_denominator:.2f}{suffix}"
@@ -59,7 +59,9 @@ def _sort_new_cost(
     if all_denominator <= 0:
         return float("inf")
     if is_unlocked:
-        return 0.0
+        # a free post costs nothing; a bought one sorts with the other
+        # labels ("N/A", "All Dupes") at the bottom
+        return 0.0 if price <= 0 else float("inf")
     if new_denominator <= 0:
         return float("inf")
     return price / new_denominator

@@ -66,6 +66,8 @@ class _FakeApp:
     _run_unique_selection = table_app.InputApp._run_unique_selection
     on_data_table_cell_selected = table_app.InputApp.on_data_table_cell_selected
     add_to_row_queue = table_app.InputApp.add_to_row_queue
+    _per_page = table_app.InputApp._per_page
+    _page_rows = table_app.InputApp._page_rows
 
     def __init__(self, rows):
         self.table_data = rows
@@ -74,6 +76,7 @@ class _FakeApp:
         self._sortkey = "number"
         self._reverse = False
         self.main_page = 1
+        self._shown_per_page = {"main": 50}
         self.is_sidebar_open = False
         self.nodes = {
             "#main_per_page_input": SimpleNamespace(value=50),

@@ -6,6 +6,7 @@ import subprocess
 
 
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 from ofscraper.utils.system.subprocess import run
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as env
@@ -18,6 +19,9 @@ def after_like_action_script(username, media, posts=None, action=None):
 
     if not script_path:
         log.debug("after like action script is disabled; skipping excution")
+        return
+    if dry_run.active():
+        log.debug("dry run: not running the after action script")
         return
     elif not os.path.exists(script_path):
         log.info(

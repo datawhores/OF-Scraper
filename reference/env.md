@@ -40,8 +40,9 @@ The app reads these with `os.getenv` where it uses them, not through `of_env.get
 | `DISPLAY` | **Default:** `None` · **Read in:** `ofscraper/classes/table/utils/open_folder.py`.<br>Check table, Linux only: with neither this nor `WAYLAND_DISPLAY` set there's no desktop, so Open Download Folder and `o` show the folder's path instead of running `xdg-open`. |
 | `OFSC_FANSLY_API_BASE` | **Default:** `f'https://{API_HOST}/api/v1/'` · **Read in:** `ofscraper/sites/fansly/constants.py`.<br>Base URL of the Fansly API that Fansly requests go to. |
 | `OFSC_FANSLY_AUTH_FILE_NAME` | **Default:** `'fansly_auth.json'` · **Read in:** `ofscraper/sites/fansly/constants.py`.<br>Name of the Fansly credentials file in the profile folder. |
-| `STASH_API_KEY` | **Default:** `None` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync` only: the Stash API key, for a Stash with a password. `--api-key` overrides it. |
-| `STASH_URL` | **Default:** `DEFAULT_URL` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync` only: Stash's GraphQL URL. `--url` overrides it. |
+| `OFSC_STATUS_FILE` | **Default:** `None` · **Read in:** `ofscraper/commands/health.py`.<br>Path to the status JSON file written for unattended runs. Unset, it is `status.json` in the active profile folder, or in the config folder for the `--profiles` daemon. A one-off run leaves alone a file a running daemon in another process writes, so `docker compose exec` beside the daemon doesn't replace it. |
+| `STASH_API_KEY` | **Default:** `None` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync`: the Stash API key, for a Stash with a password. `--api-key` overrides it. `ofscraper doctor --online` sends it too. |
+| `STASH_URL` | **Default:** `DEFAULT_URL` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync`: Stash's GraphQL URL. `--url` overrides it. `ofscraper doctor --online` checks Stash only when this is set. |
 | `WAYLAND_DISPLAY` | **Default:** `None` · **Read in:** `ofscraper/classes/table/utils/open_folder.py`.<br>Check table, Linux only: see `DISPLAY`. |
 
 ## Downloads and actions
@@ -148,7 +149,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="file_size_min_default"></a>`OFSC_FILE_SIZE_MIN_DEFAULT`<br>Key: `FILE_SIZE_MIN_DEFAULT` | **Default:** `0`. Default for `content_filter_options.file_size_min` (minimum file size in bytes; 0 means no limit). |
 | <a id="min_length_default"></a>`OFSC_MIN_LENGTH_DEFAULT`<br>Key: `MIN_LENGTH_DEFAULT` | **Default:** `0`. Default for `content_filter_options.length_min` (minimum video duration in seconds; 0 means no limit). |
 | <a id="max_length_default"></a>`OFSC_MAX_LENGTH_DEFAULT`<br>Key: `MAX_LENGTH_DEFAULT` | **Default:** `0`. Default for `content_filter_options.length_max` (maximum video duration in seconds; 0 means no limit). |
-| <a id="textlength_default"></a>`OFSC_TEXTLENGTH_DEFAULT`<br>Key: `TEXTLENGTH_DEFAULT` | **Default:** `0`. Default for `file_options.textlength` (maximum post text length in filenames; 0 means no limit). |
+| <a id="textlength_default"></a>`OFSC_TEXTLENGTH_DEFAULT`<br>Key: `TEXTLENGTH_DEFAULT` | **Default:** `0`. Default for `file_options.textlength` (maximum post text length in filenames, in letters or words per `TEXT_TYPE_DEFAULT`; 0 means no limit). |
 | <a id="space_replacer_default"></a>`OFSC_SPACE_REPLACER_DEFAULT`<br>Key: `SPACE_REPLACER_DEFAULT` | **Default:** `' '`. Default for `file_options.space_replacer` (character replacing spaces in filename text). |
 | <a id="progress_default"></a>`OFSC_PROGRESS_DEFAULT`<br>Key: `PROGRESS_DEFAULT` | **Default:** `False`. Default for `advanced_options.downloadbars` (whether to show per-file download progress bars). |
 | <a id="save_path_default"></a>`OFSC_SAVE_PATH_DEFAULT`<br>Key: `SAVE_PATH_DEFAULT` | **Default:** `'{home_directory}/Data/ofscraper'`. Default for `file_options.save_location` (root folder for downloads). |
@@ -180,6 +181,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="use_wiv_cache_key"></a>`OFSC_USE_WIV_CACHE_KEY`<br>Key: `USE_WIV_CACHE_KEY` | **Default:** `True`. Whether to cache Widevine decryption keys by PSSH (`keyhelpers.py`). |
 | <a id="after_action_script_default"></a>`OFSC_AFTER_ACTION_SCRIPT_DEFAULT`<br>Key: `AFTER_ACTION_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.after_action_script`. |
 | <a id="post_script_default"></a>`OFSC_POST_SCRIPT_DEFAULT`<br>Key: `POST_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.post_script`. |
+| <a id="alert_script_default"></a>`OFSC_ALERT_SCRIPT_DEFAULT`<br>Key: `ALERT_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.alert_script`. |
 | <a id="skip_download_script_default"></a>`OFSC_SKIP_DOWNLOAD_SCRIPT_DEFAULT`<br>Key: `SKIP_DOWNLOAD_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.skip_download_script`. |
 | <a id="after_download_script_default"></a>`OFSC_AFTER_DOWNLOAD_SCRIPT_DEFAULT`<br>Key: `AFTER_DOWNLOAD_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.after_download_script`. |
 | <a id="naming_script_default"></a>`OFSC_NAMING_SCRIPT_DEFAULT`<br>Key: `NAMING_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.naming_script`. |
@@ -301,8 +303,8 @@ Defined in `ofscraper/utils/of_env/values/path/length.py`.
 | Variable / Key | Description |
 |---|---|
 | <a id="max_text_length"></a>`OFSC_MAX_TEXT_LENGTH`<br>Key: `MAX_TEXT_LENGTH` | **Default:** `70`. Wrap width, in characters, when writing downloaded post text files. |
-| <a id="windows_max_path_bytes"></a>`OFSC_WINDOWS_MAX_PATH_BYTES`<br>Key: `WINDOWS_MAX_PATH_BYTES` | **Default:** `530`. Maximum full path length, in bytes, before truncation on Windows. |
-| <a id="mac_max_path"></a>`OFSC_MAC_MAX_PATH`<br>Key: `MAC_MAX_PATH` | **Default:** `255`. Maximum full path length, in characters, before truncation on macOS. |
+| <a id="windows_max_path_bytes"></a>`OFSC_WINDOWS_MAX_PATH_BYTES`<br>Key: `WINDOWS_MAX_PATH_BYTES` | **Default:** `518`. Maximum full path length, in bytes, before truncation on Windows (2 bytes a UTF-16 unit, 4 for an emoji; 518 is MAX_PATH's 259 units). |
+| <a id="mac_max_path"></a>`OFSC_MAC_MAX_PATH`<br>Key: `MAC_MAX_PATH` | **Default:** `255`. Maximum file name length, in bytes of UTF-8, before truncation on macOS; a name must also fit in this many UTF-16 units decomposed (NFD), as HFS+ counts. The folder's length isn't counted. |
 | <a id="linux_max_file_name_bytes"></a>`OFSC_LINUX_MAX_FILE_NAME_BYTES`<br>Key: `LINUX_MAX_FILE_NAME_BYTES` | **Default:** `254`. Maximum filename length, in bytes, before truncation on Linux. |
 
 ### Character sizes
@@ -311,11 +313,9 @@ Defined in `ofscraper/utils/of_env/values/path/bytes.py`.
 
 | Variable / Key | Description |
 |---|---|
-| <a id="normal_char_size_windows"></a>`NORMAL_CHAR_SIZE_WINDOWS` | **Default:** `2`. Estimated byte size per ASCII character when measuring path length on Windows (used when `UTF` is unset). |
-| <a id="special_char_size_windows"></a>`SPECIAL_CHAR_SIZE_WINDOWS` | **Default:** `4`. Estimated byte size per non-ASCII character when measuring path length on Windows (used when `UTF` is unset). |
 | <a id="special_char_size_unix"></a>`SPECIAL_CHAR_SIZE_UNIX` | **Default:** `4`. Estimated byte size per non-ASCII character when measuring path length on Unix-like systems (used when `UTF` is unset). |
 | <a id="normal_char_size_unix"></a>`NORMAL_CHAR_SIZE_UNIX` | **Default:** `2`. Estimated byte size per ASCII character when measuring path length on Unix-like systems (used when `UTF` is unset). |
-| <a id="utf"></a>`UTF` | **Default:** `None`. Encoding name (for example `utf-8`) used to measure exact path byte length instead of the `*_CHAR_SIZE_*` estimates. |
+| <a id="utf"></a>`UTF` | **Default:** `None`. Encoding name (for example `utf-8`) used to measure exact path byte length on Linux, instead of the `*_CHAR_SIZE_UNIX` estimates. Not used on Windows, where path length is always counted in UTF-16 units. |
 
 ## Network, retries and rate limits
 
@@ -348,7 +348,13 @@ Longest wait for the next piece of a response (seconds), for requests that don't
 
 | Variable / Key | Description |
 |---|---|
-| <a id="proxy"></a>`OFSC_PROXY`<br>Key: `PROXY` | **Default:** `None`. Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. |
+| <a id="proxy"></a>`OFSC_PROXY`<br>Key: `PROXY` | **Default:** `None`. Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). [Details](#proxy-details). |
+
+##### `PROXY` details
+
+**Environment variable:** `OFSC_PROXY` · **Default:** `None`
+
+Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. Fansly livestream recording sends it to ffmpeg, which takes only `http://` proxies; with any other value set, Fansly livestreams aren't recorded.
 
 #### Chunking
 
@@ -441,6 +447,18 @@ Defined in `ofscraper/utils/of_env/values/req/git.py`.
 | <a id="git_min_wait"></a>`OFSC_GIT_MIN_WAIT`<br>Key: `GIT_MIN_WAIT` | **Default:** `1.0`. Minimum wait, in seconds, before retrying a dynamic-rules download. |
 | <a id="git_max_wait"></a>`OFSC_GIT_MAX_WAIT`<br>Key: `GIT_MAX_WAIT` | **Default:** `5.0`. Maximum wait, in seconds, before retrying a dynamic-rules download. |
 | <a id="git_num_tries"></a>`OFSC_GIT_NUM_TRIES`<br>Key: `GIT_NUM_TRIES` | **Default:** `3`. Maximum number of attempts when downloading dynamic signing rules. |
+
+### Livestream polling and recording
+
+Defined in `ofscraper/utils/of_env/values/req/live.py`.
+
+| Variable / Key | Description |
+|---|---|
+| <a id="live_check_concurrency"></a>`OFSC_LIVE_CHECK_CONCURRENCY`<br>Key: `LIVE_CHECK_CONCURRENCY` | **Default:** `5`. Maximum simultaneous per-creator status checks during `--live` / `--live-watch` polling. |
+| <a id="live_check_timeout"></a>`OFSC_LIVE_CHECK_TIMEOUT`<br>Key: `LIVE_CHECK_TIMEOUT` | **Default:** `15`. Timeout in seconds for a single livestream status check during recording. |
+| <a id="live_individual_max"></a>`OFSC_LIVE_INDIVIDUAL_MAX`<br>Key: `LIVE_INDIVIDUAL_MAX` | **Default:** `10`. Most OnlyFans creators chosen with `-u` that each `--live` / `--live-watch` check asks one by one; with more, a check reads the subscription list instead and asks this many of the chosen creators missing from it, taking turns. |
+| <a id="live_jitter"></a>`OFSC_LIVE_JITTER`<br>Key: `LIVE_JITTER` | **Default:** `10`. Maximum random jitter in seconds added to the `--live-watch` polling interval. |
+| <a id="live_max_failures"></a>`OFSC_LIVE_MAX_FAILURES`<br>Key: `LIVE_MAX_FAILURES` | **Default:** `3`. Consecutive failed stream-recovery attempts before stopping a Fansly recording. |
 
 ## DRM, CDM and Discord
 
@@ -539,13 +557,26 @@ Defined in `ofscraper/utils/of_env/values/system.py`.
 | <a id="ffmpeg_subprocess_level"></a>`OFSC_FFMPEG_SUBPROCESS_LEVEL`<br>Key: `FFMPEG_SUBPROCESS_LEVEL` | **Default:** `10`. Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ffprobe_subprocess_level"></a>`OFSC_FFPROBE_SUBPROCESS_LEVEL`<br>Key: `FFPROBE_SUBPROCESS_LEVEL` | **Default:** `10`. Log level for the output of this subprocess (the user script, ffmpeg or ffprobe named in the key). 0 turns that output off. |
 | <a id="ofsc_database_url"></a>`OFSC_DATABASE_URL` | **Default:** `''`. A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. [Details](#ofsc_database_url-details). |
-| <a id="disk_space_check_path"></a>`OFSC_DISK_SPACE_CHECK_PATH`<br>Key: `DISK_SPACE_CHECK_PATH` | **Default:** `'/'`. The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). It is not the save location unless you set it to be. |
+| <a id="install_extras"></a>`OFSC_INSTALL_EXTRAS`<br>Key: `INSTALL_EXTRAS` | **Default:** `True`. Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the PostgreSQL driver when `OFSC_DATABASE_URL` is set on a system it isn't installed with by default. [Details](#install_extras-details). |
+| <a id="disk_space_check_path"></a>`OFSC_DISK_SPACE_CHECK_PATH`<br>Key: `DISK_SPACE_CHECK_PATH` | **Default:** `''`. The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). [Details](#disk_space_check_path-details). |
 
 ##### `OFSC_DATABASE_URL` details
 
 **Environment variable:** `OFSC_DATABASE_URL` · **Default:** `''`
 
-A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image).
+A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the PostgreSQL driver (psycopg), which is installed with OF-Scraper on macOS, 64-bit Windows and 64-bit Linux (x86_64, aarch64, ppc64le, riscv64) and is in the Docker image. Elsewhere, the first run with a URL offers to install it (`OFSC_INSTALL_EXTRAS`), or install the `postgres` extra.
+
+##### `INSTALL_EXTRAS` details
+
+**Environment variable:** `OFSC_INSTALL_EXTRAS` · **Default:** `True`
+
+Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the PostgreSQL driver when `OFSC_DATABASE_URL` is set on a system it isn't installed with by default. It asks first, and only at a terminal: the daemon, runs without a terminal (cron, services) and root under sudo are given the install command instead. They go into the Python running OF-Scraper, with pip, or with uv when that Python has no pip, using `OFSC_PROXY` when set. When False, or when the install is declined or fails, the feature stops and says how to install the extra. The standalone download never installs anything.
+
+##### `DISK_SPACE_CHECK_PATH` details
+
+**Environment variable:** `OFSC_DISK_SPACE_CHECK_PATH` · **Default:** `''`
+
+The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). Empty (the default) measures the disk that holds `save_location`, or the nearest existing folder above it if it doesn't exist yet. Set it to check a different disk.
 
 ### Menu choices
 

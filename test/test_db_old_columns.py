@@ -417,7 +417,7 @@ OLD_TABLES = [
         "CREATE TABLE stories (id INTEGER NOT NULL, post_id INTEGER NOT NULL, text VARCHAR,"
         " price INTEGER, paid INTEGER, archived BOOLEAN, created_at TIMESTAMP, PRIMARY KEY (id))",
         {"post_id": 7, "text": "t", "price": 0, "paid": 0, "archived": 0, "created_at": "x"},
-        {"model_id": 9},
+        {"model_id": 9, "highlight_id": None},
     ),
     (
         others_ops.get_all_others_transition,

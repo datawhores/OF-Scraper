@@ -328,7 +328,7 @@ async def scrape_messages(
                 yield batch
 
     except Exception as E:
-        incomplete.mark_incomplete(model_id, API, repr(E))
+        incomplete.mark_incomplete(model_id, API, f"{type(E).__name__}: {E}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:

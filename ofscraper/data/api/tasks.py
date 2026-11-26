@@ -20,26 +20,35 @@ def post_id(item):
     return item.get("id")
 
 
-async def consume_pages(generators, description, on_page, progress=None, create_task=None):
+async def consume_pages(
+    generators, description, on_page, progress=None, create_task=None, *, strict=False
+):
     """Run a producer per generator and hand each non-empty page to ``on_page``.
 
     ``description`` is the progress bar's text; the page count is appended.
     Workers are stop-tracked fetch tasks (``stop.create_fetch_task``) unless
     ``create_task`` says otherwise. ``progress`` defaults to the API screen.
+    With ``strict``, raise the first worker error after all workers finish.
     """
     progress = progress or progress_utils.api
     create_task = create_task or stop.create_fetch_task
     page_count = 0
     page_task = progress.add_overall_task(f"{description}: {page_count}", visible=True)
     queue = asyncio.Queue()
+    first_error = None
 
     async def producer(gen):
+        nonlocal first_error
         try:
             async for page in gen:
                 await queue.put(page)
         except Exception as E:
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
+            if strict:
+                if first_error is None:
+                    first_error = E
+            else:
+                log.traceback_(E)
+                log.traceback_(traceback.format_exc())
         finally:
             await queue.put(None)
 
@@ -59,6 +68,8 @@ async def consume_pages(generators, description, on_page, progress=None, create_
             on_page(page)
 
     progress.remove_overall_task(page_task)
+    if first_error is not None:
+        raise first_error
 
 
 async def collect_pages(generators, description, on_new=None, key=post_id, **kwargs):

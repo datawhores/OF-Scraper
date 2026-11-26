@@ -130,3 +130,21 @@ def test_manual_does_not_warn(monkeypatch, screen):
     assert network.check_cdm() is True
     assert "deprecated" not in screen.buf.getvalue()
     assert not [r for r in screen.records if r.levelno >= logging.WARNING]
+
+
+def test_cdrm_startup_with_an_unreadable_address_says_so(monkeypatch, screen):
+    # an address urlsplit() can't read stopped the run (#819); it's now
+    # treated as no server, and named without its value
+    real_getattr = of_env.getattr
+    bad = "http://user:secret@[::1/api/decrypt"
+    monkeypatch.setattr(
+        of_env,
+        "getattr",
+        lambda key, default=None: bad if key == "CDRM" else real_getattr(key, default),
+    )
+    _key_mode(monkeypatch, "cdrm")
+    assert network.check_cdm() is False
+    out = screen.buf.getvalue()
+    assert "OFSC_CDRM_URL can't be read" in out
+    assert "skipped before download" in out
+    assert "secret" not in out and "::1" not in out

@@ -119,8 +119,9 @@ SECTION_KEYS = {
                          "infinite_loop_action_mode", "logs_expire_time", "remove_hash_match",
                          "rotate_logs", "sanitize_text", "skip_unavailable_content", "ssl_verify",
                          "temp_dir"],
-    "script_options": ["after_action_script", "after_download_script", "naming_script",
-                       "post_script", "skip_download_script"],
+    # alert_script was added on purpose (plan 15): runs when something needs a person
+    "script_options": ["after_action_script", "after_download_script", "alert_script",
+                       "naming_script", "post_script", "skip_download_script"],
     "responsetype": ["archived", "highlights", "message", "paid", "pinned", "profile", "stories",
                      "streams", "timeline"],
     # live_options and type_options were added on purpose (#850): path

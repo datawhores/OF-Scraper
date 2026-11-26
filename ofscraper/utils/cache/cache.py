@@ -57,7 +57,9 @@ def close(*args, **kwargs):
             return None
         global cache
         if cache is None:
-            cache = Cache(common_paths.getcachepath(), disk=data.get_cache_mode())
+            # nothing open to close; opening the cache here would make a dry
+            # run copy it again after its copies were removed
+            return None
         cache.close(*args, **kwargs)
     except Exception as E:
         raise E

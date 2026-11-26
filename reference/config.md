@@ -74,6 +74,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 | [`advanced_options.database_url`](#advanced_optionsdatabase_url) | **Default:** see below |
 | [`script_options.after_action_script`](#script_optionsafter_action_script) | **Default:** `null` · **CLI:** `--after-action-script` · **Env:** [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) |
 | [`script_options.post_script`](#script_optionspost_script) | **Default:** `null` · **CLI:** `--post-script` · **Env:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) |
+| [`script_options.alert_script`](#script_optionsalert_script) | **Default:** `null` · **Env:** [`ALERT_SCRIPT_DEFAULT`](env.md#alert_script_default) |
 | [`script_options.naming_script`](#script_optionsnaming_script) | **Default:** `null` · **CLI:** `--naming-script` · **Env:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) |
 | [`script_options.after_download_script`](#script_optionsafter_download_script) | **Default:** `null` · **CLI:** `--after-download-script` · **Env:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) |
 | [`script_options.skip_download_script`](#script_optionsskip_download_script) | **Default:** `null` · **CLI:** `--skip-download-script` · **Env:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) |
@@ -105,7 +106,7 @@ The folder pattern for each creator's `user_data.db`. It uses placeholders such 
 
 **Default:** `""` · **CLI override:** `--discord` · **Env default:** [`DISCORD_DEFAULT`](env.md#discord_default) · **Read by:** `get_discord()` in `ofscraper/utils/config/data.py`
 
-The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `LOW` or `NORMAL`. The option defaults to `OFF`.
+The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `SUMMARY` (one summary message per run or daemon pass, no log lines), `LOW` or `NORMAL`. The option defaults to `OFF`.
 
 ## `file_options`
 
@@ -119,7 +120,7 @@ The root folder for downloads. `dir_format` is resolved under it. It is also the
 
 **Default:** `"{model_username}/{responsetype}/{mediatype}/"` · **Env default:** [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) · **Read by:** `get_dirformat()` in `ofscraper/utils/config/data.py`
 
-The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path.
+The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path. An unknown placeholder or a broken template here or in `file_format` is logged once at startup, naming the setting.
 
 ### `file_options.file_format`
 
@@ -131,25 +132,25 @@ The file name pattern for each download. It is built from placeholders such as `
 
 **Default:** `0` · **CLI override:** `--textlength` · **Env default:** [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) · **Read by:** `get_textlength()` in `ofscraper/utils/config/data.py`
 
-The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, according to `text_type_default`. 0 means no limit. The `-tl`/`--textlength` option overrides it.
+The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, see `text_type_default`. The default unit is `letter`, so `30` means 30 characters, not 30 words. 0 means no limit. A debug line in the log says when `{text}` is cut, and in which unit. The `-tl`/`--textlength` option overrides it.
 
 ### `file_options.space_replacer`
 
 **Default:** `" "` · **CLI override:** `--space-replacer` · **Env default:** [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) · **Also reads:** `space-replacer` · **Read by:** `get_spacereplacer()` in `ofscraper/utils/config/data.py`
 
-The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. An empty value falls back to a space. The `-sr`/`--space-replacer` option overrides it.
+The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. It is used as literal text. An empty value falls back to a space, and so does a value that isn't a string (such as `123` or `true`) or has a character a file name can't hold (such as `/`, `\`, `:` or `?`), with a warning at startup. The `-sr`/`--space-replacer` option overrides it.
 
 ### `file_options.date`
 
 **Default:** `"MM-DD-YYYY"` · **Env default:** [`DATE_DEFAULT`](env.md#date_default) · **Read by:** `get_date()` in `ofscraper/utils/config/data.py`
 
-An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads.
+An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads. A `/` is removed from the date, and on Windows so are the other characters a name can't hold there (such as `\`, `:` or `?`). This is the same in `dir_format`, so a date always fills one folder: a `/` in the date format no longer makes folders, and a config that used one (such as `YYYY/MM/DD`) gets one date folder (`20240501`) in place of the old nested ones, with a warning at startup; use `{year}/{month}/{day}` in `dir_format` for nested date folders. A `/` typed in `dir_format` itself still separates folders.
 
 ### `file_options.text_type_default`
 
 **Default:** `"letter"` · **CLI override:** `--text-type` · **Env default:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) · **Read by:** `get_textType()` in `ofscraper/utils/config/data.py`
 
-Whether `textlength` counts `letter`s or `word`s. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
+Whether `textlength` counts `letter`s or `word`s, matched without regard to case. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
 
 ### `file_options.truncation_default`
 
@@ -161,7 +162,7 @@ When true, final file paths longer than the operating system's limit are shorten
 
 **Default:** `"media_id"` · **Env default:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
 
-What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
+What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes. A `--text` file follows the same rule with the post's id: when its name holds another post's text, it is saved as `name_<post_id>`, then `name_<post_id>_2` and so on, unless `file_format` or `dir_format` has `{post_id}`. A text file that holds the post's text, or whose name has `{post_id}`, is the post's own and isn't rewritten without `--force-all`, unless it holds the caption's raw HTML as older versions wrote it; one that holds another post's text never is. With `overwrite`, it is skipped as before.
 
 ## `live_options`
 
@@ -201,13 +202,13 @@ When true, a leftover `.part` file is resumed with an HTTP range request. When f
 
 **Default:** `0` · **CLI override:** `system_free_min` · **Env default:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
 
-The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on `OFSC_DISK_SPACE_CHECK_PATH` (default `/`), not on `save_location`. There is no CLI option for it.
+The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location`, or on `OFSC_DISK_SPACE_CHECK_PATH` when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
 
 ### `download_options.max_post_count`
 
 **Default:** `0` · **CLI override:** `--max-post-count` · **Env default:** [`MAX_COUNT_DEFAULT`](env.md#max_count_default) · **Read by:** `get_max_post_count()` in `ofscraper/utils/config/data.py`
 
-The most media items (not posts) to download or process per creator, after all other filters. 0 means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
+The most media items (not posts) to download or process per creator, after all other filters. The newest are kept, and the log says how many the cap left out; `--media-sort` and `--media-desc` order the kept items but don't change which are kept. 0 or a negative value means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
 
 ### `download_options.verify_all_integrity`
 
@@ -221,7 +222,7 @@ When true, `ffprobe` checks ordinary (non-DRM) video and audio downloads and Fan
 
 **Default:** `""` · **Env default:** [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) · **Read by:** `get_ffmpeg()` in `ofscraper/utils/config/data.py`
 
-The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. Surrounding quotes are stripped.
+The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. An ffmpeg that crashes reading a small MPEG-TS test file (some static builds do on newer Linux systems) is skipped with a warning, and used only if no other is found. Surrounding quotes are stripped.
 
 ## `cdm_options`
 
@@ -401,7 +402,13 @@ An executable that runs after each user is processed by the like, unlike or down
 
 **Default:** `null` · **CLI override:** `--post-script` · **Env default:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_post_script()` in `ofscraper/utils/config/data.py`
 
-An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities. The `-ps`/`--post-script` option overrides it.
+An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities, plus a `summary` key: the run's record (site, profile, command, start and finish times, outcome, exit status (`status`, `status_label`), download/metadata/text totals, creators done and not finished, and each creator's new files, bytes and failures), or `null` when it couldn't be built. The `-ps`/`--post-script` option overrides it.
+
+### `script_options.alert_script`
+
+**Default:** `null` · **Env default:** [`ALERT_SCRIPT_DEFAULT`](env.md#alert_script_default) · **Read by:** `get_alert_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs when something needs a person: the login is rejected (at the start or partway through a run), the free-space limit is reached, or a daemon pass fails. It receives JSON on stdin with `kind` (`login`, `disk_full` or `daemon_pass`), `message`, `site` and `profile`. Each kind is sent when it starts failing and again when it recovers, not on every daemon pass. The same alerts go to Discord at any `-dc`/`--discord` level except `OFF`. The `--alert-script` option overrides it.
 
 ### `script_options.naming_script`
 

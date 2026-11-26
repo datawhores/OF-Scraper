@@ -675,7 +675,12 @@ def test_logging_after_the_table_closes(monkeypatch):
                 app.query_one("#send_downloads_main").press()
                 await pilot.pause()
                 shared.info("while the table is open")
-                await pilot.pause()
+                # The log holds writes back until it has been laid out, which
+                # a busy machine can take more than one pause to do.
+                for _ in range(50):
+                    await pilot.pause()
+                    if console_log.lines:
+                        break
                 assert console_log.lines  # written, not just queued
             return console_log
 
@@ -867,3 +872,385 @@ def test_sorting_by_number_keeps_each_creator_together(rows):
         ("first", 2),
         ("first", 1),
     ]
+
+
+# ----------------------------------------------------------------------
+# Check table: long values stay on one line; Per Page redraws once,
+# never divides by 0, and is skipped after the app closes; Length sorts
+# day-long and fractional lengths.
+# ----------------------------------------------------------------------
+
+import asyncio
+import queue
+from types import SimpleNamespace
+
+import pytest
+
+import ofscraper.classes.table.app as table_app
+import ofscraper.classes.table.utils.post_metrics as post_metrics
+
+
+class _Settings_hf(SimpleNamespace):
+    def __getattr__(self, name):
+        return None
+
+
+@pytest.fixture
+def stub_env_hf(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_settings",
+        lambda *a, **k: _Settings_hf(db_sort="number", desc=False),
+    )
+    monkeypatch.setattr(
+        table_app.settings,
+        "get_args",
+        lambda *a, **k: SimpleNamespace(text=False, text_only=False),
+    )
+    monkeypatch.setattr(table_app.settings, "update_args", lambda *a, **k: None)
+    monkeypatch.setattr(table_app, "row_queue", queue.Queue())
+    monkeypatch.setattr(
+        post_metrics, "get_media_ids_downloaded_model_sync", lambda **k: set()
+    )
+
+
+def _media_row_hf(index, **values):
+    row = {
+        "index": index,
+        "number": index,
+        "download_cart": "[]",
+        "username": "creator_a",
+        "downloaded": False,
+        "unlocked": True,
+        "download_type": "normal",
+        "other_posts_with_media": [],
+        "post_media_count": 1,
+        "mediatype": "Videos",
+        "post_date": "2024-05-01 12:00:00",
+        "length": "0:01:00",
+        "responsetype": "Timeline",
+        "price": "Free",
+        "post_id": 100 + index,
+        "media_id": 1000 + index,
+        "text": "post",
+    }
+    row.update(values)
+    return row
+
+
+def _media_obj_hf(mid, pid, mtype="images", canview=True):
+    return SimpleNamespace(
+        id=mid,
+        post_id=pid,
+        mediatype=mtype,
+        numeric_duration=None,
+        duration=None,
+        canview=canview,
+    )
+
+
+def _post_obj_hf(pid, price, items, date="2024-05-01 12:00:00"):
+    return SimpleNamespace(
+        id=pid,
+        price=price,
+        opened=1,
+        all_media=items,
+        responsetype="timeline",
+        formatted_date=date,
+        db_sanitized_text="post",
+    )
+
+
+def _app_hf(media_rows, post_rows):
+    app = table_app.InputApp()
+    app.table_data = media_rows
+    app.post_data = post_rows
+    app._sortkey = None
+    app._reverse = False
+    return app
+
+
+LONG_ID_hf = 123456789012345678
+
+
+LONG_NAME_hf = "a_long_creator_x"  # 16 characters
+
+
+def test_long_values_stay_on_one_line(stub_env_hf):
+    # columns narrower than the old 18 (media) and 16 (posts) wrapped these
+    # values onto a second line, doubling the row height
+    media_rows = [
+        _media_row_hf(
+            1,
+            post_id=LONG_ID_hf,
+            media_id=LONG_ID_hf,
+            post_date="2024-05-01",
+            username=LONG_NAME_hf,
+        ),
+        _media_row_hf(2, post_date="Probably Deleted"),
+    ]
+    post_rows = post_metrics.build_post_centric_rows(
+        [_post_obj_hf(2, 0, [_media_obj_hf(2, 2)])], LONG_NAME_hf, 1
+    )
+
+    async def drive():
+        app = _app_hf(media_rows, post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            await pilot.press("h")  # show the id columns
+            await pilot.pause()
+            assert {"post_id", "media_id"} <= set(app.table.ordered_columns_keys)
+            assert [r.height for r in app.table.rows.values()] == [1, 1]
+
+            await pilot.click("#post_tab")
+            await pilot.pause()
+            assert "username" in app.post_table.ordered_columns_keys
+            assert [r.height for r in app.post_table.rows.values()] == [1]
+
+    asyncio.run(drive())
+
+
+def test_two_other_post_ids_stay_on_one_line(stub_env_hf):
+    # "[1234567890, 1234567891]" is 24 characters
+    media_rows = [
+        _media_row_hf(
+            1, post_date="2024-05-01", other_posts_with_media=[1234567890, 1234567891]
+        )
+    ]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            assert "other_posts_with_media" in app.table.ordered_columns_keys
+            assert [r.height for r in app.table.rows.values()] == [1]
+
+    asyncio.run(drive())
+
+
+def test_long_and_fractional_lengths_sort_by_their_real_length():
+    lengths = ["2 days, 0:00:00", "2:00:00", "0:01:30.500000", "1 day, 1:00:00", "0:01:00"]
+    app = table_app.InputApp()
+    app.table_data = [_media_row_hf(n, length=v) for n, v in enumerate(lengths, 1)]
+    app._reverse = False
+
+    app._sort_runner("length")
+
+    assert [r["length"] for r in app.table_data] == [
+        "0:01:00",
+        "0:01:30.500000",
+        "2:00:00",
+        "1 day, 1:00:00",
+        "2 days, 0:00:00",
+    ]
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_fractional_lengths_sort_within_the_same_second(reverse):
+    lengths = ["0:01:30.900000", "0:01:30.100000", "0:01:30.500000"]
+    app = table_app.InputApp()
+    app.table_data = [_media_row_hf(n, length=v) for n, v in enumerate(lengths, 1)]
+    app._reverse = reverse
+
+    app._sort_runner("length")
+
+    assert [r["length"] for r in app.table_data] == sorted(lengths, reverse=reverse)
+
+
+def _count_page_builds_hf(monkeypatch):
+    counts = {"main": 0, "post": 0, "cart": 0}
+    for prefix, name in (
+        ("main", "set_page"),
+        ("post", "set_post_page"),
+        ("cart", "update_cart_table"),
+    ):
+        original = getattr(table_app.InputApp, name)
+
+        def counted(self, *a, _orig=original, _prefix=prefix, **k):
+            counts[_prefix] += 1
+            return _orig(self, *a, **k)
+
+        monkeypatch.setattr(table_app.InputApp, name, counted)
+    return counts
+
+
+def test_per_page_builds_each_table_once_at_startup(stub_env_hf, monkeypatch):
+    counts = _count_page_builds_hf(monkeypatch)
+
+    async def drive():
+        app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause(0.6)
+            assert counts["main"] == 1
+            assert counts["post"] == 1
+            assert counts["cart"] <= 1
+
+    asyncio.run(drive())
+
+
+def test_typing_a_per_page_value_builds_the_table_once(stub_env_hf, monkeypatch):
+    counts = _count_page_builds_hf(monkeypatch)
+    # long enough that a busy machine can't fire it between two keystrokes
+    monkeypatch.setattr(table_app.InputApp, "PER_PAGE_DELAY", 1.0)
+
+    async def drive():
+        app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause(0.6)
+            box = app.query_one("#main_per_page_input")
+            box.focus()
+            box.value = ""
+            await pilot.pause()
+            counts["main"] = 0
+            await pilot.press("5", "0", "0", "0")
+            await pilot.pause(1.5)
+            assert counts["main"] == 1
+            assert app.table.row_count == 3
+
+    asyncio.run(drive())
+
+
+def test_clearing_per_page_restores_the_default(stub_env_hf):
+    async def drive():
+        app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            box = app.query_one("#main_per_page_input")
+            box.value = "1"
+            await pilot.pause(0.5)
+            assert app.table.row_count == 1
+            box.value = ""
+            await pilot.pause(0.5)
+            assert app.table.row_count == 3
+
+    asyncio.run(drive())
+
+
+def test_a_per_page_of_zero_draws_the_default_page_size(stub_env_hf):
+    # 0 stays in the box (it isn't above 0, so typing it redraws nothing);
+    # the next filter, sort or cart redraw divided by it
+    media_rows = [_media_row_hf(n, post_date="2024-05-01") for n in range(1, 4)]
+    media_rows[0]["download_cart"] = "[added]"
+    post_rows = post_metrics.build_post_centric_rows(
+        [_post_obj_hf(n, 0, [_media_obj_hf(n, n)]) for n in range(1, 4)], "creator_a", 1
+    )
+
+    async def drive():
+        app = _app_hf(media_rows, post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            for prefix in ("main", "post", "cart"):
+                app.query_one(f"#{prefix}_per_page_input").value = "0"
+            await pilot.pause(0.5)
+            app.filter_table()
+            app.filter_post_table()
+            app.update_cart_table()
+            await pilot.pause()
+            assert app.table.row_count == 3
+            assert app.post_table.row_count == 3
+            assert app.query_one("#cart_data_table").row_count == 1
+
+    asyncio.run(drive())
+
+
+def test_page_cart_actions_use_the_default_page_size_for_zero(stub_env_hf):
+    # with 0 in a Per Page box the page actions worked on an empty page
+    media_rows = [
+        _media_row_hf(n, post_date="2024-05-01", post_id=n, media_id=n)
+        for n in range(1, 4)
+    ]
+    post_rows = post_metrics.build_post_centric_rows(
+        [_post_obj_hf(n, 0, [_media_obj_hf(n, n)]) for n in range(1, 4)], "creator_a", 1
+    )
+
+    def carts():
+        return [r["download_cart"] for r in media_rows]
+
+    async def drive():
+        app = _app_hf(media_rows, post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            for prefix in ("main", "post", "cart"):
+                app.query_one(f"#{prefix}_per_page_input").value = "0"
+            await pilot.pause(0.5)
+
+            for add in (
+                app.action_select_current_page,
+                app.action_select_unique_current_page,
+                app.action_select_page_undownloaded,
+            ):
+                add()
+                assert carts() == ["[added]"] * 3
+                app.action_clear_current_page()
+                assert carts() == ["[]"] * 3
+
+            await pilot.click("#post_tab")
+            await pilot.pause()
+            for add in (app.action_select_current_page, app.action_select_page_undownloaded):
+                add()
+                assert carts() == ["[added]"] * 3
+                app.action_clear_current_page()
+                assert carts() == ["[]"] * 3
+
+            app.action_select_current_page()
+            await pilot.click("#cart")
+            await pilot.pause()
+            app.action_clear_current_page()
+            assert carts() == ["[]"] * 3
+
+    asyncio.run(drive())
+
+
+def test_page_cart_actions_act_on_the_page_as_drawn(stub_env_hf):
+    # Zero does not redraw; page actions still use the 50 rows displayed.
+    media_rows = [
+        _media_row_hf(n, post_date="2024-05-01", post_id=n, media_id=n)
+        for n in range(1, 121)
+    ]
+
+    def added():
+        return [r["index"] for r in media_rows if r["download_cart"] == "[added]"]
+
+    async def drive():
+        app = _app_hf(media_rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+
+            async def show_page_2_of_50(cart):
+                for r in media_rows:
+                    r["download_cart"] = cart
+                box = app.query_one("#main_per_page_input")
+                box.value = "50"
+                app.main_page = 2
+                app.set_page()
+                box.value = "0"
+                await pilot.pause(0.5)
+
+            for add in (
+                app.action_select_current_page,
+                app.action_select_unique_current_page,
+                app.action_select_page_undownloaded,
+            ):
+                await show_page_2_of_50("[]")
+                add()
+                assert added() == list(range(51, 101))
+
+            await show_page_2_of_50("[added]")
+            app.action_clear_current_page()
+            assert added() == list(range(1, 51)) + list(range(101, 121))
+
+    asyncio.run(drive())
+
+
+def test_a_per_page_redraw_after_the_app_closed_does_nothing(stub_env_hf):
+    # the 0.3 s wait can end while the app is closing and its inputs are gone
+    async def drive():
+        app = _app_hf([_media_row_hf(1)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+        for prefix in ("main", "post", "cart"):
+            app._apply_per_page(prefix)
+
+    asyncio.run(drive())

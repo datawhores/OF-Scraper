@@ -19,6 +19,7 @@ import logging
 import traceback
 from types import SimpleNamespace
 
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
@@ -87,9 +88,18 @@ def discard_finished_labels(model_id):
 @stop.fetching
 async def get_labels_data(model_id, c=None):
     # on Fansly a label is a wall (a named tab on the creator's profile)
-    names = fansly_scrape.label_names if sites.is_fansly() else scrape_labels
+    names = fansly_wall_names if sites.is_fansly() else scrape_labels
     generators = [names(c, model_id)]
     return [decode_label_name(label) for label in await process_tasks_labels(generators)]
+
+
+async def fansly_wall_names(c, model_id):
+    try:
+        async for walls in fansly_scrape.label_names(c, model_id):
+            yield walls
+    except Exception as E:
+        incomplete.mark_incomplete(model_id, API, f"{type(E).__name__}: {E}")
+        raise
 
 
 def decode_label_name(label):
@@ -263,7 +273,7 @@ async def scrape_labels(c, model_id, offset=0):
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Labels API Error: {r.status} for {url}")
-
+                    incomplete.mark_incomplete(model_id, API, f"HTTP {r.status}")
                     break
 
                 data = await r.json_()
@@ -293,6 +303,7 @@ async def scrape_labels(c, model_id, offset=0):
         except Exception as E:
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+            incomplete.mark_incomplete(model_id, API, f"{type(E).__name__}: {E}")
             break
         finally:
             if task:
@@ -377,9 +388,8 @@ async def scrape_posts_labels(c, label, model_id, offset=0, known=None, track=Fa
             if task:
                 progress_utils.api.remove_job_task(task)
     if not finished:
-        log.warning(
-            f"{API}: scan of label {label['name']} stopped early (error or rate limit), "
-            "some of its posts may be missing"
+        incomplete.mark_incomplete(
+            model_id, API, f"label {label['name']}, some of its posts may be missing"
         )
     elif track:
         mark_label_finished(model_id, label["id"])
@@ -417,9 +427,8 @@ async def scrape_posts_walls(c, label, model_id, known=None, track=False):
     finally:
         progress_utils.api.remove_job_task(task)
     if not finished:
-        log.warning(
-            f"{API}: scan of wall {label['name']} stopped early (error or rate limit), "
-            "some of its posts may be missing"
+        incomplete.mark_incomplete(
+            model_id, API, f"wall {label['name']}, some of its posts may be missing"
         )
     elif track:
         mark_label_finished(model_id, label["id"])

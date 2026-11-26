@@ -19,13 +19,13 @@ def load_max_lengths_config():
     # Default: 30
     config["MAX_TEXT_WORKER"] = int(os.getenv("OFSC_MAX_TEXT_WORKER", "30"))
 
-    # WINDOWS_MAX_PATH_BYTES: Maximum full path length, in bytes, before truncation on Windows.
-    # Default: 530
+    # WINDOWS_MAX_PATH_BYTES: Maximum full path length, in bytes, before truncation on Windows (2 bytes a UTF-16 unit, 4 for an emoji; 518 is MAX_PATH's 259 units).
+    # Default: 518
     config["WINDOWS_MAX_PATH_BYTES"] = int(
-        os.getenv("OFSC_WINDOWS_MAX_PATH_BYTES", "530")
+        os.getenv("OFSC_WINDOWS_MAX_PATH_BYTES", "518")
     )
 
-    # MAC_MAX_PATH: Maximum full path length, in characters, before truncation on macOS.
+    # MAC_MAX_PATH: Maximum file name length, in bytes of UTF-8, before truncation on macOS; a name must also fit in this many UTF-16 units decomposed (NFD), as HFS+ counts. The folder's length isn't counted.
     # Default: 255
     config["MAC_MAX_PATH"] = int(os.getenv("OFSC_MAC_MAX_PATH", "255"))
 

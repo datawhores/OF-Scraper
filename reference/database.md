@@ -102,7 +102,9 @@ One row per media item (image, video, audio) seen in a post, message, story or o
 - **Stray media:** `batch_set_media_downloaded` sets `unlocked=0`. Despite its name, it does not touch `downloaded`. `clean_stray_media` in `post.py` calls it on every scrape for not-yet-downloaded unlocked rows. These are rows whose post was just scraped but whose media id was not returned. The `metadata` command calls it for strays when `mark_stray` is on.
 - **Permanent skips undone:** `unmark_permanent_skips` sets `downloaded` and `skip_permanent` back to `NULL` on rows with `skip_permanent = 1` only. `ofscraper db --unmark-permanent-skips` calls it for the rows it selects, and a `--retry-permanent-skips` run calls it when the script no longer skips a file for good.
 - **Collision recovery:** the offline tool `python -m ofscraper.commands.recover_collisions` sets `downloaded=0` for rows that share one file path, and writes an undo file. It does so in a `user_data.db`, or with `--postgres` in PostgreSQL.
+- **Verify:** the offline tool `ofscraper verify --apply` sets `downloaded=0` for media whose recorded file is missing or empty, and writes an undo file. It does so in a `user_data.db`, or with `--postgres` in PostgreSQL.
 - **Moving a creator's files:** the offline tool `python -m ofscraper.commands.move_creator_files` moves files recorded under another name's folder to the current name's, and sets `directory` in their rows to the new folder. No other column changes. It does so in a `user_data.db`, or with `--postgres` in PostgreSQL.
+- **Renaming to the current formats:** the offline tool `ofscraper rename_to_format` renames a creator's files to the names the current `file_format` and `dir_format` give them, and sets `directory` and `filename` in their rows to match. It writes an undo file. It does so in a `user_data.db` only.
 - **Migration and merge:** migration rebuilds the table once (`rebuild_media_table`). It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
 - **Deletes:** nothing in the app deletes rows.
 - **Unique key:** `UNIQUE (media_id, model_id, post_id)`. There is no `ON CONFLICT` clause. The code reads the existing `(media_id, post_id)` pairs and chooses insert or update itself. Merge dedupes on `(media_id, model_id)` only.
@@ -312,6 +314,7 @@ Flag names:
 - `messages_group_id`: `messages.group_id` column added.
 - `media_skip_permanent`: `medias.skip_permanent` column added.
 - `profiles_seen_at`: `profiles.first_seen_at` and `profiles.last_seen_at` columns added.
+- `stories_highlight_id`: `stories.highlight_id` column added.
 - `stories_model_id`: `stories.model_id` column added.
 - `labels_model_id`: `labels.model_id` column added.
 - `products_model_id`: `products.model_id` column added.
@@ -346,14 +349,16 @@ One row per story or highlight story seen for the creator.
 | `archived` | **Type:** `BOOLEAN`. The archived flag from the API (normally 0). |
 | `created_at` | **Type:** `TIMESTAMP`. The story date. |
 | `model_id` | **Type:** `INTEGER`. The creator account id the row belongs to. |
+| `highlight_id` | **Type:** `INTEGER`. The id of the highlight the story was scraped from, so a highlight's stories can be grouped. A story in several highlights keeps the first one saved. `NULL` for a story seen only in the Stories area, and for rows saved before the column existed; the next highlights scan that sees the story fills it in. |
 
 <details>
 <summary>Write and migration details</summary>
 
 **Written by:** `make_stories_table_changes` (`ofscraper/db/operations_/stories.py`) runs when the Stories or Highlights areas are scraped (`ofscraper/data/posts/post.py`). Manual/url mode and the check command also run it.
 
-- **New and existing rows:** new ids are inserted. Existing rows are updated only under the `metadata` command.
-- **Migration and merge:** migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in.
+- **New and existing rows:** new ids are inserted. Existing rows are updated only under the `metadata` command. On every scan, an existing row whose `highlight_id` is still `NULL` gets the highlight the scan found; the metadata update doesn't change it.
+- **Migration and merge:** `stories_highlight_id` adds `highlight_id` (empty) to older databases. Migration rebuilds the table once. It copies every row into the new table in one transaction before the old table is dropped. The Merge Databases menu copies rows in, `highlight_id` included.
+- **PostgreSQL:** a database made before `highlight_id` gets it when the scraper next starts (`ADDED_COLUMNS` in `ofscraper/db/postgres.py`).
 - **Deletes:** the app never deletes rows.
 - **Unique key:** `UNIQUE (post_id, model_id)`. The application inserts ids that are not already present.
 
@@ -376,4 +381,4 @@ Each creator has one SQLite file, `user_data.db`. It sits in the folder given by
   - All three go through `ofscraper/db/creator_rows.py`. Given a SQLite file while PostgreSQL is on, each says it's working on the file.
   - `scripts/creator_names.py` reads and adds names in PostgreSQL with `--postgres`, and prints a notice on stderr (`sqlite_files_notice`) when given SQLite files while PostgreSQL is on.
   - Merge Databases works on SQLite files only and says so on its screen.
-  - Standalone tools (`stash_sync`, `recover_collisions`, `move_creator_files`, `scripts/creator_names.py`) read `OFSC_DATABASE_URL` only from the environment they are run in, not from scraper env files. See `POSTGRESQL.md`.
+  - Standalone tools (`stash_sync`, `recover_collisions`, `move_creator_files`, `verify`, `rename_to_format`, `scripts/creator_names.py`) read `OFSC_DATABASE_URL` only from the environment they are run in, not from scraper env files. See `POSTGRESQL.md`.

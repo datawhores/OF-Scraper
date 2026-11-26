@@ -42,8 +42,15 @@ def missing_cdm_keys():
     s = settings.get_settings()
     if s.key_mode != "manual":
         return None
+    return cdm_key_problems(s.key_mode, s.client_id, s.private_key)
+
+
+def cdm_key_problems(key_mode, client_id, private_key):
+    """missing_cdm_keys for the values given, not the settings."""
+    if key_mode != "manual":
+        return None
     problems = []
-    for name, value in (("client-id", s.client_id), ("private-key", s.private_key)):
+    for name, value in (("client-id", client_id), ("private-key", private_key)):
         value = str(value or "").strip()
         if not value:
             problems.append(f"{name} is not set")
@@ -247,22 +254,56 @@ def get_ffmpeg_key(key):
     return key.split(":")[1]
 
 
+CDRM_UNREADABLE = (
+    "OFSC_CDRM_URL can't be read as an http or https address, so nothing is "
+    "sent to it. Check its value, or use key mode manual."
+)
+
+# the full stops IDNA treats as ".": httpx and yarl send
+# cdrm-project。com to cdrm-project.com
+_DOTS = str.maketrans({"。": ".", "．": ".", "｡": "."})
+
+
+def _cdrm_host(url):
+    """The host of url, lower-cased with IDNA's full stops as "."; "" when
+    url is empty; None when it isn't an http(s) address with a host: urlsplit
+    raises (an unclosed IPv6 bracket, #819), or there's no scheme
+    (localhost:8080/api), no host (https:/host) or another scheme (ftp://)."""
+    text = str(url or "")
+    if not text.strip():
+        return ""
+    try:
+        parts = urlsplit(text.strip())
+        host = parts.hostname
+    except ValueError:
+        return None
+    if parts.scheme.lower() not in ("http", "https") or not host:
+        return None
+    return host.translate(_DOTS).lower().rstrip(".")
+
+
 def cdrm_retired(url):
     """True when url points at cdrm-project.com, which no longer works.
     It isn't sent the headers and cookies; a self-hosted server set in
     OFSC_CDRM_URL still is (#677)."""
-    host = (urlsplit(str(url or "")).hostname or "").lower().rstrip(".")
-    return host == "cdrm-project.com" or host.endswith(".cdrm-project.com")
+    host = _cdrm_host(url)
+    return bool(host) and (host == "cdrm-project.com" or host.endswith(".cdrm-project.com"))
+
+
+def cdrm_unreadable(url):
+    """True when url is set but can't be read as an address (#819)."""
+    return bool(str(url or "").strip()) and _cdrm_host(url) is None
 
 
 def cdrm_unavailable():
-    """True when key mode cdrm has no server to ask: OFSC_CDRM_URL is empty
-    or the retired cdrm-project.com, the default. Its DRM videos can't get
-    a key, so they're skipped before download (#681, #696)."""
+    """True when key mode cdrm has no server to ask: OFSC_CDRM_URL is empty,
+    the retired cdrm-project.com (the default) or can't be read as an
+    address. Its DRM videos can't get a key, so they're skipped before
+    download (#681, #696, #819)."""
     if settings.get_settings().key_mode != "cdrm":
         return False
     url = str(of_env.getattr("CDRM") or "").strip()
-    return not url or cdrm_retired(url)
+    return not url or cdrm_retired(url) or cdrm_unreadable(url)
 
 
 _cdrm_retired_logged = False
@@ -273,10 +314,14 @@ async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
     key = None
     log.debug(f"ID:{id} using cdrm auto key helper")
     cdrm_url = str(of_env.getattr("CDRM") or "").strip()
-    if not cdrm_url or cdrm_retired(cdrm_url):
+    if not cdrm_url or cdrm_retired(cdrm_url) or cdrm_unreadable(cdrm_url):
         if not _cdrm_retired_logged:
             _cdrm_retired_logged = True
-            log.error(f"Nothing was sent to cdrm-project.com. {CDRM_DEPRECATED}")
+            # the address itself isn't logged: it can hold a login
+            if cdrm_unreadable(cdrm_url):
+                log.error(CDRM_UNREADABLE)
+            else:
+                log.error(f"Nothing was sent to cdrm-project.com. {CDRM_DEPRECATED}")
         log.debug(f"ID:{id} no key: key mode cdrm, no cdrm server configured")
         return None
     try:
@@ -317,6 +362,17 @@ async def key_helper_cdrm(c, pssh, licence_url, id, kid=None):
         raise E
 
 
+def load_device(private_key, client_id):
+    """The Widevine device the two key files make; raises if they can't."""
+    return Device(
+        security_level=3,
+        private_key=pathlib.Path(private_key).read_bytes(),
+        client_id=pathlib.Path(client_id).read_bytes(),
+        type_="ANDROID",
+        flags=None,
+    )
+
+
 async def key_helper_manual(c, pssh, licence_url, id, kid=None):
     key = None
     log.debug(f"ID:{id} using manual key helper")
@@ -328,15 +384,7 @@ async def key_helper_manual(c, pssh, licence_url, id, kid=None):
         pssh_obj = PSSH(pssh)
 
         # load device
-        private_key = pathlib.Path(settings.get_settings().private_key).read_bytes()
-        client_id = pathlib.Path(settings.get_settings().client_id).read_bytes()
-        device = Device(
-            security_level=3,
-            private_key=private_key,
-            client_id=client_id,
-            type_="ANDROID",
-            flags=None,
-        )
+        device = load_device(settings.get_settings().private_key, settings.get_settings().client_id)
 
         # load cdm
         cdm = Cdm.from_device(device)
