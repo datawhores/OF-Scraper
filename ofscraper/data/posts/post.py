@@ -564,6 +564,21 @@ def log_skipped_labels(username):
     )
 
 
+def log_inactive_subscription(ele, username):
+    """Say before a creator's scan that its subscription isn't active, so a
+    run that finds only part of the creator's posts says why (#767)."""
+    if ele.active:
+        return
+    if sites.is_fansly():
+        found = "public posts, follower posts, messages and purchases can be downloaded"
+    elif skip_wall(ele):
+        # process_tasks skips the wall: messages and purchases are left
+        found = "messages and purchases are scanned (skip_unavailable_content)"
+    else:
+        found = "free posts, messages and purchases can be downloaded"
+    log.info(f"[{username}] subscription not active: only {found}")
+
+
 def log_skipped_wall(username):
     log.info(
         f"Skipping wall/story APIs for {username} (Account is inactive and past grace period)"
@@ -572,6 +587,7 @@ def log_skipped_wall(username):
 
 async def process_tasks(model_id, username, ele, c=None):
     tasks = []
+    log_inactive_subscription(ele, username)
 
     # Fansly walls are visible without a subscription (wall_visible)
     skip_wall_ = skip_wall(ele)
