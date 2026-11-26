@@ -259,10 +259,11 @@ def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, mode
         stem = stem[: -(len(ext) + 1)]
     if not live_names_apart(dir_fmt, file_fmt):
         stem = f"{stem}_{stamp}"
-    # Drop the folder's drive and root before joining it to the save location.
+    # Resolve parent components against the folder's root before dropping it.
     folder_path = pathlib.Path(folder)
     if folder_path.anchor:
-        folder_path = pathlib.Path(*folder_path.parts[1:])
+        normalized_folder = pathlib.Path(os.path.normpath(folder_path))
+        folder_path = pathlib.Path(*normalized_folder.parts[1:])
     return pathlib.Path(os.path.normpath(root / folder_path), f"{stem}.{ext}")
 
 

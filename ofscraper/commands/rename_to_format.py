@@ -340,8 +340,8 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
     names = {type_name(name) for name in config_data.get_type_options()}
     # "text" is the caption files', which have no row here
     by_media_type = bool(names & (MEDIA_TYPES - {"text"}))
-    # an entry for an area (or its folder name)
-    by_area = bool(names and names & area_type_names())
+    # Include the Unknown fallback RecordedPost uses for a missing area.
+    by_area = bool(names and names & (area_type_names() | {"unknown"}))
     with _offline(placeholder):
         for row in media:
             post_id = str(row["post_id"])
@@ -384,7 +384,7 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
                 out[row["rowid"]] = (None, f"the new name can't be made ({type(error).__name__}: {error})")
                 continue
             missing = sorted(set(MARKED.findall(built)))
-            # with no media type or area, an entry for one can't be matched,
+            # with no media type or area, an entry for one can't be matched reliably,
             # so which folder the file belongs in isn't known
             if not row["media_type"] and by_media_type:
                 missing = sorted(set(missing) | {"mediatype"})

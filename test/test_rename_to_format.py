@@ -1244,22 +1244,24 @@ def test_a_row_without_a_media_type_is_left_when_a_media_type_entry_is_set(tmp_p
     assert result["type_options"] == config["type_options"]
 
 
-@pytest.mark.parametrize("area", ["messages", "Inbox"])
+@pytest.mark.parametrize("area", ["messages", "Inbox", "unknown"])
 def test_a_row_without_an_area_is_left_when_an_area_entry_is_set(tmp_path, area):
     # a download would put the file under the entry's folder; which area
     # it's from isn't recorded
     library = Library(tmp_path)
     library.post(501)
-    path = library.add("abcdef.jpg", post_id=501, area=None)
+    path = library.add("abcdef.jpg", post_id=501, area=None, media_id=42)
+    library.formats("renamed", "{media_id}.{ext}")
     config = json.loads(library.config.read_text(encoding="utf-8"))
     config["responsetype"] = {"message": "Inbox"}
-    config["type_options"] = {area: {"save_location": str(tmp_path / "msgs")}}
+    config["type_options"] = {area: {"dir_format": "special"}}
     library.config.write_text(json.dumps(config), encoding="utf-8")
 
-    result = library.run()
+    result = library.run(apply=True)
 
-    assert result["to_rename"] == 0
+    assert result["renamed"] == 0
     assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{response_type}")}]
+    assert path.is_file()
 
 
 def test_an_unknown_type_entry_does_not_block_a_rename_without_an_area(tmp_path):
