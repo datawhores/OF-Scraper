@@ -534,8 +534,14 @@ def refresh_batch(monkeypatch, batch):
     batch.calls = calls
     batch.collection = collection
     batch.failed_ids = {0, 1}
-    yield batch
-    stop.clear()
+    loop = asyncio.new_event_loop()  # @run uses the thread's loop
+    asyncio.set_event_loop(loop)
+    try:
+        yield batch
+    finally:
+        stop.clear()
+        asyncio.set_event_loop(None)
+        loop.close()
 
 
 def test_failed_timeline_fetches_post_once_and_retries_new_link(monkeypatch, refresh_batch):
