@@ -45,10 +45,14 @@ import re
 import sqlite3
 import stat
 import sys
+import unicodedata
 import uuid
 from collections import Counter, defaultdict
 from contextlib import closing
+from functools import cache
 from pathlib import Path
+
+import psutil
 
 import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
@@ -562,16 +566,17 @@ def _spelt_on_disk(path, key, folders):
     return found[0] if len(found) == 1 else None
 
 
-def _two_names(old, new):
+def _two_names(old, new, listdir=os.listdir):
     """`old` and `new`, one file, are two names of it (a hard link), not
-    one name spelt two ways on a disk that doesn't tell case apart."""
+    one name spelt two ways on a disk that doesn't tell case apart.
+    `listdir` can be a cached one, for a plan that asks of many names."""
     old_folder, new_folder = os.path.dirname(old), os.path.dirname(new)
     if not _same_file(old_folder, new_folder):
         return True
     if os.path.basename(old) == os.path.basename(new):
         return False
     try:
-        names = os.listdir(old_folder)
+        names = listdir(old_folder)
     except OSError:
         return False
     return os.path.basename(old) in names and os.path.basename(new) in names
@@ -593,10 +598,55 @@ def _where(old, new):
 
 
 def _path_key():
-    """A path as the disk tells paths apart: os.path.normcase, and lower
-    case on a disk that doesn't tell case apart (macOS's, whose normcase
-    keeps case). That is tried on the nearest folder that is there."""
+    """A path as the disk tells paths apart: os.path.normcase, lower case
+    on a disk that doesn't tell case apart (macOS's, whose normcase keeps
+    case; tried on the nearest folder that is there), and one Unicode
+    spelling where the disk treats two as the same name (APFS, or a folder
+    where both spellings find one file)."""
     folds = {}
+
+    @cache
+    def apfs_devices():
+        try:
+            mounts = psutil.disk_partitions(all=True)
+        except (OSError, psutil.Error):
+            return set()
+        devices = set()
+        for mount in mounts:
+            if mount.fstype.lower() == "apfs":
+                with contextlib.suppress(OSError):
+                    devices.add(os.stat(mount.mountpoint).st_dev)
+        return devices
+
+    @cache
+    def on_apfs(folder):
+        devices = apfs_devices()
+        if not devices:
+            return False
+        try:
+            return os.stat(folder).st_dev in devices
+        except (FileNotFoundError, NotADirectoryError):
+            parent = os.path.dirname(folder)
+            return parent != folder and on_apfs(parent)
+        except OSError:
+            return False
+
+    @cache
+    def apfs_spelling(path):
+        folder, name = os.path.split(path)
+        if not name:
+            return path
+        if not name.isascii() and on_apfs(folder):
+            name = unicodedata.normalize("NFC", name)
+        if not folder.isascii():
+            folder = apfs_spelling(folder)
+        return os.path.join(folder, name)
+
+    @cache
+    def listdir(folder):
+        # the key is used while the plan is made, before anything is renamed,
+        # so each folder is read once
+        return frozenset(os.listdir(folder))
 
     def folds_case(folder):
         if folder not in folds:
@@ -611,6 +661,14 @@ def _path_key():
 
     def key(path):
         path = os.path.normcase(path)
+        normalized = unicodedata.normalize("NFC", path)
+        # APFS treats the two spellings as one name even before a file has it.
+        # Elsewhere, only where both find one file, and not a hard link's two names.
+        if normalized != path:
+            if _same_file(path, normalized) and not _two_names(path, normalized, listdir):
+                path = normalized
+            else:
+                path = apfs_spelling(path)
         return path.lower() if folds_case(os.path.dirname(path)) else path
 
     return key
