@@ -169,7 +169,9 @@ def final_media_sort(media):
     return media
 
 
-def previous_download_filter(medialist, username=None, model_id=None):
+def previous_download_filter(medialist, username=None, model_id=None, left_out=None):
+    """Leave out media the database marks as downloaded. ``left_out``, a
+    dict, gets how many under "already downloaded"."""
     log.info("reading database to retrive previous downloads")
 
     # sort to key order same
@@ -184,7 +186,10 @@ def previous_download_filter(medialist, username=None, model_id=None):
         return medialist
 
     # Apply the filters to whichever pool we selected above
+    count = len(medialist)
     medialist = [m for m in medialist if media_key(m) not in media_ids]
+    if left_out is not None:
+        left_out["already downloaded"] = count - len(medialist)
     log.debug(
         f"Number of new media_ids after dupe/previously downloaded ids removed: {len(medialist)}"
     )

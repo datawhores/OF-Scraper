@@ -155,6 +155,7 @@ class Selector:
 
     def __init__(self, model_id, username):
         self.seen = set()
+        self.already_downloaded = 0  # media left out as already downloaded
         self.downloaded = filters.downloaded_media_ids(
             username=username, model_id=model_id
         )
@@ -169,6 +170,7 @@ class Selector:
                 continue
             self.seen.add(key)
             if self.downloaded is not None and key in self.downloaded:
+                self.already_downloaded += 1
                 continue
             out.append(item)
         if self.downloaded is not None:
@@ -745,7 +747,9 @@ async def run(ele, c, collection=None):
             if (not ended or stop.requested.is_set()) and collection is None:
                 # a scan that was interrupted or failed isn't recorded as finished
                 labels_api.discard_finished_labels(model_id)
-        # pages are picked one at a time; say once what the filters left out
+        # pages are picked one at a time; say once what was left out
+        if run_.selector is not None:
+            run_.collection.left_out["already downloaded"] = run_.selector.already_downloaded
         run_.collection.log_left_out()
         if not stopped:
             # videos saved without sound: check their audio again (silent.py)
