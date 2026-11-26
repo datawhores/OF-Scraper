@@ -348,7 +348,13 @@ Longest wait for the next piece of a response (seconds), for requests that don't
 
 | Variable / Key | Description |
 |---|---|
-| <a id="proxy"></a>`OFSC_PROXY`<br>Key: `PROXY` | **Default:** `None`. Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. |
+| <a id="proxy"></a>`OFSC_PROXY`<br>Key: `PROXY` | **Default:** `None`. Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). [Details](#proxy-details). |
+
+##### `PROXY` details
+
+**Environment variable:** `OFSC_PROXY` · **Default:** `None`
+
+Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. Fansly livestream recording sends it to ffmpeg, which takes only `http://` proxies; with any other value set, Fansly livestreams aren't recorded.
 
 #### Chunking
 

@@ -60,7 +60,7 @@ def load_network_config():
     config["KEEP_ALIVE_EXP"] = int(os.getenv("OFSC_KEEP_ALIVE_EXP", "10"))
 
     # --- Proxy Configuration ---
-    # PROXY: Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment.
+    # PROXY: Proxy URL for all HTTP sessions (`http://` or `https://` only; SOCKS isn't supported). When unset, most requests use no proxy, but some still follow `HTTP_PROXY`/`HTTPS_PROXY` from the environment. Fansly livestream recording sends it to ffmpeg, which takes only `http://` proxies; with any other value set, Fansly livestreams aren't recorded.
     config["PROXY"] = os.getenv("OFSC_PROXY", None)
 
     # PROXY_MOUNTS: Defined but not read anywhere.
