@@ -63,7 +63,16 @@ def save_path_str(username=None, model_id=None):
         site_name=sites.site_name(),
         sitename=sites.site_name(),
     )
-    return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]"
+    # a type_options entry sends some files elsewhere; the line says so
+    # instead of listing each template
+    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, type_name
+
+    others = ", ".join(sorted(
+        name for name, entry in config_data.get_type_options().items()
+        if entry and type_name(name) not in LIVE_TYPE_KEYS
+    ))
+    also = f" ({escape_text(others)}: as type_options sets)" if others else ""
+    return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]{also}"
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):

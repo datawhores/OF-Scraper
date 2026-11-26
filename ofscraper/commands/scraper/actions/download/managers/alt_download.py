@@ -191,7 +191,7 @@ class AltDownloadManager(DownloadManager):
         """Download one track. before is the size of the tracks already
         downloaded: the size limits are checked on it plus this track's
         size. None checks no limits (another track comes after this one)."""
-        self._downloadspace()
+        self._downloadspace(ele)
         placeholderObj = await placeholder.tempFilePlaceholder(
             ele, f"{item['name']}.part"
         ).init()

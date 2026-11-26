@@ -11,6 +11,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - [Quick reference](#quick-reference)
 - [Top level](#top-level)
 - [`file_options`](#file_options)
+- [`live_options`](#live_options)
 - [`download_options`](#download_options)
 - [`binary_options`](#binary_options)
 - [`cdm_options`](#cdm_options)
@@ -36,6 +37,10 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 | [`file_options.text_type_default`](#file_optionstext_type_default) | **Default:** `"letter"` · **CLI:** `--text-type` · **Env:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) |
 | [`file_options.truncation_default`](#file_optionstruncation_default) | **Default:** `true` · **CLI:** `--original` · **Env:** [`TRUNCATION_DEFAULT`](env.md#truncation_default) |
 | [`file_options.filename_collision`](#file_optionsfilename_collision) | **Default:** `"media_id"` · **Env:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) |
+| [`live_options.save_location`](#live_optionssave_location) | **Default:** `""` |
+| [`live_options.dir_format`](#live_optionsdir_format) | **Default:** `""` |
+| [`live_options.file_format`](#live_optionsfile_format) | **Default:** `""` |
+| [`type_options`](#type_options) | **Default:** `{}` |
 | [`download_options.filter`](#download_optionsfilter) | **Default:** `["Images", "Audios", "Videos"]` · **CLI:** `--mediatype` · **Env:** [`FILTER_DEFAULT`](env.md#filter_default) |
 | [`download_options.auto_resume`](#download_optionsauto_resume) | **Default:** `true` · **CLI:** `--no-auto-resume` · **Env:** [`RESUME_DEFAULT`](env.md#resume_default) |
 | [`download_options.system_free_min`](#download_optionssystem_free_min) | **Default:** `0` · **CLI:** `system_free_min` · **Env:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) |
@@ -104,6 +109,12 @@ The folder pattern for each creator's `user_data.db`. It uses placeholders such 
 
 The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `SUMMARY` (one summary message per run or daemon pass, no log lines), `LOW` or `NORMAL`. The option defaults to `OFF`.
 
+### `type_options`
+
+**Default:** `{}` · **Read by:** `get_type_options()` in `ofscraper/utils/config/data.py`
+
+Per-type folder and file name overrides, at the top level of `config.json`. Each key is a post area (`timeline`, `messages`, `archived`, `stories`, ...), a media type (`videos`, `images`, `audios`, `text`) or `livestreams`, matched without regard to case (`post` means `timeline` and `message` means `messages`; a folder name from `responsetype` matches every area saved under it, so `posts`, the timeline's default folder, also matches pinned posts, which `timeline` doesn't); each value is an object with any of `save_location`, `dir_format` and `file_format`. A media file is looked up by its area, then its area as `responsetype` names it, then its media type, and the first entry that sets a value wins; a `--text` file by its area, then `text`. A value left out comes from `file_options` (for livestreams, from `live_options`, then the built-in livestream pattern). On Fansly a `Fansly` folder is added to an override `save_location` as to `file_options.save_location`, unless the templates use `{site_name}` (or `{sitename}`). Templates with unknown placeholders, an entry named for no area or type, two entries for the same type (the last is used), and an entry that isn't an object, has another field or holds a value that isn't text (each removed) are logged at startup, naming the entry. `ofscraper doctor` checks each override save folder as it checks `save_location`, and the free-space limit is checked on the disk each file is saved on. Example: `{"videos": {"save_location": "E:/videos"}, "text": {"file_format": "{post_id}.{ext}"}}`.
+
 ## `file_options`
 
 ### `file_options.save_location`
@@ -160,6 +171,26 @@ When true, final file paths longer than the operating system's limit are shorten
 
 What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes. A `--text` file follows the same rule with the post's id: when its name holds another post's text, it is saved as `name_<post_id>`, then `name_<post_id>_2` and so on, unless `file_format` or `dir_format` has `{post_id}`. A text file that holds the post's text, or whose name has `{post_id}`, is the post's own and isn't rewritten without `--force-all`, unless it holds the caption's raw HTML as older versions wrote it; one that holds another post's text never is. With `overwrite`, it is skipped as before.
 
+## `live_options`
+
+### `live_options.save_location`
+
+**Default:** `""` · **Read by:** `get_live_save_location()` in `ofscraper/utils/config/data.py`
+
+Optional root directory override for livestream recordings (`onlyfans/live.py` and `fansly/live.py`). When empty, livestreams use `file_options.save_location`. On Fansly, a `Fansly` subfolder is added automatically unless `dir_format` or `file_format` includes `{site_name}` (or `{sitename}`). Surrounding quotes are stripped.
+
+### `live_options.dir_format`
+
+**Default:** `""` · **Read by:** `get_live_dirformat()` in `ofscraper/utils/config/data.py`
+
+Optional folder pattern for livestream recordings, relative to `save_location` (a full path is placed under it too). When empty, defaults to `{sitename}/{model_username}/Livestreams`. Livestream templates can use `{model_username}`, `{username}`, `{model_id}`, `{first_letter}`, `{site_name}` (`OnlyFans` or `Fansly`, the folder recordings were saved in before these settings; downloads' `{site_name}` is `Onlyfans`, so a template shared by both makes two folders where names are case-sensitive), `{date}` and `{timestamp}` (the start time as `YYYYMMDD_HHMMSS`), `{year}`, `{month}`, `{day}`, `{response_type}` (`Livestreams`), `{media_type}` (`Videos`), `{ext}`, `{save_location}`, `{root}`, `{config_path}`, `{profile}`, `{my_id}`, `{my_username}`, `{config}` and `{args}`, and their underscore-free forms. Post and media placeholders such as `{post_id}` or `{text}` don't apply: an unknown placeholder is logged at startup, and a template that can't be filled in is replaced by the default names for that recording, in the same save location, with a warning, so the stream is still recorded.
+
+### `live_options.file_format`
+
+**Default:** `""` · **Read by:** `get_live_fileformat()` in `ofscraper/utils/config/data.py`
+
+Optional filename pattern (without extension) for livestream recordings. When empty, defaults to `{model_username}_{date}_live`. When neither livestream template has `{date}` or `{timestamp}`, `_YYYYMMDD_HHMMSS` (the start time) is added to the name, with a warning at startup, so a creator's recordings don't share a file. It takes the placeholders listed under `live_options.dir_format`. The path is shortened to fit the system's limit as other downloads are, unless `truncation_default` is false.
+
 ## `download_options`
 
 ### `download_options.filter`
@@ -178,7 +209,7 @@ When true, a leftover `.part` file is resumed with an HTTP range request. When f
 
 **Default:** `0` · **CLI override:** `system_free_min` · **Env default:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
 
-The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location`, or on `OFSC_DISK_SPACE_CHECK_PATH` when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
+The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location`, and before each download on the disk of the folder it's saved under (a `type_options` entry can set another), or on `OFSC_DISK_SPACE_CHECK_PATH` when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
 
 ### `download_options.max_post_count`
 
@@ -384,7 +415,7 @@ An executable that runs once when the program finishes. It receives JSON on stdi
 
 **Default:** `null` · **Env default:** [`ALERT_SCRIPT_DEFAULT`](env.md#alert_script_default) · **Read by:** `get_alert_script()` in `ofscraper/utils/config/data.py`
 
-An executable that runs when something needs a person: the login is rejected (at the start or partway through a run), the free-space limit is reached, or a daemon pass fails. It receives JSON on stdin with `kind` (`login`, `disk_full` or `daemon_pass`), `message`, `site` and `profile`. Each kind is sent when it starts failing and again when it recovers, not on every daemon pass. The same alerts go to Discord at any `-dc`/`--discord` level except `OFF`. The `--alert-script` option overrides it.
+An executable that runs when something needs a person: the login is rejected (at the start or partway through a run), the free-space limit is reached, or a daemon pass fails. It receives JSON on stdin with `kind` (`login`, `disk_full` or `daemon_pass`), `message`, `site` and `profile`. Each kind is sent when it starts failing and again when it recovers, not on every daemon pass; `disk_full` recovers once every disk downloads are saved on (`save_location`'s and each `type_options` one's) is above the limit. The same alerts go to Discord at any `-dc`/`--discord` level except `OFF`. The `--alert-script` option overrides it.
 
 ### `script_options.naming_script`
 

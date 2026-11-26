@@ -865,6 +865,7 @@ def _large_post(post_id, media_ids, day):
             mediatype="images",
             numeric_duration="N/A",
             responsetype="timeline",
+            modified_responsetype="Posts",
         )
         for media_id in media_ids
     ]

@@ -677,17 +677,12 @@ def _device(path):
 
 
 def _check_path(save):
-    """The folder the free-space limit is measured at: OFSC_DISK_SPACE_CHECK_PATH,
-    or when that is empty the disk that holds the save folder, measured at
-    its nearest folder that is there, a link followed first
-    (free.get_check_path's rule)."""
-    measured = of_env.getattr("DISK_SPACE_CHECK_PATH")
-    if measured:
-        return measured
-    path = save.resolve()
-    while not path.exists() and path.parent != path:
-        path = path.parent
-    return path
+    """The folder the free-space limit is measured at for this save folder,
+    as a run measures it: OFSC_DISK_SPACE_CHECK_PATH, or when that is empty
+    free.measured_at(save)."""
+    import ofscraper.utils.system.free as free
+
+    return of_env.getattr("DISK_SPACE_CHECK_PATH") or free.measured_at(save)
 
 
 # where Linux and macOS mount drives and shares; a missing save folder whose
@@ -716,16 +711,15 @@ def check_folders(config, report):
     import ofscraper.utils.config.data as data
     import ofscraper.utils.paths.common as common_paths
 
-    save = pathlib.Path(os.path.expanduser(common_paths.get_save_location(_config(config))))
-    if save.is_dir():
-        report.add(PASS, "save folder", f"{save}, {_free(save)}")
-    elif not _windows() and _unmounted(save):
-        report.add(FAIL, "save folder", f"{save} isn't there: is the drive or share mounted?")
-    elif pathlib.Path(save.anchor or ".").is_dir():
-        # the download makes it, parents included
-        report.add(WARN, "save folder", f"{save} isn't there yet: a run makes it")
-    else:
-        report.add(FAIL, "save folder", f"{save} isn't there, nor is its drive {save.anchor}")
+    # the save location, then each live_options or type_options one, named
+    # by its section: "save folder (type_options.videos)"
+    saves = {
+        "" if setting == "file_options.save_location" else f" ({setting.rsplit('.', 1)[0]})":
+            pathlib.Path(os.path.expanduser(path))
+        for setting, path in common_paths.get_save_locations(_config(config)).items()
+    }
+    for which, save in saves.items():
+        _check_save(report, f"save folder{which}", save)
     temp = _get(data.get_TempDir, config)
     if temp:
         temp = pathlib.Path(os.path.expanduser(temp))
@@ -740,14 +734,37 @@ def check_folders(config, report):
     if not limit:
         report.add(PASS, "free-space limit", "off")
         return
+    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, type_name
+
+    for which, save in saves.items():
+        # recordings don't stop at the limit, so their folder has no line
+        section = which.strip(" ()")
+        if section == "live_options" or type_name(section.partition(".")[2]) in LIVE_TYPE_KEYS:
+            continue
+        _check_limit(report, f"free-space limit{which}", limit, save)
+
+
+def _check_save(report, name, save):
+    if save.is_dir():
+        report.add(PASS, name, f"{save}, {_free(save)}")
+    elif not _windows() and _unmounted(save):
+        report.add(FAIL, name, f"{save} isn't there: is the drive or share mounted?")
+    elif pathlib.Path(save.anchor or ".").is_dir():
+        # the download makes it, parents included
+        report.add(WARN, name, f"{save} isn't there yet: a run makes it")
+    else:
+        report.add(FAIL, name, f"{save} isn't there, nor is its drive {save.anchor}")
+
+
+def _check_limit(report, name, limit, save):
     measured = _check_path(save)
     if _device(measured) is None:
-        report.add(FAIL, "free-space limit", f"measures {measured}, which isn't there (set OFSC_DISK_SPACE_CHECK_PATH)")
+        report.add(FAIL, name, f"measures {measured}, which isn't there (set OFSC_DISK_SPACE_CHECK_PATH)")
     elif save.is_dir() and _device(measured) != _device(save):
-        report.add(WARN, "free-space limit",
+        report.add(WARN, name,
                    f"measures {measured}, but downloads go to another disk ({save}); set OFSC_DISK_SPACE_CHECK_PATH")
     else:
-        report.add(PASS, "free-space limit", f"{limit} bytes, measured at {measured}, {_free(measured)}")
+        report.add(PASS, name, f"{limit} bytes, measured at {measured}, {_free(measured)}")
 
 
 def check_database(report):

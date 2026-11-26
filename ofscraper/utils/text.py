@@ -90,7 +90,7 @@ def _holds(path, *contents):
 _POST_ID = {"post_id", "postid"}
 
 
-def _own_path(path, ele, *contents):
+def _own_path(path, ele, *contents, formats):
     """Where a post's text goes. A file template can give two posts the same
     name, e.g. captions that start with the same textlength words. A file
     with other content at path is another post's, so this post's text goes
@@ -99,14 +99,13 @@ def _own_path(path, ele, *contents):
     name), so the same check is made there, and then at name_<post_id>_2,
     _3 and so on: the first name that's free or holds this post's text.
     filename_collision "overwrite" keeps the old behaviour: the name is
-    used as it is. When file_format or dir_format has {post_id} (or
-    {postid}), the name is the post's own: a number in the caption or the
-    date that only looks like the post id doesn't count."""
+    used as it is. When one of formats (the dir_format and file_format the
+    name was made from) has {post_id} (or {postid}), the name is the post's
+    own: a number in the caption or the date that only looks like the post
+    id doesn't count."""
     path = pathlib.Path(path)
-    if (
-        str(config_data.get_filename_collision()).lower() == "overwrite"
-        or _POST_ID & parse_safe(config_data.get_fileformat())
-        or _POST_ID & parse_safe(config_data.get_dirformat())
+    if str(config_data.get_filename_collision()).lower() == "overwrite" or any(
+        _POST_ID & parse_safe(fmt) for fmt in formats
     ):
         return path
     if not path.exists() or _holds(path, *contents):
@@ -150,7 +149,10 @@ async def _write_text(ele):
             _older_file_text(new_ele.text),
             _run_together_text(new_ele.text),
         )
-        filepath = _own_path(placeholderObj.filepath, new_ele, content, *older)
+        filepath = _own_path(
+            placeholderObj.filepath, new_ele, content, *older,
+            formats=placeholderObj.templates()[1:],
+        )
 
         # Check for existing file BEFORE marking the attempt. A file at a
         # name with {post_id} in it is kept as it is, even with other

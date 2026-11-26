@@ -336,8 +336,16 @@ def _quality(recorded, base, replacer):
 async def _new_paths(media, username, model_id, posts, labelled, counts, site, replacer):
     """Each media row with the path a download would now give it, or why
     it can't be made: {rowid: (path or None, why)}."""
+    import ofscraper.utils.config.data as config_data
+    from ofscraper.utils.config.naming_check import MEDIA_TYPES, area_type_names, type_name
+
     placeholder, RecordedPost, RecordedMedia, RenamePlaceholders = _classes()
     out = {}
+    names = {type_name(name) for name in config_data.get_type_options()}
+    # "text" is the caption files', which have no row here
+    by_media_type = bool(names & (MEDIA_TYPES - {"text"}))
+    # Include the Unknown fallback RecordedPost uses for a missing area.
+    by_area = bool(names and names & (area_type_names() | {"unknown"}))
     with _offline(placeholder):
         for row in media:
             post_id = str(row["post_id"])
@@ -380,6 +388,12 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
                 out[row["rowid"]] = (None, f"the new name can't be made ({type(error).__name__}: {error})")
                 continue
             missing = sorted(set(MARKED.findall(built)))
+            # with no media type or area, an entry for one can't be matched reliably,
+            # so which folder the file belongs in isn't known
+            if not row["media_type"] and by_media_type:
+                missing = sorted(set(missing) | {"mediatype"})
+            if not row["api_type"] and by_area:
+                missing = sorted(set(missing) | {"response_type"})
             if missing or "\ue000" in str(path) or "\ue001" in str(path):
                 values = ", ".join(f"{{{name}}}" for name in missing) or "a value"
                 out[row["rowid"]] = (None, NEEDS.format(values))
@@ -435,11 +449,14 @@ def plan(conn, settings, username=None, path_root=None):
         site, settings.space_replacer or " ",
     ))
 
-    root = os.path.abspath(placeholder.default_media_root())
+    # the save location first: it's the one the report shows
+    roots = [os.path.abspath(root) for root in placeholder.media_roots()]
     result = {
         "database": None, "creator": {"site": site, "model_id": model_id}, "username": name, "why": why,
         "file_format": config_data.get_fileformat(), "dir_format": config_data.get_dirformat(),
-        "save_location": root, "files": 0, "unchanged": 0, "to_rename": 0, "already_there": 0,
+        # the per-type formats and folders, which win over the two above
+        "type_options": config_data.get_type_options(),
+        "save_location": roots[0], "files": 0, "unchanged": 0, "to_rename": 0, "already_there": 0,
         "left": [], "renames": [], "renamed": 0, "rows_changed": 0, "folders_removed": [],
         "undo_file": None,
     }
@@ -451,7 +468,6 @@ def plan(conn, settings, username=None, path_root=None):
     for row in recorded:
         old = mover._full(Path(row["directory"], row["filename"]), path_root)
         files[key(old)].append((old, row))
-    taken_by_rows = set(files)
     planned = []
     for found in sorted(files.values(), key=lambda found: min(old for old, _row in found)):
         rows = [row for _old, row in found]
@@ -487,9 +503,10 @@ def plan(conn, settings, username=None, path_root=None):
     to_do = []
     for old, new, changes in planned:
         at_old, at_new = _where(old, new)
-        if targets[key(new)] > 1:
+        old_key, new_key = key(old), key(new)
+        if targets[new_key] > 1:
             result["left"].append({"file": old, "why": SAME_TARGET, "new_place": new})
-        elif key(new) in taken_by_rows and key(new) != key(old):
+        elif new_key in files and new_key != old_key:
             result["left"].append({"file": old, "why": RECORDED, "new_place": new})
         elif at_old and not _is_file(old):
             # a folder (on a disk that doesn't tell case apart, perhaps one
@@ -514,7 +531,7 @@ def plan(conn, settings, username=None, path_root=None):
         else:
             result["already_there"] += 1
             to_do.append(("there", old, new, changes))
-    return result, to_do, root
+    return result, to_do, roots
 
 
 def _by_post(media):
@@ -693,12 +710,16 @@ def _is_there(path):
     return f"{path} is there already"
 
 
-def _remove_emptied(moved, root):
-    """Remove the old folders the renames left empty, up to `root`."""
+def _remove_emptied(moved, *roots):
+    """Remove the old folders the renames left empty, up to the root they
+    are in: the save location or a type_options one. A root is never
+    removed, also when it's inside another one."""
     removed = []
     for old in sorted({os.path.dirname(old) for old in moved}, key=len, reverse=True):
         folder = old
-        while _inside(folder, root):
+        while not any(_same_folder(folder, root) for root in roots) and any(
+            _inside(folder, root) for root in roots
+        ):
             try:
                 os.rmdir(folder)
             except OSError:
@@ -713,10 +734,14 @@ def _inside(folder, root):
     a disk that doesn't tell case apart finds `root` however it is spelt."""
     parent = os.path.dirname(folder)
     while parent != folder:
-        if os.path.normcase(parent) == os.path.normcase(root) or _same_file(parent, root):
+        if _same_folder(parent, root):
             return True
         folder, parent = parent, os.path.dirname(parent)
     return False
+
+
+def _same_folder(folder, root):
+    return os.path.normcase(folder) == os.path.normcase(root) or _same_file(folder, root)
 
 
 def _write_undo(undo_file, record):
@@ -741,7 +766,7 @@ def rename(database, apply=False, username=None, path_root=None, config=None, pr
     database = Path(database).resolve(strict=True)
     with closing(_connect(database, apply)) as conn:
         with scraper_settings(config, profile, _site(conn)) as settings:
-            result, to_do, root = plan(conn, settings, username, path_root)
+            result, to_do, roots = plan(conn, settings, username, path_root)
         result["database"] = str(database)
         result["applied"] = apply
         result["renames"] = [{"from": old, "to": new} for _what, old, new, _rows in to_do
@@ -805,7 +830,7 @@ def rename(database, apply=False, username=None, path_root=None, config=None, pr
         with contextlib.suppress(OSError):
             undo_file.unlink()
             result["undo_file"] = None
-    result["folders_removed"] = _remove_emptied([old for old, _new in moved], root)
+    result["folders_removed"] = _remove_emptied([old for old, _new in moved], *roots)
     return result
 
 
