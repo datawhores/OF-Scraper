@@ -175,14 +175,19 @@ def _linux_truncateHelper(path, keep_suffix=""):
 
 
 def validate_directory_parts(parts):
-    """Reject a generated directory name that exceeds its platform's component limit."""
+    """Reject a generated directory name that exceeds its platform's component
+    limit: on macOS and Linux the name limits truncate() cuts file names to"""
     system = platform.system()
     if system == "Windows":
+        # 255 UTF-16 units; WINDOWS_MAX_PATH_BYTES is the whole path's
         size, limit = get_string_byte_size_windows, 510
     elif system == "Darwin":
-        size, limit = _mac_name_size, 255
+        size, limit = _mac_name_size, of_env.getattr("MAC_MAX_PATH")
     else:
-        size, limit = lambda part: len(os.fsencode(part)), 255
+        # real bytes: the estimate truncate() uses without UTF (2 per ASCII
+        # character) would reject a folder name half the limit long
+        size = lambda part: len(os.fsencode(part))  # noqa: E731
+        limit = of_env.getattr("LINUX_MAX_FILE_NAME_BYTES")
     if any(size(part) > limit for part in parts):
         raise ValueError("a livestream directory component exceeds the filesystem name limit")
 

@@ -1365,3 +1365,22 @@ def test_a_save_root_inside_another_is_never_removed(tmp_path):
     removed = tool._remove_emptied([str(old)], str(inner), str(outer))
     assert removed == [str(old.parent), str(old.parent.parent)]
     assert inner.is_dir()
+
+
+def test_the_path_key_reads_a_folder_once_for_many_decomposed_names(tmp_path, monkeypatch):
+    """A folder of NFD-spelt names (from a Mac) was listed again for each one,
+    once per name while the plan was made"""
+    folder = tmp_path / "a_creator"
+    folder.mkdir()
+    names = [unicodedata.normalize("NFD", f"caf\u00e9_{n}.jpg") for n in range(20)]
+    listed = []
+    real = os.listdir
+    monkeypatch.setattr(tool.os, "listdir", lambda path=".": listed.append(str(path)) or real(path))
+    # each NFD name finds the same file as its NFC spelling, as on APFS
+    monkeypatch.setattr(tool, "_same_file", lambda a, b: True)
+
+    key = tool._path_key()
+    for name in names:
+        key(str(folder / name))
+
+    assert listed.count(os.path.normcase(str(folder))) <= 1

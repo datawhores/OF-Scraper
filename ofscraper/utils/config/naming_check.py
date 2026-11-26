@@ -45,6 +45,9 @@ LIVE_TYPE_KEYS = ("livestreams", "live")
 # timeline's default folder name, which pinned posts are saved under too, so
 # a "posts" entry matches both, and a "timeline" one only the timeline
 TYPE_ALIASES = {"post": "timeline", "message": "messages"}
+# an area's key in the responsetype section: "timeline" for post or posts,
+# "message" for messages (the other way round from TYPE_ALIASES)
+RESPONSETYPE_KEYS = {"post": "timeline", "posts": "timeline", "messages": "message"}
 # the live placeholders that hold the start time, which keep one creator's
 # recordings apart
 LIVE_TIME_FIELDS = {"date", "timestamp"}
@@ -256,13 +259,48 @@ POST_AREAS = {
 MEDIA_TYPES = {"images", "videos", "audios", "text"}
 
 
-def area_type_names():
-    """Names a type_options entry can match by post area or response folder."""
+def responsetype_folders(config=None):
+    """The responsetype section as config.json gets it (schema.py lists the
+    same getters): each area's folder name, its default when it isn't set.
+    Only these getters, not every setting the schema reads."""
+    import ofscraper.utils.config.data as data
     import ofscraper.utils.config.file as config_file
-    import ofscraper.utils.config.schema as schema
 
-    folders = schema.get_current_config_schema(config_file.open_config())["responsetype"]
+    if config is None:
+        config = config_file.open_config()
+    return {
+        "timeline": data.get_timeline_responsetype(config=config),
+        "message": data.get_messages_progress_responsetype(config=config),
+        "archived": data.get_archived_responsetype(config=config),
+        "paid": data.get_paid_responsetype(config=config),
+        "stories": data.get_stories_responsetype(config=config),
+        "highlights": data.get_highlights_responsetype(config=config),
+        "profile": data.get_profile_responsetype(config=config),
+        "pinned": data.get_pinned_responsetype(config=config),
+        "streams": data.get_streams_responsetype(config=config),
+    }
+
+
+def area_type_names(config=None):
+    """Names a type_options entry can match by post area or response folder."""
+    folders = responsetype_folders(config=config)
     return POST_AREAS | {type_name(folder) for folder in folders.values() if folder}
+
+
+def used_type_options(config=None):
+    """{name as written: section} for the type_options entries downloads
+    use: a post area, media type or livestreams, and of two spellings of one
+    type only the last, as placeholder._type_settings reads them"""
+    import ofscraper.utils.config.data as data
+
+    names = area_type_names(config) | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
+    used = {}
+    for name, section in data.get_type_options(config=config).items():
+        key = type_name(name)
+        if key in names:
+            used.pop(key, None)
+            used[key] = (name, section)
+    return dict(used.values())
 
 
 def report():

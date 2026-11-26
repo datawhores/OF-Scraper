@@ -2193,3 +2193,30 @@ def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(
             recorder.stream["startedAt"] = started_ms
             sidecar = asyncio.run(recorder.run())
             assert sidecar["parts"] == [expected.name]
+
+
+@pytest.mark.parametrize("system", ["Linux", "Darwin"])
+def test_a_shortened_default_name_keeps_one_start_time_and_live(
+    tmp_path, monkeypatch, fansly_settings, system,
+):
+    """The default file name ends in "_live", after the start time: a cut
+    for the chat file's room keeps both, once each."""
+    import ofscraper.utils.config.file as config_file
+    import ofscraper.utils.paths.paths as paths
+
+    fansly_settings(trunicate=True)
+    config = {"live_options": {"dir_format": "recordings"}}
+    monkeypatch.setattr(config_file, "open_config", lambda: config)
+    limit = 255
+    real_getenv = paths.of_env.getattr
+    overrides = {"LINUX_MAX_FILE_NAME_BYTES": limit, "MAC_MAX_PATH": limit, "UTF": "utf-8"}
+    monkeypatch.setattr(paths.platform, "system", lambda: system)
+    monkeypatch.setattr(paths.of_env, "getattr", lambda key, *a, **kw:
+                        overrides[key] if key in overrides else real_getenv(key, *a, **kw))
+    start = live.utc_start(STARTED_MS)
+
+    base = live.recording_base(tmp_path, "a" * 240, start)
+
+    assert base.name.count(STAMP) == 1, base.name
+    assert base.name.endswith(f"{STAMP}_live"), base.name
+    assert len(live.chat_path(base).name.encode("utf-8")) <= limit

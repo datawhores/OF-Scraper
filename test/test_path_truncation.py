@@ -351,3 +351,16 @@ def test_the_caption_is_left_whole_when_truncation_is_off(name_env, monkeypatch)
 
     monkeypatch.setattr(placeholder.Placeholders, "_name_with_text", shortened)
     name_env("{date} {text} {filename}.{ext}", "a long caption " * 40)
+
+
+@pytest.mark.parametrize("system, key", [("Linux", "LINUX_MAX_FILE_NAME_BYTES"), ("Darwin", "MAC_MAX_PATH")])
+def test_a_folder_name_is_checked_against_the_limit_names_are_cut_to(monkeypatch, system, key):
+    """A lowered limit (an encrypted share allows 143 bytes) applies to the
+    livestream folder names checked, as to the file names cut"""
+    real = paths.of_env.getattr
+    monkeypatch.setattr(paths.platform, "system", lambda: system)
+    monkeypatch.setattr(paths.of_env, "getattr", lambda k, *a, **kw: 143 if k == key else real(k, *a, **kw))
+
+    paths.validate_directory_parts(["a" * 143])
+    with pytest.raises(ValueError):
+        paths.validate_directory_parts(["a" * 144])

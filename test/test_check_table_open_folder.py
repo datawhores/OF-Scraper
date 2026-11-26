@@ -663,3 +663,28 @@ def test_a_row_not_on_disk_opens_the_folder_its_type_options_entry_sets(tmp_path
     # as a download looks it up: the area, its folder name, the media type
     assert seen == [("Timeline", "Posts", "Videos")]
     assert target == Target(tmp_path / "videos" / "a_creator")
+
+
+def test_an_archived_row_opens_the_archived_type_options_folder(tmp_path, monkeypatch):
+    """An archived post keeps responsetype "timeline" but is saved under the
+    archived folder, and its type_options entry is looked up by that folder."""
+    import ofscraper.classes.of.posts as posts
+    import ofscraper.utils.config.data as data
+    from ofscraper.classes.placeholder import media_type_keys
+
+    archived_root = tmp_path / "archive_disk"
+    monkeypatch.setattr(data, "get_type_options", lambda *a, **k: {"archived": {"save_location": str(archived_root)}})
+    monkeypatch.setattr(data, "get_archived_responsetype", lambda *a, **k: "Archived")
+    monkeypatch.setattr(data, "get_dirformat", lambda *a, **k: "{model_username}/{responsetype}")
+    monkeypatch.setattr(data, "get_fileformat", lambda *a, **k: "{filename}.{ext}")
+    monkeypatch.setattr(posts.Post, "archived", property(lambda self: True))
+    monkeypatch.setattr(posts.Post, "responsetype", property(lambda self: "timeline"))
+    post = posts.Post({"id": 1}, 1, "a_creator", responsetype="timeline")
+    ele = SimpleNamespace(responsetype=post.responsetype,
+                          modified_responsetype=post.modified_responsetype, mediatype="videos")
+    row = {**_row(), "responsetype": "Timeline", "mediatype": "Videos",
+           "type_keys": media_type_keys(ele)}
+
+    target = open_folder.row_target(row)
+
+    assert target.path.parent == open_folder.absolute(archived_root)

@@ -212,6 +212,44 @@ def test_a_full_override_disk_stops_only_its_files(measured, tmp_path, monkeypat
         DownloadManager._downloadspace(None, _media("Videos"))
 
 
+def test_a_type_entry_without_a_save_location_is_on_the_save_location(measured, tmp_path, monkeypatch):
+    """On Fansly a dir_format naming {sitename} drops the Fansly folder from
+    the root, but the files are still on save_location's disk: no type_options
+    save disk is named in the alert"""
+    import ofscraper.sites as sites
+
+    save = tmp_path / "downloads"
+    save.mkdir()
+    config = tmp_path / "home" / ".config" / "ofscraper" / "config.json"
+    config.write_text(json.dumps({
+        "file_options": {"save_location": str(save)},
+        "type_options": {"videos": {"dir_format": "{sitename}/{model_username}"}},
+    }), encoding="utf-8")
+    monkeypatch.setattr(sites, "current_site", lambda: sites.FANSLY)
+
+    assert free.save_folder(("Timeline", "Posts", "Videos")) is None
+
+
+def test_save_locations_leave_out_type_entries_that_are_never_used(tmp_path):
+    """Of two spellings of one type only the last is used, and a name that
+    isn't a type is never used: neither is a folder files are saved under"""
+    import ofscraper.utils.paths.common as common_paths
+
+    config = {
+        "file_options": {"save_location": str(tmp_path / "downloads")},
+        "type_options": {
+            "post": {"save_location": str(tmp_path / "shadowed")},
+            "timeline": {"save_location": str(tmp_path / "timeline")},
+            "nonsense": {"save_location": str(tmp_path / "unused")},
+        },
+    }
+
+    assert common_paths.get_save_locations(config) == {
+        "file_options.save_location": str(tmp_path / "downloads"),
+        "type_options.timeline.save_location": str(tmp_path / "timeline"),
+    }
+
+
 def test_the_folder_a_download_goes_to_is_worked_out_once(measured, tmp_path, monkeypatch):
     """the check runs before every download; config.json was read again
     each time, even with no limit"""

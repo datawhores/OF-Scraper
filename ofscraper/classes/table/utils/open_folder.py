@@ -168,19 +168,24 @@ def row_target(row, root=None, dir_format=None) -> Target:
 
 
 def type_templates(row):
-    """(root, dir_format) a type_options entry sets for the row, looked up as
-    a download looks it up (its area, the area's folder name, its media
-    type), or (None, None) when none is set"""
+    """(root, dir_format) a type_options entry sets for the row, looked up by
+    the keys its download uses (placeholder.media_type_keys, which the check
+    command stores on the row: an archived post's folder is the archived
+    one), or (None, None) when none is set"""
     import ofscraper.utils.config.data as data
 
     if not data.get_type_options():
         return None, None
-    from ofscraper.classes.of.posts import responsetype_folder
     from ofscraper.classes.placeholder import media_templates
 
-    area = row.get("responsetype")
-    folder = responsetype_folder(area) if area else None
-    root, dir_format, _ = media_templates((area, folder, row.get("mediatype")))
+    keys = row.get("type_keys")
+    if keys is None:
+        # a row made without them: its area, the area's folder, its media type
+        from ofscraper.classes.of.posts import responsetype_folder
+
+        area = row.get("responsetype")
+        keys = (area, responsetype_folder(area) if area else None, row.get("mediatype"))
+    root, dir_format, _ = media_templates(tuple(keys))
     return root, dir_format
 
 

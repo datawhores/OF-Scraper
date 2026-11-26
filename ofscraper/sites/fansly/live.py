@@ -187,34 +187,12 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
 _CHAT_SUFFIX = "_chat.jsonl"
 
 
-def _base_with_suffix_room(base: pathlib.Path, suffix: str, started_at) -> pathlib.Path:
+def part_path(base: pathlib.Path, n: int, *, started_at=None) -> pathlib.Path:
     import ofscraper.classes.placeholder as placeholder
 
-    stamp = re.search(r"_?\d{8}_\d{6}$", base.name)
-    keep = (stamp.group() if stamp else "") + suffix
-    candidate = base.with_name(base.name + suffix)
-    fitted = placeholder.final_path(candidate, keep_suffix=keep)
-    if started_at is not None and fitted.name != candidate.name:
-        timestamp = started_at.strftime("%Y%m%d_%H%M%S")
-        prefix, matched, tail = base.name.rpartition(timestamp)
-        if not matched:
-            prefix, timestamp, tail = base.name, f"_{timestamp}", ""
-        keep = timestamp + tail + suffix
-        if not fitted.name.endswith(keep):
-            try:
-                fitted = placeholder.final_path(base.with_name(prefix + keep), keep_suffix=keep)
-            except ValueError:
-                if not tail:
-                    raise
-                keep = timestamp + suffix
-                fitted = placeholder.final_path(base.with_name(prefix + keep), keep_suffix=keep)
-    return fitted.with_name(fitted.name.removesuffix(suffix))
-
-
-def part_path(base: pathlib.Path, n: int, *, started_at=None) -> pathlib.Path:
     suffix = ".mp4" if n == 1 else f"_part{n}.mp4"
     if len(suffix) > len(_CHAT_SUFFIX):
-        base = _base_with_suffix_room(base, suffix, started_at)
+        base = placeholder.fit_with_suffix(base, suffix, started_at)
     return base.with_name(f"{base.name}{suffix}")
 
 

@@ -49,7 +49,13 @@ def save_folder(type_keys):
         cached = (key, {})
         _save_folders = cached
     if type_keys not in cached[1]:
-        root = placeholder.media_templates(type_keys)[0]
+        # only an entry's own save_location moves files to another disk; a
+        # dir_format that names the site changes the root on Fansly, not the disk
+        root = (
+            placeholder.media_templates(type_keys)[0]
+            if placeholder.type_save_location(type_keys)
+            else None
+        )
         cached[1][type_keys] = None if root == placeholder.default_media_root() else root
     return cached[1][type_keys]
 

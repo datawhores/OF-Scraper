@@ -7,6 +7,7 @@ import ofscraper.classes.of.media as Media
 import ofscraper.utils.config.data as data
 import ofscraper.filters.media.filters as helpers
 import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.utils.config.naming_check import RESPONSETYPE_KEYS
 
 log = logging.getLogger("shared")
 
@@ -33,12 +34,8 @@ def responsetype_folder(responsetype):
     """The folder an area's posts are saved under, from the responsetype
     section, for a post that isn't archived: the area capitalized when it
     sets none ("messages" -> "Messages")"""
-    # the config keys are "timeline" (for post or posts) and "message"
     response_key = str(responsetype).lower()
-    if response_key in {"post", "posts"}:
-        response_key = "timeline"
-    elif response_key == "messages":
-        response_key = "message"
+    response_key = RESPONSETYPE_KEYS.get(response_key, response_key)
     response = data.responsetype().get(response_key)
     if response in (None, ""):
         return str(responsetype).capitalize()

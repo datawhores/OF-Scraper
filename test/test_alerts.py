@@ -402,7 +402,8 @@ def test_a_full_type_options_disk_isnt_announced_as_recovered(sent, monkeypatch,
     monkeypatch.setattr(placeholder, "default_media_root", lambda *a, **k: main)
     monkeypatch.setattr(placeholder, "media_roots", lambda: [main, videos])
     monkeypatch.setattr(placeholder, "media_templates", lambda keys, **k: (videos, "", ""))
-    clip = SimpleNamespace(responsetype="Timeline", modified_responsetype="Posts", mediatype="Videos")
+    monkeypatch.setattr(placeholder, "type_save_location", lambda keys: str(videos))
+    clip =SimpleNamespace(responsetype="Timeline", modified_responsetype="Posts", mediatype="Videos")
     for _ in range(3):
         with pytest.raises(Exception):
             DownloadManager(ctx=object())._downloadspace(clip)

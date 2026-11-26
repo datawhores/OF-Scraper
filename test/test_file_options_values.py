@@ -442,3 +442,15 @@ def test_known_placeholders_match_what_names_are_built_from():
         built = {k for k, kinds in rows.items() if kind in kinds}
         built |= {k.replace("_", "") for k in built}
         assert known == built, kind
+
+
+@pytest.mark.parametrize("config", [
+    {},
+    {"responsetype": {"post": "Wall", "message": "DMs", "archived": "Old"}},
+])
+def test_the_area_folder_names_are_the_responsetype_section_config_json_gets(config):
+    """naming_check reads the area folders without building every setting;
+    they're the same names the config.json rewrite writes"""
+    import ofscraper.utils.config.schema as schema
+
+    assert naming_check.responsetype_folders(config=config) == schema.get_current_config_schema(config)["responsetype"]

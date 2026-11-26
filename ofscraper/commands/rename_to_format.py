@@ -583,16 +583,17 @@ def _spelt_on_disk(path, key, folders):
     return found[0] if len(found) == 1 else None
 
 
-def _two_names(old, new):
+def _two_names(old, new, listdir=os.listdir):
     """`old` and `new`, one file, are two names of it (a hard link), not
-    one name spelt two ways on a disk that doesn't tell case apart."""
+    one name spelt two ways on a disk that doesn't tell case apart.
+    `listdir` can be a cached one, for a plan that asks of many names."""
     old_folder, new_folder = os.path.dirname(old), os.path.dirname(new)
     if not _same_file(old_folder, new_folder):
         return True
     if os.path.basename(old) == os.path.basename(new):
         return False
     try:
-        names = os.listdir(old_folder)
+        names = listdir(old_folder)
     except OSError:
         return False
     return os.path.basename(old) in names and os.path.basename(new) in names
@@ -665,13 +666,19 @@ def _path_key():
                 folds[folder] = folds_case(parent)
         return folds[folder]
 
+    @cache
+    def listdir(folder):
+        # the key is used while the plan is made, before anything is renamed,
+        # so each folder is read once
+        return frozenset(os.listdir(folder))
+
     def key(path):
         path = os.path.normcase(path)
         normalized = unicodedata.normalize("NFC", path)
         # APFS folds canonical Unicode spellings even before an entry exists.
         # On other filesystems, use observed aliases while keeping hard links distinct.
         if normalized != path:
-            if _same_file(path, normalized) and not _two_names(path, normalized):
+            if _same_file(path, normalized) and not _two_names(path, normalized, listdir):
                 path = normalized
             else:
                 path = apfs_spelling(path)

@@ -772,6 +772,7 @@ def _media(media_id, post_id, date):
         mediatype="images",
         numeric_duration="N/A",
         responsetype="timeline",
+        modified_responsetype="Posts",
     )
 
 
