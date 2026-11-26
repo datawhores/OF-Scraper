@@ -399,9 +399,7 @@ class Media(base.base):
 
     @property
     def file_text(self):
-        text = self.get_text()
-        text = self.file_cleanup(text)
-        text = self.text_trunicate(text)
+        text = self.text_trunicate(self.get_text())
         if not text:
             return str(self.id)
         return text
@@ -603,14 +601,25 @@ class Media(base.base):
         self._log = val
 
     def get_text(self):
+        """The text for a file name, cleaned once. Cleaning the post's
+        cleaned caption a second time turned a "-" space_replacer into "_",
+        so the caption was no longer cut at textlength words."""
         # an undated item falls back to 0 (1970), as its file name does
         if self.responsetype != "Profile":
             date_str = arrow.get(self.date or 0).format(data.get_date())
-            text = self._post.file_sanitized_text or self.filename or date_str
-        else:
-            date_str = arrow.get(self.date or 0).format()
-            text = f"{date_str} {self.text or self.filename}"
-        return text
+            post = self._post
+            if not post.text:
+                # no caption: the post id, as before
+                return post.file_sanitized_text
+            caption = post.file_cleanup(post.text)
+            # a caption that cleans to nothing, or only to spaces (or the
+            # space_replacer that stands for them), names nothing
+            sep = base.settings.get_settings().space_replacer or " "
+            if caption.replace(sep, "").strip():
+                return caption
+            return self.file_cleanup(self.filename or date_str)
+        date_str = arrow.get(self.date or 0).format()
+        return self.file_cleanup(f"{date_str} {self.text or self.filename}")
 
     @async_cached_property
     async def _video_adaptation_set(self):
