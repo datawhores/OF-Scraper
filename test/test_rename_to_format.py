@@ -12,7 +12,9 @@ import sys
 import unicodedata
 from contextlib import closing
 from pathlib import Path
+from types import SimpleNamespace
 
+import psutil
 import pytest
 
 import ofscraper.classes.placeholder as placeholder
@@ -939,6 +941,13 @@ def _entries(folder):
     return sorted(os.listdir(folder))
 
 
+def _simulate_apfs(monkeypatch, mountpoint):
+    monkeypatch.setattr(tool, "os", CaseFoldingOS(fold=lambda part: unicodedata.normalize("NFC", part)))
+    monkeypatch.setattr(psutil, "disk_partitions", lambda **_: [
+        SimpleNamespace(mountpoint=str(mountpoint), fstype="apfs"),
+    ])
+
+
 @pytest.mark.parametrize("normcase", [None, str.lower], ids=["macos", "windows"])
 def test_a_case_only_rename_on_a_disk_that_ignores_case_is_made_and_undone(tmp_path, monkeypatch, normcase):
     library = Library(tmp_path)
@@ -990,7 +999,7 @@ def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, own
     config["type_options"] = {"messages": {"dir_format": "alice/Posts/Images", "file_format": recorded_name}}
     library.config.write_text(json.dumps(config), encoding="utf-8")
     rows = library.rows()
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(fold=lambda part: unicodedata.normalize("NFC", part)))
+    _simulate_apfs(monkeypatch, library.root)
 
     result = library.run(apply=True)
 
@@ -1000,6 +1009,48 @@ def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, own
     assert (owner if owner_on_disk else source).read_bytes() == b"same size"
     assert not (source if owner_on_disk else owner).exists()
     assert library.rows() == rows
+
+
+def test_a_missing_unicode_spelling_does_not_reserve_a_distinct_name(tmp_path):
+    composed = "caf\N{LATIN SMALL LETTER E WITH ACUTE}.jpg"
+    decomposed = unicodedata.normalize("NFD", composed)
+    probe = tmp_path / composed
+    probe.touch()
+    if probe.with_name(decomposed).exists():
+        pytest.skip("this filesystem treats Unicode spellings as equivalent")
+
+    library = Library(tmp_path)
+    source = library.add("source.jpg")
+    owner = library.add(decomposed, downloaded=0, on_disk=False)
+    library.formats(OLD_DIRS, composed)
+    owner_row = library.rows()[1]
+
+    result = library.run(apply=True)
+
+    assert (result["renamed"], result["rows_changed"], result["left"]) == (1, 1, [])
+    assert source.with_name(composed).is_file()
+    assert not owner.exists()
+    assert library.rows()[1] == owner_row
+
+
+def test_unicode_aliases_of_a_new_destination_conflict_on_apfs(tmp_path, monkeypatch):
+    library = Library(tmp_path)
+    composed = "caf\N{LATIN SMALL LETTER E WITH ACUTE}"
+    decomposed = unicodedata.normalize("NFD", composed)
+    library.post(501, text=composed)
+    library.post(502, text=decomposed)
+    sources = [library.add("first.jpg", post_id=501), library.add("second.jpg", post_id=502)]
+    library.formats("new/subfolder", "{text}.{ext}")
+    rows = library.rows()
+    _simulate_apfs(monkeypatch, library.root)
+
+    for apply in (False, True):
+        result = library.run(apply=apply)
+        assert (result["to_rename"], result["renamed"], result["rows_changed"]) == (0, 0, 0)
+        assert {entry["why"] for entry in result["left"]} == {tool.SAME_TARGET}
+        assert {entry["file"] for entry in result["left"]} == {str(source) for source in sources}
+        assert all(source.is_file() for source in sources)
+        assert library.rows() == rows
 
 
 @pytest.mark.skipif(not hasattr(os, "link") or os.name == "nt", reason="hard links where a rename is made with one")

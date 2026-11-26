@@ -151,6 +151,9 @@ def pick_variant(variants: list):
 
 def utc_start(started_at) -> datetime.datetime:
     """Stream start in UTC from milliseconds or seconds; now when unknown."""
+    if isinstance(started_at, datetime.datetime):
+        return (started_at.astimezone(datetime.timezone.utc) if started_at.tzinfo
+                else started_at.replace(tzinfo=datetime.timezone.utc))
     if started_at:
         try:
             value = float(started_at)
@@ -184,39 +187,54 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
 _CHAT_SUFFIX = "_chat.jsonl"
 
 
-def _base_with_suffix_room(base: pathlib.Path, suffix: str) -> pathlib.Path:
+def _base_with_suffix_room(base: pathlib.Path, suffix: str, started_at) -> pathlib.Path:
     import ofscraper.classes.placeholder as placeholder
 
     stamp = re.search(r"_?\d{8}_\d{6}$", base.name)
     keep = (stamp.group() if stamp else "") + suffix
-    fitted = placeholder.final_path(base.with_name(base.name + suffix), keep_suffix=keep)
+    candidate = base.with_name(base.name + suffix)
+    fitted = placeholder.final_path(candidate, keep_suffix=keep)
+    if started_at is not None and fitted.name != candidate.name:
+        timestamp = started_at.strftime("%Y%m%d_%H%M%S")
+        prefix, matched, tail = base.name.rpartition(timestamp)
+        if not matched:
+            prefix, timestamp, tail = base.name, f"_{timestamp}", ""
+        keep = timestamp + tail + suffix
+        if not fitted.name.endswith(keep):
+            try:
+                fitted = placeholder.final_path(base.with_name(prefix + keep), keep_suffix=keep)
+            except ValueError:
+                if not tail:
+                    raise
+                keep = timestamp + suffix
+                fitted = placeholder.final_path(base.with_name(prefix + keep), keep_suffix=keep)
     return fitted.with_name(fitted.name.removesuffix(suffix))
 
 
-def part_path(base: pathlib.Path, n: int) -> pathlib.Path:
+def part_path(base: pathlib.Path, n: int, *, started_at=None) -> pathlib.Path:
     suffix = ".mp4" if n == 1 else f"_part{n}.mp4"
     if len(suffix) > len(_CHAT_SUFFIX):
-        base = _base_with_suffix_room(base, suffix)
+        base = _base_with_suffix_room(base, suffix, started_at)
     return base.with_name(f"{base.name}{suffix}")
 
 
-def next_part_number(base: pathlib.Path) -> int:
+def next_part_number(base: pathlib.Path, *, started_at=None) -> int:
     n = 1
-    while part_path(base, n).exists():
+    while part_path(base, n, started_at=started_at).exists():
         n += 1
     return n
 
 
-def reserve_part(base: pathlib.Path) -> pathlib.Path:
+def reserve_part(base: pathlib.Path, *, started_at=None) -> pathlib.Path:
     """Create the next free part file exclusively and return it.
 
     Only a file this recorder created is ever handed to ffmpeg, counted as a
     part or deleted, even when another process records the same stream.
     """
     base.parent.mkdir(parents=True, exist_ok=True)
-    n = next_part_number(base)
+    n = next_part_number(base, started_at=started_at)
     while True:
-        path = part_path(base, n)
+        path = part_path(base, n, started_at=started_at)
         try:
             with open(path, "x"):
                 return path
@@ -356,6 +374,7 @@ class LiveRecorder:
         # parts and chat file listed by an earlier run of the same stream
         self.earlier = {"parts": [], "chat": None}
         self.base = None
+        self.started_at = None
         self.end_reason = None
         self.sidecar = {}
 
@@ -436,8 +455,9 @@ class LiveRecorder:
                     self._update_stream(channel)
                     mask_url_secrets(channel.get("playbackUrl"))
                 if self.base is None:
+                    self.started_at = utc_start(self.stream.get("startedAt"))
                     self.base = recording_base(self.save_location, self.username,
-                                               self.stream.get("startedAt"),
+                                               self.started_at,
                                                model_id=self.stream.get("accountId"))
                     self.base.parent.mkdir(parents=True, exist_ok=True)
                     self._read_earlier_sidecar()
@@ -484,7 +504,7 @@ class LiveRecorder:
         if scheme not in self.schemes:
             log.info(f"{self.username}: skipping a variant URL with scheme {scheme or 'none'!r}")
             return False, False
-        out = reserve_part(self.base)
+        out = reserve_part(self.base, started_at=self.started_at)
         log.info(f"{self.username}: recording livestream to {out.name}")
         try:
             await self.ffmpeg_runner(

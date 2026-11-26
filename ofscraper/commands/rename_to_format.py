@@ -49,7 +49,10 @@ import unicodedata
 import uuid
 from collections import Counter, defaultdict
 from contextlib import closing
+from functools import cache
 from pathlib import Path
+
+import psutil
 
 import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
@@ -464,9 +467,6 @@ def plan(conn, settings, username=None, path_root=None):
     for row in recorded:
         old = mover._full(Path(row["directory"], row["filename"]), path_root)
         files[key(old)].append((old, row))
-    recorded_spellings = defaultdict(list)
-    for recorded_key in files:
-        recorded_spellings[unicodedata.normalize("NFC", recorded_key)].append(recorded_key)
     planned = []
     folders = {}
     for found in sorted(files.values(), key=lambda found: min(old for old, _row in found)):
@@ -504,15 +504,9 @@ def plan(conn, settings, username=None, path_root=None):
     for old, new, changes in planned:
         at_old, at_new = _where(old, new)
         old_key, new_key = key(old), key(new)
-        # If both spellings are absent, the disk cannot show that they are
-        # distinct. Keep the other row's reservation.
-        missing_alias = not at_new and any(
-            recorded_key not in (old_key, new_key) and not os.path.lexists(files[recorded_key][0][0])
-            for recorded_key in recorded_spellings.get(unicodedata.normalize("NFC", new_key), ())
-        ) and not os.path.lexists(new)
         if targets[new_key] > 1:
             result["left"].append({"file": old, "why": SAME_TARGET, "new_place": new})
-        elif (new_key in files and new_key != old_key) or missing_alias:
+        elif new_key in files and new_key != old_key:
             result["left"].append({"file": old, "why": RECORDED, "new_place": new})
         elif at_old and not _is_file(old):
             # a folder (on a disk that doesn't tell case apart, perhaps one
@@ -620,8 +614,45 @@ def _where(old, new):
 
 
 def _path_key():
-    """Compare spellings using the case and Unicode equivalence seen on disk."""
+    """Compare spellings using the destination filesystem's name rules."""
     folds = {}
+
+    @cache
+    def apfs_devices():
+        try:
+            mounts = psutil.disk_partitions(all=True)
+        except (OSError, psutil.Error):
+            return set()
+        devices = set()
+        for mount in mounts:
+            if mount.fstype.lower() == "apfs":
+                with contextlib.suppress(OSError):
+                    devices.add(os.stat(mount.mountpoint).st_dev)
+        return devices
+
+    @cache
+    def on_apfs(folder):
+        devices = apfs_devices()
+        if not devices:
+            return False
+        try:
+            return os.stat(folder).st_dev in devices
+        except (FileNotFoundError, NotADirectoryError):
+            parent = os.path.dirname(folder)
+            return parent != folder and on_apfs(parent)
+        except OSError:
+            return False
+
+    @cache
+    def apfs_spelling(path):
+        folder, name = os.path.split(path)
+        if not name:
+            return path
+        if not name.isascii() and on_apfs(folder):
+            name = unicodedata.normalize("NFC", name)
+        if not folder.isascii():
+            folder = apfs_spelling(folder)
+        return os.path.join(folder, name)
 
     def folds_case(folder):
         if folder not in folds:
@@ -637,9 +668,13 @@ def _path_key():
     def key(path):
         path = os.path.normcase(path)
         normalized = unicodedata.normalize("NFC", path)
-        # Check the actual volume. Distinct directory entries can be hard links.
-        if normalized != path and _same_file(path, normalized) and not _two_names(path, normalized):
-            path = normalized
+        # APFS folds canonical Unicode spellings even before an entry exists.
+        # On other filesystems, use observed aliases while keeping hard links distinct.
+        if normalized != path:
+            if _same_file(path, normalized) and not _two_names(path, normalized):
+                path = normalized
+            else:
+                path = apfs_spelling(path)
         return path.lower() if folds_case(os.path.dirname(path)) else path
 
     return key

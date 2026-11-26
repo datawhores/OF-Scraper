@@ -899,8 +899,8 @@ def test_a_part_taken_by_another_process_is_never_used(tmp_path, monkeypatch, ot
     taken = folder / f"creator_a_{STAMP}_live.mp4"
     real_next = live.next_part_number
 
-    def racing_next(base):
-        n = real_next(base)
+    def racing_next(base, *, started_at=None):
+        n = real_next(base, started_at=started_at)
         folder.mkdir(parents=True, exist_ok=True)
         if not taken.exists():
             taken.write_bytes(other_bytes)
@@ -2148,15 +2148,17 @@ def test_live_path_uses_stream_account_id_without_cached_models(monkeypatch, tmp
 
 
 @pytest.mark.parametrize("system", ["Linux", "Darwin"])
-@pytest.mark.parametrize("prefix", ["a" * 300 + "_", "a" * 229], ids=["shortened-base", "shortened-part"])
+@pytest.mark.parametrize("file_format", [
+    "a" * 300 + "_{date}", "a" * 229 + "{date}", "a" * 228 + "{date}x",
+], ids=["shortened-base", "shortened-part", "text-after-date"])
 def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(
-    tmp_path, monkeypatch, fansly_settings, system, prefix,
+    tmp_path, monkeypatch, fansly_settings, system, file_format,
 ):
     import ofscraper.utils.config.file as config_file
     import ofscraper.utils.paths.paths as paths
 
     fansly_settings(trunicate=True)
-    config = {"live_options": {"dir_format": "recordings", "file_format": prefix + "{date}"}}
+    config = {"live_options": {"dir_format": "recordings", "file_format": file_format}}
     monkeypatch.setattr(config_file, "open_config", lambda: config)
     # Exercise both production truncators on every test host.
     limit = 255
@@ -2165,15 +2167,29 @@ def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(
     monkeypatch.setattr(paths.platform, "system", lambda: system)
     monkeypatch.setattr(paths.of_env, "getattr", lambda key, *a, **kw:
                         overrides[key] if key in overrides else real_getenv(key, *a, **kw))
-    base = live.recording_base(tmp_path, "test_creator", STARTED_MS)
-    later = live.recording_base(tmp_path, "test_creator", STARTED_MS + 1_000)
+    first_start = live.utc_start(STARTED_MS)
+    later_start = live.utc_start(STARTED_MS + 1_000)
+    base = live.recording_base(tmp_path, "test_creator", first_start)
+    later = live.recording_base(tmp_path, "test_creator", later_start)
     assert live.sidecar_path(base) != live.sidecar_path(later)
     assert live.chat_path(base) != live.chat_path(later)
     assert len(live.chat_path(base).name.encode("utf-8")) == limit
     for n in (1, 99, 100, 1000, 10_000):
-        part = live.part_path(base, n)
+        part = live.part_path(base, n, started_at=first_start)
         assert part.name.endswith(".mp4" if n == 1 else f"_part{n}.mp4")
         assert len(part.name.encode("utf-8")) <= limit, part.name
-        assert part != live.part_path(later, n)
+        assert part != live.part_path(later, n, started_at=later_start)
+        if file_format.endswith("{date}x"):
+            assert STAMP + "x" in part.name
     for sidecar in (live.sidecar_path(base), live.chat_path(base)):
         assert len(sidecar.name.encode("utf-8")) <= limit, sidecar.name
+    if file_format.endswith("{date}x"):
+        monkeypatch.setattr(live, "next_part_number", lambda base, *, started_at: 1000)
+        for started_ms, expected in (
+            (STARTED_MS, live.part_path(base, 1000, started_at=first_start)),
+            (STARTED_MS + 1_000, live.part_path(later, 1000, started_at=later_start)),
+        ):
+            recorder, _ = one_part_recorder(tmp_path)
+            recorder.stream["startedAt"] = started_ms
+            sidecar = asyncio.run(recorder.run())
+            assert sidecar["parts"] == [expected.name]
