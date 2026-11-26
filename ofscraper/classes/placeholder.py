@@ -258,10 +258,56 @@ class Placeholders(basePlaceholder):
         file = await self.createfilename()
         script_name = await naming_script(dir, file, self._ele)
         if not script_name:
+            file = self._fit_text(dir, file)
             self._filepath = paths.truncate(pathlib.Path(dir, file))
         else:
             self._filepath = paths.truncate(pathlib.Path(script_name))
         return self
+
+    def _fit_text(self, dir, file):
+        """A name too long for the path, with {text} made just short enough
+        to fit, so the end of the name ({filename}, {media_id} and the rest
+        after the caption) isn't cut instead (#741). The name unchanged when
+        it fits, or when it doesn't fit even with no caption. Left alone, as
+        the rest of the path is, when --original or truncation_default: false
+        turns shortening off."""
+
+        def fits(name):
+            if name is None:
+                return False
+            try:
+                return paths.truncate(pathlib.Path(dir, name)).name == name
+            except ValueError:
+                # not even the start of the name fits
+                return False
+
+        text = self._variables.get("text")
+        if (
+            not getattr(settings.get_settings(), "trunicate", True)
+            or not text
+            or self._ele.responsetype.capitalize() == "Profile"
+            or fits(file)
+            or not fits(self._name_with_text(""))
+        ):
+            return file
+        low, high = 0, len(text)
+        while low < high:
+            mid = (low + high + 1) // 2
+            if fits(self._name_with_text(text[:mid])):
+                low = mid
+            else:
+                high = mid - 1
+        return self._name_with_text(text[:low])
+
+    def _name_with_text(self, text):
+        """The name with this caption, or None when nothing is left before
+        the extension: a nameless ".jpg" is no name, nor is the "_1.jpg" a
+        count makes of it (the count repeats in every post), but "_70.jpg"
+        from "{text}_{media_id}" is."""
+        out = data.get_fileformat().format(**{**self._variables, "text": text.rstrip()})
+        if not re.sub(r"\.[a-z0-9]{1,10}$", "", out, flags=re.IGNORECASE).strip():
+            return None
+        return self._addcount(self._ele, out)
 
     def add_price_variables(self, username):
         modelObj = manager.Manager.current_model_manager.get_model(username)
