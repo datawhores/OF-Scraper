@@ -53,7 +53,7 @@ def funct(prompt_):
     [File Options]:
     save_location: root directory for files
     dir_format: format of directories
-    textlength: max length of text placeholder
+    textlength: max length of text placeholder, in letters or words (see text_type_default)
     space_replacer: space replacement for filenames
     date: date format for placeholders
     text_type_default: toggle for word count type
@@ -238,7 +238,7 @@ def file_config():
                 "type": "number",
                 "name": "textlength",
                 "message": "textlength: ",
-                "option_instruction": "Enter the max length to extract for post text, 0 means unlimited\n",
+                "option_instruction": "Enter the max length to extract for post text, in letters or words (see text type below), 0 means unlimited\n",
                 "default": data.get_textlength(),
                 "min_allowed": 0,
                 "validate": EmptyInputValidator(),
