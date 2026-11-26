@@ -1,6 +1,7 @@
 """Long paths are cut to fit: Windows' 259-character MAX_PATH, Linux's file-name limit."""
 
 import pathlib
+import unicodedata
 
 import pytest
 
@@ -90,6 +91,27 @@ def test_an_emoji_counts_as_two_windows_units():
     assert 258 <= windows_chars(out) <= 259
 
 
+@pytest.mark.parametrize(
+    "folder", ["/Users/someone/d", "/Users/someone/" + "d" * 300], ids=["short", "long"]
+)
+@pytest.mark.parametrize(
+    "name", ["日本語のテキスト" * 16, "💀" * 100, "a" * 300], ids=["cjk", "emoji", "ascii"]
+)
+def test_a_long_mac_name_fits_in_255_bytes(monkeypatch, folder, name):
+    monkeypatch.setattr(paths.platform, "system", lambda: "Darwin")
+    out = paths.truncate(f"{folder}/{name}.mp4")
+    size = len(out.name.encode("utf-8"))
+    # as much as fits: one more character would not
+    assert size <= 255 < size + len(name[0].encode("utf-8"))
+    assert out.name.endswith(".mp4") and out.parent.as_posix() == folder
+
+
+def test_a_short_mac_name_is_left_alone(monkeypatch):
+    monkeypatch.setattr(paths.platform, "system", lambda: "Darwin")
+    path = "/Users/someone/" + "d" * 300 + "/short.mp4"
+    assert paths.truncate(path).as_posix() == path
+
+
 @pytest.mark.parametrize("name", ["💀" * 200 + ".txt", "💀" * 200])
 def test_a_folder_that_leaves_no_room_for_a_character_says_so(name):
     # room for 2 bytes after the folder: not one emoji (4), so nothing of the
@@ -161,3 +183,29 @@ def test_utf_does_not_change_how_windows_counts_a_path(monkeypatch, encoding):
     monkeypatch.setenv("UTF", encoding)
     out = cut(f"{FOLDER}\\{'a' * 400}.txt")
     assert windows_chars(out) == 259
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["💀" * 100 + ".txt", "💀" * 100, ".longext"],
+    ids=["ext", "no-ext", "ext-only"],
+)
+def test_a_mac_name_with_no_room_for_a_character_says_so(monkeypatch, name):
+    # room for less than one emoji (4 bytes), or an extension that alone is
+    # over the limit: nothing of the name would be left
+    monkeypatch.setattr(paths.platform, "system", lambda: "Darwin")
+    monkeypatch.setenv("MAC_MAX_PATH", "7" if name.endswith(".txt") else "3")
+    with pytest.raises(ValueError, match="no room"):
+        paths.truncate(f"/Users/someone/d/{name}")
+
+
+@pytest.mark.parametrize("char", ["ǖ", "ᾂ", "한"], ids=["latin", "greek", "hangul"])
+def test_a_mac_name_fits_hfs_plus_decomposed_form_too(monkeypatch, char):
+    # HFS+ stores a name decomposed (NFD) and allows 255 UTF-16 units of it:
+    # "ǖ" is 2 bytes of UTF-8 but 3 units decomposed
+    monkeypatch.setattr(paths.platform, "system", lambda: "Darwin")
+    out = paths.truncate(f"/Volumes/external/d/{char * 300}.mp4")
+    nfd = unicodedata.normalize("NFD", out.name)
+    assert len(out.name.encode("utf-8")) <= 255
+    assert len(nfd.encode("utf-16-le")) // 2 <= 255
+    assert out.name.endswith(".mp4") and len(out.name) > 4
