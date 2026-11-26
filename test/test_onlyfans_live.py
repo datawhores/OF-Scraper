@@ -487,6 +487,54 @@ def test_without_playwright_it_says_how_to_install_and_records_nothing(monkeypat
     assert "playwright install chromium" in caplog.text
 
 
+@pytest.fixture
+def first_use(monkeypatch):
+    """Playwright and Chromium missing; installing them makes them present."""
+    from ofscraper.utils.system import extras
+
+    state = SimpleNamespace(playwright=False, chromium=False, calls=[], works=True)
+
+    def install(extra):
+        state.calls.append(extra)
+        state.playwright = state.works
+        return state.works
+
+    def install_chromium():
+        state.calls.append("chromium")
+        state.chromium = state.works
+        return state.works
+
+    monkeypatch.setattr(live_capture, "has_playwright", lambda: state.playwright)
+    monkeypatch.setattr(live_capture, "chromium_installed", lambda: state.chromium)
+    monkeypatch.setattr(extras, "install", install)
+    monkeypatch.setattr(extras, "install_chromium", install_chromium)
+    return state
+
+
+def test_the_first_run_installs_playwright_and_chromium(first_use):
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == ["live", "chromium"]
+
+
+def test_nothing_is_installed_when_both_are_there(first_use):
+    first_use.playwright = first_use.chromium = True
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == []
+
+
+def test_only_chromium_is_downloaded_when_playwright_is_there(first_use):
+    first_use.playwright = True
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == ["chromium"]
+
+
+def test_a_failed_install_says_how_to_install_and_records_nothing(first_use, caplog):
+    first_use.works = False
+    with caplog.at_level("WARNING", logger="shared"):
+        assert live_capture.playwright_ready() is False
+    assert "playwright install chromium" in caplog.text
+
+
 def test_the_standalone_download_is_not_told_to_pip_install(monkeypatch, onlyfans_settings, caplog):
     import builtins
     import sys

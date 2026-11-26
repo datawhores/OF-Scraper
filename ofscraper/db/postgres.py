@@ -490,25 +490,41 @@ def row_factory(cursor):
     return row
 
 
-def _driver():
-    """psycopg and its pool, or a sentence saying how to install them."""
-    try:
-        import psycopg
-        import psycopg_pool
-    except ImportError as E:
-        if getattr(sys, "frozen", False):
-            fix = (
-                "The standalone download doesn't include it: use the pip or "
-                "Docker install, or unset the variable to use SQLite."
-            )
-        else:
-            from ofscraper.__version__ import __dist_name__
+def _import_driver():
+    import psycopg
+    import psycopg_pool
 
-            fix = f"Install it with: {INSTALL_HINT.format(dist=__dist_name__)}"
-        raise PostgresUnavailable(
-            f"{URL_KEY} is set, but the PostgreSQL driver isn't installed. {fix}"
-        ) from E
     return psycopg, psycopg_pool
+
+
+def _driver():
+    """psycopg and its pool, or a sentence saying how to install them.
+
+    On first use, installs them (``OFSC_INSTALL_EXTRAS``).
+    """
+    try:
+        return _import_driver()
+    except ImportError as E:
+        missing = E
+    from ofscraper.utils.system import extras
+
+    if extras.install("postgres"):
+        try:
+            return _import_driver()
+        except ImportError as E:
+            missing = E
+    if getattr(sys, "frozen", False):
+        fix = (
+            "The standalone download doesn't include it: use the pip or "
+            "Docker install, or unset the variable to use SQLite."
+        )
+    else:
+        from ofscraper.__version__ import __dist_name__
+
+        fix = f"Install it with: {INSTALL_HINT.format(dist=__dist_name__)}"
+    raise PostgresUnavailable(
+        f"{URL_KEY} is set, but the PostgreSQL driver isn't installed. {fix}"
+    ) from missing
 
 
 @functools.lru_cache(maxsize=1)

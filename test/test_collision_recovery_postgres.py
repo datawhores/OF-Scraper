@@ -1510,6 +1510,33 @@ def test_a_missing_driver_is_one_sentence(tmp_path, monkeypatch, capsys):
         assert "[postgres]" in err and err.count("\n") == 1
 
 
+def test_a_missing_driver_is_installed_on_first_use(monkeypatch):
+    import types
+
+    from ofscraper.utils.system import extras
+
+    installed = []
+    real_import = builtins.__import__
+    fake = types.ModuleType("psycopg"), types.ModuleType("psycopg_pool")
+
+    def not_yet(name, *args, **kwargs):
+        if name.split(".")[0] in ("psycopg", "psycopg_pool") and not installed:
+            raise ImportError(f"No module named {name!r}")
+        return real_import(name, *args, **kwargs)
+
+    def install(extra):
+        installed.append(extra)
+        monkeypatch.setitem(sys.modules, "psycopg", fake[0])
+        monkeypatch.setitem(sys.modules, "psycopg_pool", fake[1])
+        return True
+
+    monkeypatch.setattr(builtins, "__import__", not_yet)
+    monkeypatch.setattr(extras, "install", install)
+
+    assert postgres._driver() == fake
+    assert installed == ["postgres"]
+
+
 @pytest.mark.parametrize("apply", [False, True])
 def test_a_server_that_isnt_there_is_one_sentence(tmp_path, monkeypatch, capsys, apply):
     pytest.importorskip("psycopg")
