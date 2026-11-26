@@ -178,7 +178,7 @@ When true, a leftover `.part` file is resumed with an HTTP range request. When f
 
 **Default:** `0` · **CLI override:** `system_free_min` · **Env default:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) · **Read by:** `get_system_freesize()` in `ofscraper/utils/config/data.py`
 
-The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on `OFSC_DISK_SPACE_CHECK_PATH` (default `/`), not on `save_location`. There is no CLI option for it.
+The minimum free disk space. Once free space drops below it, scraping of further post areas stops with the message "Space min has been reached". It accepts bytes or a size string such as `10GB`. 0 disables the check. Space is measured on the disk that holds `save_location`, or on `OFSC_DISK_SPACE_CHECK_PATH` when that is set. The temporary folder (`temp_dir`) isn't checked. There is no CLI option for it.
 
 ### `download_options.max_post_count`
 
