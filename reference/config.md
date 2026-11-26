@@ -70,6 +70,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 | [`advanced_options.database_url`](#advanced_optionsdatabase_url) | **Default:** see below |
 | [`script_options.after_action_script`](#script_optionsafter_action_script) | **Default:** `null` · **CLI:** `--after-action-script` · **Env:** [`AFTER_ACTION_SCRIPT_DEFAULT`](env.md#after_action_script_default) |
 | [`script_options.post_script`](#script_optionspost_script) | **Default:** `null` · **CLI:** `--post-script` · **Env:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) |
+| [`script_options.alert_script`](#script_optionsalert_script) | **Default:** `null` · **Env:** [`ALERT_SCRIPT_DEFAULT`](env.md#alert_script_default) |
 | [`script_options.naming_script`](#script_optionsnaming_script) | **Default:** `null` · **CLI:** `--naming-script` · **Env:** [`NAMING_SCRIPT_DEFAULT`](env.md#naming_script_default) |
 | [`script_options.after_download_script`](#script_optionsafter_download_script) | **Default:** `null` · **CLI:** `--after-download-script` · **Env:** [`AFTER_DOWNLOAD_SCRIPT_DEFAULT`](env.md#after_download_script_default) |
 | [`script_options.skip_download_script`](#script_optionsskip_download_script) | **Default:** `null` · **CLI:** `--skip-download-script` · **Env:** [`SKIP_DOWNLOAD_SCRIPT_DEFAULT`](env.md#skip_download_script_default) |
@@ -101,7 +102,7 @@ The folder pattern for each creator's `user_data.db`. It uses placeholders such 
 
 **Default:** `""` · **CLI override:** `--discord` · **Env default:** [`DISCORD_DEFAULT`](env.md#discord_default) · **Read by:** `get_discord()` in `ofscraper/utils/config/data.py`
 
-The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `LOW` or `NORMAL`. The option defaults to `OFF`.
+The Discord webhook URL that log messages are posted to. Nothing is sent unless the run's Discord log level is raised with `-dc`/`--discord` set to `SUMMARY` (one summary message per run or daemon pass, no log lines), `LOW` or `NORMAL`. The option defaults to `OFF`.
 
 ## `file_options`
 
@@ -377,7 +378,13 @@ An executable that runs after each user is processed by the like, unlike or down
 
 **Default:** `null` · **CLI override:** `--post-script` · **Env default:** [`POST_SCRIPT_DEFAULT`](env.md#post_script_default) · **Also reads:** `advanced_options`, `scripts` · **Read by:** `get_post_script()` in `ofscraper/utils/config/data.py`
 
-An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities. The `-ps`/`--post-script` option overrides it.
+An executable that runs once when the program finishes. It receives JSON on stdin that lists processed and unprocessed users for the like, unlike, download and scrape-paid activities, plus a `summary` key: the run's record (site, profile, command, start and finish times, outcome, exit status (`status`, `status_label`), download/metadata/text totals, creators done and not finished, and each creator's new files, bytes and failures), or `null` when it couldn't be built. The `-ps`/`--post-script` option overrides it.
+
+### `script_options.alert_script`
+
+**Default:** `null` · **Env default:** [`ALERT_SCRIPT_DEFAULT`](env.md#alert_script_default) · **Read by:** `get_alert_script()` in `ofscraper/utils/config/data.py`
+
+An executable that runs when something needs a person: the login is rejected (at the start or partway through a run), the free-space limit is reached, or a daemon pass fails. It receives JSON on stdin with `kind` (`login`, `disk_full` or `daemon_pass`), `message`, `site` and `profile`. Each kind is sent when it starts failing and again when it recovers, not on every daemon pass. The same alerts go to Discord at any `-dc`/`--discord` level except `OFF`. The `--alert-script` option overrides it.
 
 ### `script_options.naming_script`
 

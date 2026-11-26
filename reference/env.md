@@ -180,6 +180,7 @@ Defined in `ofscraper/utils/of_env/values/main.py`.
 | <a id="use_wiv_cache_key"></a>`OFSC_USE_WIV_CACHE_KEY`<br>Key: `USE_WIV_CACHE_KEY` | **Default:** `True`. Whether to cache Widevine decryption keys by PSSH (`keyhelpers.py`). |
 | <a id="after_action_script_default"></a>`OFSC_AFTER_ACTION_SCRIPT_DEFAULT`<br>Key: `AFTER_ACTION_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.after_action_script`. |
 | <a id="post_script_default"></a>`OFSC_POST_SCRIPT_DEFAULT`<br>Key: `POST_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.post_script`. |
+| <a id="alert_script_default"></a>`OFSC_ALERT_SCRIPT_DEFAULT`<br>Key: `ALERT_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.alert_script`. |
 | <a id="skip_download_script_default"></a>`OFSC_SKIP_DOWNLOAD_SCRIPT_DEFAULT`<br>Key: `SKIP_DOWNLOAD_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.skip_download_script`. |
 | <a id="after_download_script_default"></a>`OFSC_AFTER_DOWNLOAD_SCRIPT_DEFAULT`<br>Key: `AFTER_DOWNLOAD_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.after_download_script`. |
 | <a id="naming_script_default"></a>`OFSC_NAMING_SCRIPT_DEFAULT`<br>Key: `NAMING_SCRIPT_DEFAULT` | **Default:** `None`. Default for `script_options.naming_script`. |

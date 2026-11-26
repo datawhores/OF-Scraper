@@ -424,6 +424,7 @@ class DownloadManager:
 
     def _downloadspace(self):
         if not system.check_free_size():
+            system.alert_full()
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
     async def _after_download_script(self, filepath, ele):

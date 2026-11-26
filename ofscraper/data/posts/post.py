@@ -64,10 +64,16 @@ def log_area_failure(username, area, error):
     """Say at normal output that one area of a creator failed (#379); the
     area then comes back empty, as before. The traceback stays at traceback
     level. Call it from an except block."""
+    from ofscraper.utils.checkers import LoginRejected, check_login_after_failure
+
+    if isinstance(error, LoginRejected):
+        raise error  # said already; it ends the pass, not just this area
     log.warning(f"[{username}] {area} failed: {type(error).__name__}: {error}")
     log.traceback_(error)
     log.traceback_(traceback.format_exc())
     exit_status.record(exit_status.PARTIAL)
+    # a 401 or 403 may mean the login was rejected: that stops the pass
+    check_login_after_failure(error)
 
 
 @run

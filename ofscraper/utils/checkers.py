@@ -20,6 +20,59 @@ class AuthCheckLeft(Exception):
     """The user chose "Go to Main Menu" in the auth prompt."""
 
 
+class LoginRejected(Exception):
+    """The site rejected the login partway through a run; the pass stops."""
+
+
+# whether this pass has asked auth_status after a failure already
+_login_checked = False
+
+
+def new_pass():
+    global _login_checked
+    _login_checked = False
+
+
+def http_status(error):
+    """The HTTP status an error carries, from any of the clients, or None."""
+    seen = set()
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        for value in (
+            getattr(error, "status", None),
+            getattr(getattr(error, "response", None), "status_code", None),
+            getattr(getattr(error, "response", None), "status", None),
+        ):
+            if isinstance(value, int):
+                return value
+        error = error.__cause__ or error.__context__
+    return None
+
+
+def check_login_after_failure(error):
+    """After a creator failed with 401 or 403, ask once per pass whether the
+    login still works: a 403 can also be a rate or location block, so the
+    status alone isn't trusted. If the site says the login is rejected, the
+    pass stops with "login failed" and an alert."""
+    global _login_checked
+    if _login_checked or http_status(error) not in (401, 403):
+        return
+    _login_checked = True
+    status, _ = init.auth_status()
+    if status != "DOWN":
+        return
+    import ofscraper.main.close.alerts as alerts
+    import ofscraper.main.close.exit_status as exit_status
+
+    exit_status.record(exit_status.AUTH)
+    alerts.failing(alerts.LOGIN, f"{_site_label()} rejected the login during the run; update the auth")
+    raise LoginRejected(f"{_site_label()} rejected the login") from error
+
+
+def _site_label():
+    return "Fansly" if sites.is_fansly() else "OnlyFans"
+
+
 def check_auth(include_main_menu=False):
     status = None
     log.info("checking auth status")
@@ -35,6 +88,11 @@ def check_auth(include_main_menu=False):
             raise AuthCheckUnavailable(f"Couldn't check the auth: {message}")
         if status != "UP":
             log.info("Auth Failed")
+            import ofscraper.main.close.alerts as alerts
+
+            # before any prompt: in a daemon under Docker's tty: true a
+            # prompt waits forever, so at least the wait is announced
+            alerts.failing(alerts.LOGIN, f"{_site_label()} rejected the login; update the auth")
             try:
                 if sites.is_fansly():
                     fansly_auth.make_auth()
@@ -61,4 +119,7 @@ def check_auth(include_main_menu=False):
                 # the main menu catches this and shows itself again
                 raise AuthCheckLeft("back to the main menu")
         else:
+            import ofscraper.main.close.alerts as alerts
+
+            alerts.recovered(alerts.LOGIN, f"{_site_label()} login works again")
             break
