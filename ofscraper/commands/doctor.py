@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.parse
 
 import ofscraper.utils.of_env.of_env as of_env
 
@@ -255,14 +256,35 @@ def check_keys(config, site, report):
         report.add(SKIP, "key files", "not used: Fansly videos aren't protected")
         return
     mode = _get(data.get_key_mode, config)
+    client_id = _get(data.get_client_id, config) if config else None
+    private_key = _get(data.get_private_key, config) if config else None
     if mode == "cdrm":
-        report.add(PASS, "key files", "key mode cdrm: no key files needed; its server isn't contacted by this check")
+        if keyhelpers.cdm_key_problems("manual", client_id, private_key):
+            fix = "then set client-id and private-key to your key files"
+        else:
+            fix = "client-id and private-key are already set, so that switch is the whole fix"
+        url = str(of_env.getattr("CDRM") or "").strip()
+        try:
+            retired = keyhelpers.cdrm_retired(url)
+            host = urllib.parse.urlsplit(url).hostname
+        except ValueError:  # a malformed address, e.g. an unclosed IPv6 bracket
+            retired, host = False, None
+        if url and not retired:
+            # a server of the user's own (#677): only its host is shown, as
+            # the address can hold a login
+            host = host or "an unreadable address"
+            report.add(WARN, "key files",
+                       f"key mode cdrm: keys are asked from the server in OFSC_CDRM_URL ({host}), which is sent"
+                       " your OnlyFans cookies, so use only a server you run (not contacted by this check)."
+                       f" The cdrm mode is deprecated: to stop using it, set key-mode-default to manual; {fix}")
+            return
+        report.add(WARN, "key files",
+                   "key mode cdrm: the cdrm service doesn't work, so protected videos will fail"
+                   f" (not contacted by this check). Set key-mode-default to manual; {fix}")
         return
     if mode != "manual":
         report.add(PASS, "key files", f"key mode {mode}: no key files needed")
         return
-    client_id = _get(data.get_client_id, config) if config else None
-    private_key = _get(data.get_private_key, config) if config else None
     if not str(client_id or "").strip() and not str(private_key or "").strip():
         # the default on a fresh install: a run goes on without them
         report.add(WARN, "key files", "no key files set up yet: protected (DRM) videos are skipped until client-id and private-key are set")

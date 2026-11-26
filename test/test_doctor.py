@@ -189,8 +189,23 @@ def test_key_files(home, tmp_path):
     key.write_bytes(b"not a key")
     status, detail = result(doctor.run(), "key files")
     assert status == "FAIL" and detail.startswith("the key files can't be loaded")
+
+
+def test_key_mode_cdrm_warns_without_contacting_it(home, tmp_path, monkeypatch):
+    from ofscraper.commands.scraper.actions.download.utils import keyhelpers
+
+    monkeypatch.setattr(keyhelpers, "load_device", lambda *a: pytest.fail("loaded the keys"))
     write_config(home, {"cdm_options": {"key-mode-default": "cdrm"}})
-    assert "isn't contacted" in result(doctor.run(), "key files")[1]
+    report = doctor.run()
+    status, detail = result(report, "key files")
+    assert status == "WARN" and "doesn't work" in detail and "key-mode-default to manual" in detail
+    assert "then set client-id and private-key" in detail
+    client, key = tmp_path / "client_id.bin", tmp_path / "private_key.pem"
+    client.write_bytes(b"c")
+    key.write_bytes(b"k")
+    write_config(home, {"cdm_options": {"key-mode-default": "cdrm", "client-id": str(client), "private-key": str(key)}})
+    status, detail = result(doctor.run(), "key files")
+    assert status == "WARN" and "already set, so that switch is the whole fix" in detail
 
 
 @pytest.mark.parametrize(
@@ -513,6 +528,34 @@ def test_online_json_is_the_only_thing_on_stdout(home, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert json.loads(captured.out)["results"]
     assert "a config was made" in captured.err
+
+
+def test_key_mode_cdrm_with_a_server_of_your_own(home, monkeypatch):
+    """OFSC_CDRM_URL set to a server other than the retired one: keys are
+    asked from it, so the warning says that and not that cdrm can't work."""
+    import ofscraper.utils.of_env.of_env as of_env
+
+    url = f"http://user:{SECRET}@127.0.0.1:8080/api/decrypt"
+    real = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr", lambda key, *a, **k: url if key == "CDRM" else real(key, *a, **k))
+    write_config(home, {"cdm_options": {"key-mode-default": "cdrm"}})
+    status, detail = result(doctor.run(), "key files")
+    assert status == "WARN" and "doesn't work" not in detail
+    assert "127.0.0.1" in detail and "cookies" in detail and SECRET not in detail
+
+
+def test_key_mode_cdrm_with_a_malformed_server_address(home, monkeypatch):
+    """An OFSC_CDRM_URL that urlsplit can't parse (an unclosed IPv6
+    bracket) still gets the warning, without naming a host or crashing."""
+    import ofscraper.utils.of_env.of_env as of_env
+
+    url = f"http://user:{SECRET}@[::1/api/decrypt"
+    real = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr", lambda key, *a, **k: url if key == "CDRM" else real(key, *a, **k))
+    write_config(home, {"cdm_options": {"key-mode-default": "cdrm"}})
+    status, detail = result(doctor.run(), "key files")
+    assert status == "WARN" and "an unreadable address" in detail and "cookies" in detail
+    assert SECRET not in detail and "::1" not in detail
 
 
 # --- second review round ---
