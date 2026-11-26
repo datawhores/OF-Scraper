@@ -305,9 +305,11 @@ class InputApp(App):
             self.PER_PAGE_DELAY, lambda: self._apply_per_page(prefix)
         )
 
-    def _per_page(self, prefix):
-        """The Per Page box's number, or None when it isn't above 0."""
+    def _per_page(self, prefix, *, default_if_blank=None):
+        """Return a positive page size, with an optional default for blank input."""
         val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
+        if not val:
+            return default_if_blank
         return int(val) if val.isnumeric() and int(val) > 0 else None
 
     def _page_rows(self, prefix, rows):
@@ -319,7 +321,7 @@ class InputApp(App):
     def _apply_per_page(self, prefix):
         self._per_page_timers.pop(prefix, None)
         try:
-            size = self._per_page(prefix)
+            size = self._per_page(prefix, default_if_blank=AMOUNT_PER_PAGE)
         except NoMatches:
             # the app closed while the redraw was waiting
             return
@@ -1504,7 +1506,7 @@ class InputApp(App):
                 ("post_text", lambda r, n: n.compare(str(r.get("text", "")))),
                 ("post_post_id", lambda r, n: n.compare(str(r.get("post_id", "")))),
                 ("post_price", lambda r, n: n.compare(str(r.get("_sort_total_cost", 0)))),
-                ("post_post_date", lambda r, n: True if str(r.get("post_date")) == "Probably Deleted" else n.compare(str(r.get("post_date", "")))),
+                ("post_post_date", lambda r, n: n.compare(str(r.get("post_date", "")))),
                 ("post_unlocked", lambda r, n: n.compare(str(r.get("unlocked", "")))),
                 ("post_responsetype", lambda r, n: n.compare(str(r.get("responsetype", "")))),
                 ("post_username", lambda r, n: n.compare(str(r.get("username", "")))),

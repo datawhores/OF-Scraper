@@ -1,3 +1,5 @@
+import math
+
 from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
@@ -5,10 +7,10 @@ from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
 
 
-def hms_to_seconds(value) -> int:
+def hms_to_seconds(value) -> float:
     """Seconds in a table length; "N/A" or empty is 0."""
     if value in (None, "", "N\\A", "N/A"):
-        return 0
+        return 0.0
     # str(timedelta): "1 day, 1:00:00" from 24 hours, "0:01:30.500000"
     # for a fraction of a second
     days = 0
@@ -16,7 +18,7 @@ def hms_to_seconds(value) -> int:
     if "day" in text:
         day_part, _, text = text.partition(",")
         days = int(day_part.split()[0])
-    parts = [int(float(p)) for p in text.strip().split(":")]
+    parts = [float(p) for p in text.strip().split(":")]
     if len(parts) == 3:
         return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
     if len(parts) == 2:
@@ -78,7 +80,8 @@ class TimeField(Container):
 
     def update_table_val(self, val):
         self.update_table_min(val)
-        self.update_table_max(val)
+        # Integer boxes must enclose the selected cell's fractional duration.
+        self._fill("#maxContainer", val, round_up=True)
 
     def update_table_min(self, val):
         self._fill("#minContainer", val)
@@ -86,11 +89,12 @@ class TimeField(Container):
     def update_table_max(self, val):
         self._fill("#maxContainer", val)
 
-    def _fill(self, container, val):
+    def _fill(self, container, val, *, round_up=False):
         inputs = list(self.query_one(container).query(IntegerInput))
         if str(val).count(":") == 1:
             val = f"{val}:0"  # "1:30" fills hours and minutes
-        val = hms_to_seconds(val)
+        seconds = hms_to_seconds(val)
+        val = math.ceil(seconds) if round_up else math.floor(seconds)
         parts = [val // 3600, (val % 3600) // 60, val % 60]
         for box, part in zip(inputs, parts):
             box.value = str(part) if part else ""

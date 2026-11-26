@@ -75,7 +75,8 @@ def test_username_cell_semicolon_copies_to_filter():
 
 @pytest.mark.parametrize(
     "response",
-    ["Timeline", "Archived", "Pinned", "Streams", "Stories", "Highlights", "Messages"],
+    ["Timeline", "Archived", "Pinned", "Streams", "Stories", "Highlights", "Messages",
+     "Stream", "Story", "Highlight", "Message"],
 )
 @pytest.mark.usefixtures("_stub_settings")
 def test_response_cell_semicolon_selects_its_option(response):
@@ -86,7 +87,10 @@ def test_response_cell_semicolon_selects_its_option(response):
         app.table.focus()
         await pilot.press(";")
         selected = app.query_one("#responsetype").query_one(SelectionList).selected
-        assert selected == [response]
+        expected = {"Stream": "Streams", "Story": "Stories", "Highlight": "Highlights", "Message": "Messages"}.get(response, response)
+        assert selected == [expected]
+        app.set_filtered_rows()
+        assert [r["index"] for r in app._filtered_rows] == [1]
 
     _drive_f419([_row_f419(1, responsetype=response)], steps)
 
@@ -762,6 +766,24 @@ def test_a_readable_date_bound_still_filters(stub_env_hf):
     asyncio.run(drive())
 
 
+def test_post_date_filter_excludes_undated_posts_only_with_a_bound(stub_env_hf):
+    post_rows = [
+        _media_row_hf(1, post_date="2026-05-01"),
+        _media_row_hf(2, post_date="Probably Deleted"),
+    ]
+
+    async def drive():
+        app = _app_hf([], post_rows)
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            assert [row["index"] for row in app._filtered_post_rows] == [1, 2]
+            app.query_one("#post_post_date_minDate").value = "2025.01.01"
+            app.filter_post_table()
+            assert [row["index"] for row in app._filtered_post_rows] == [1]
+
+    asyncio.run(drive())
+
+
 @pytest.mark.parametrize(
     "now, posted",
     [
@@ -807,3 +829,45 @@ def test_long_and_fractional_lengths_pass_a_length_filter(stub_env_hf, length):
             assert [r["index"] for r in app._filtered_rows] == [1]
 
     asyncio.run(drive())
+
+
+def test_fractional_lengths_above_maximum_are_excluded(stub_env_hf):
+    rows = [
+        _media_row_hf(1, length="0:01:30"),
+        _media_row_hf(2, length="0:01:30.900000"),
+    ]
+
+    async def drive():
+        app = _app_hf(rows, [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            field = app.query_one("#length")
+            field.update_table_max("0:01:30")
+            app.set_filtered_rows()
+            assert [r["index"] for r in app._filtered_rows] == [1]
+
+    asyncio.run(drive())
+
+
+def test_fractional_length_fills_integer_inputs(start_lenunits):
+    async def steps(app, pilot, field):
+        field.update_table_val("0:01:30.900000")
+        await _settle_lenunits(pilot)
+        assert _values(app, *MIN) == ["", "1", "30"]
+        assert _values(app, *MAX) == ["", "1", "31"]
+        assert field.compare("0:01:30.900000")
+
+    _drive_lenunits(steps)
+
+
+@pytest.mark.parametrize("length", ["0:01:30.900000", "0:00:59.900000", "1 day, 23:59:59.900000"])
+@pytest.mark.usefixtures("_stub_settings")
+def test_fractional_length_cell_filter_keeps_its_source_row(length):
+    async def steps(app, pilot):
+        app.table.move_cursor(row=0, column=app.table.ordered_columns_keys.index("length"))
+        app.table.focus()
+        await pilot.press(";")
+        app.set_filtered_rows()
+        assert [r["index"] for r in app._filtered_rows] == [1]
+
+    _drive_f419([_row_f419(1, length=length)], steps)

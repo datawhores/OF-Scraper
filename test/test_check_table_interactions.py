@@ -1042,6 +1042,18 @@ def test_long_and_fractional_lengths_sort_by_their_real_length():
     ]
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+def test_fractional_lengths_sort_within_the_same_second(reverse):
+    lengths = ["0:01:30.900000", "0:01:30.100000", "0:01:30.500000"]
+    app = table_app.InputApp()
+    app.table_data = [_media_row_hf(n, length=v) for n, v in enumerate(lengths, 1)]
+    app._reverse = reverse
+
+    app._sort_runner("length")
+
+    assert [r["length"] for r in app.table_data] == sorted(lengths, reverse=reverse)
+
+
 def _count_page_builds_hf(monkeypatch):
     counts = {"main": 0, "post": 0, "cart": 0}
     for prefix, name in (
@@ -1090,6 +1102,22 @@ def test_typing_a_per_page_value_builds_the_table_once(stub_env_hf, monkeypatch)
             await pilot.press("5", "0", "0", "0")
             await pilot.pause(1.5)
             assert counts["main"] == 1
+            assert app.table.row_count == 3
+
+    asyncio.run(drive())
+
+
+def test_clearing_per_page_restores_the_default(stub_env_hf):
+    async def drive():
+        app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
+        async with app.run_test(size=(250, 60)) as pilot:
+            await pilot.pause()
+            box = app.query_one("#main_per_page_input")
+            box.value = "1"
+            await pilot.pause(0.5)
+            assert app.table.row_count == 1
+            box.value = ""
+            await pilot.pause(0.5)
             assert app.table.row_count == 3
 
     asyncio.run(drive())
@@ -1171,8 +1199,7 @@ def test_page_cart_actions_use_the_default_page_size_for_zero(stub_env_hf):
 
 
 def test_page_cart_actions_act_on_the_page_as_drawn(stub_env_hf):
-    # drawn 50 per page, then the box emptied without a redraw: the page
-    # actions still work on the 50 rows shown, not 100 from the empty box
+    # Zero does not redraw; page actions still use the 50 rows displayed.
     media_rows = [
         _media_row_hf(n, post_date="2024-05-01", post_id=n, media_id=n)
         for n in range(1, 121)
@@ -1193,7 +1220,7 @@ def test_page_cart_actions_act_on_the_page_as_drawn(stub_env_hf):
                 box.value = "50"
                 app.main_page = 2
                 app.set_page()
-                box.value = ""
+                box.value = "0"
                 await pilot.pause(0.5)
 
             for add in (
