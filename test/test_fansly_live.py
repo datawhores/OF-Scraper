@@ -1140,3 +1140,39 @@ def test_api_username_is_cleaned_before_it_becomes_a_folder(tmp_path, name):
     assert livestreams.parent.parent == tmp_path / "Fansly"  # one folder level, inside Fansly
     assert livestreams.parent.name not in ("", ".", "..")
     assert not set("/\\:") & set(livestreams.parent.name + base.name)
+
+
+def test_fansly_live_options_enforces_sitename_when_omitted(monkeypatch, tmp_path):
+    import ofscraper.utils.config.file as config_file
+
+    cfg = {
+        "live_options": {
+            "save_location": str(tmp_path / "streams"),
+            "dir_format": "{model_username}/VODs",
+            "file_format": "{model_username}_{date}",
+        },
+        "type_options": {},
+    }
+    monkeypatch.setattr(config_file, "open_config", lambda: cfg)
+
+    # Without {sitename} in dir_format or file_format, /Fansly is still enforced
+    assert live.recording_base(tmp_path, "creator_a", STARTED_MS) == (
+        tmp_path / "streams" / "Fansly" / "creator_a" / "VODs" / f"creator_a_{STAMP}"
+    )
+
+    # With {sitename} present, no duplicate Fansly folder is added
+    cfg["live_options"]["dir_format"] = "{sitename}/{model_username}/VODs"
+    assert live.recording_base(tmp_path, "creator_a", STARTED_MS) == (
+        tmp_path / "streams" / "Fansly" / "creator_a" / "VODs" / f"creator_a_{STAMP}"
+    )
+
+    # type_options.livestreams takes precedence over live_options
+    cfg["type_options"] = {
+        "livestreams": {
+            "save_location": str(tmp_path / "nvme_live"),
+            "dir_format": "{sitename}/custom/{model_username}",
+        }
+    }
+    assert live.recording_base(tmp_path, "creator_a", STARTED_MS) == (
+        tmp_path / "nvme_live" / "Fansly" / "custom" / "creator_a" / f"creator_a_{STAMP}"
+    )

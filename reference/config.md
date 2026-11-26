@@ -11,6 +11,7 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 - [Quick reference](#quick-reference)
 - [Top level](#top-level)
 - [`file_options`](#file_options)
+- [`live_options`](#live_options)
 - [`download_options`](#download_options)
 - [`binary_options`](#binary_options)
 - [`cdm_options`](#cdm_options)
@@ -36,6 +37,9 @@ Every key `config.json` holds, in the order the file is written (`ofscraper/util
 | [`file_options.text_type_default`](#file_optionstext_type_default) | **Default:** `"letter"` · **CLI:** `--text-type` · **Env:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) |
 | [`file_options.truncation_default`](#file_optionstruncation_default) | **Default:** `true` · **CLI:** `--original` · **Env:** [`TRUNCATION_DEFAULT`](env.md#truncation_default) |
 | [`file_options.filename_collision`](#file_optionsfilename_collision) | **Default:** `"media_id"` · **Env:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) |
+| [`live_options.save_location`](#live_optionssave_location) | **Default:** `""` |
+| [`live_options.dir_format`](#live_optionsdir_format) | **Default:** `""` |
+| [`live_options.file_format`](#live_optionsfile_format) | **Default:** `""` |
 | [`download_options.filter`](#download_optionsfilter) | **Default:** `["Images", "Audios", "Videos"]` · **CLI:** `--mediatype` · **Env:** [`FILTER_DEFAULT`](env.md#filter_default) |
 | [`download_options.auto_resume`](#download_optionsauto_resume) | **Default:** `true` · **CLI:** `--no-auto-resume` · **Env:** [`RESUME_DEFAULT`](env.md#resume_default) |
 | [`download_options.system_free_min`](#download_optionssystem_free_min) | **Default:** `0` · **CLI:** `system_free_min` · **Env:** [`SYSTEM_FREEMIN_DEFAULT`](env.md#system_freemin_default) |
@@ -158,6 +162,26 @@ When true, final file paths longer than the operating system's limit are shorten
 **Default:** `"media_id"` · **Env default:** [`FILENAME_COLLISION_DEFAULT`](env.md#filename_collision_default) · **Read by:** `get_filename_collision()` in `ofscraper/utils/config/data.py`
 
 What happens when a download's target path already holds a different file. `overwrite` keeps the old behaviour: the larger file wins. Any other value saves the new file as `name_<media_id>`, then `name_<media_id>_2` and so on. An existing file with identical content is kept. With `--allow-dupes`, an identical file counts as this download only when the database records it for the same media and post; otherwise it is another post's copy and the new one gets its own name, in both modes.
+
+## `live_options`
+
+### `live_options.save_location`
+
+**Default:** `""` · **Also reads:** `live_save_location` · **Read by:** `get_live_save_location()` in `ofscraper/utils/config/data.py`
+
+Optional root directory override for livestream recordings (`onlyfans/live.py` and `fansly/live.py`). When empty, livestreams use `file_options.save_location`. On Fansly, a `Fansly` subfolder is added automatically unless `dir_format` or `file_format` includes `{site_name}` (or `{sitename}`). Surrounding quotes are stripped.
+
+### `live_options.dir_format`
+
+**Default:** `""` · **Also reads:** `live_dir_format` · **Read by:** `get_live_dirformat()` in `ofscraper/utils/config/data.py`
+
+Optional folder pattern for livestream recordings, relative to `save_location`. When empty, defaults to `{sitename}/{model_username}/Livestreams`.
+
+### `live_options.file_format`
+
+**Default:** `""` · **Also reads:** `live_file_format` · **Read by:** `get_live_fileformat()` in `ofscraper/utils/config/data.py`
+
+Optional filename pattern (without extension) for livestream recordings. When empty, defaults to `{model_username}_{date}_live`.
 
 ## `download_options`
 

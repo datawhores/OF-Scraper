@@ -166,10 +166,12 @@ def folder_name(username) -> str:
 
 def recording_base(save_location, username, started_at) -> pathlib.Path:
     """``{save_location}/Fansly/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live``"""
-    stamp = utc_start(started_at).strftime("%Y%m%d_%H%M%S")
+    import ofscraper.classes.placeholder as placeholder
+
     username = folder_name(username)
-    folder = pathlib.Path(save_location) / "Fansly" / username / "Livestreams"
-    return folder / f"{username}_{stamp}_live"
+    return placeholder.live_recording_base(
+        save_location, username, utc_start(started_at), site_name="Fansly", ext="mp4"
+    )
 
 
 def part_path(base: pathlib.Path, n: int) -> pathlib.Path:

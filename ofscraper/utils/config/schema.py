@@ -23,6 +23,12 @@ def get_current_config_schema(config: dict = None) -> dict:
             "truncation_default": data.get_truncation(config=config),
             "filename_collision": data.get_filename_collision(config=config),
         },
+        "live_options": {
+            "save_location": data.get_live_save_location(config=config),
+            "dir_format": data.get_live_dirformat(config=config),
+            "file_format": data.get_live_fileformat(config=config),
+        },
+        "type_options": data.get_type_options(config=config),
         "download_options": {
             "filter": data.get_filter(config=config),
             "auto_resume": data.get_part_file_clean(config=config),

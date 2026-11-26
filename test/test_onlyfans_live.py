@@ -379,3 +379,31 @@ def test_live_chat_is_fansly_only(monkeypatch, onlyfans_settings, caplog):
     with caplog.at_level("WARNING", logger="shared"):
         asyncio.run(live.run(False, asyncio.Event()))
     assert "--live-chat only applies to Fansly" in caplog.text
+
+
+def test_live_options_and_type_options_override_onlyfans_path(monkeypatch, tmp_path):
+    import ofscraper.utils.config.file as config_file
+
+    when = datetime.datetime(2026, 11, 23, 8, 5, 9, tzinfo=datetime.timezone.utc)
+    cfg = {
+        "live_options": {
+            "save_location": str(tmp_path / "live_root"),
+            "dir_format": "{sitename}/streams/{model_username}",
+            "file_format": "rec_{model_username}_{date}",
+        },
+        "type_options": {},
+    }
+    monkeypatch.setattr(config_file, "open_config", lambda: cfg)
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "live_root" / "OnlyFans" / "streams" / "creator_a" / "rec_creator_a_20261123_080509.webm"
+    )
+
+    cfg["type_options"] = {
+        "livestreams": {
+            "save_location": str(tmp_path / "type_live"),
+            "dir_format": "{model_username}/VODs",
+        }
+    }
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "type_live" / "creator_a" / "VODs" / "rec_creator_a_20261123_080509.webm"
+    )

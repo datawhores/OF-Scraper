@@ -34,10 +34,13 @@ STREAM_ACTIVE_URL = "https://onlyfans.com/api2/v2/users/{}/streams/active?view=f
 
 def recording_path(save_location, username, now=None) -> pathlib.Path:
     """``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``"""
+    import ofscraper.classes.placeholder as placeholder
+
     now = now or datetime.datetime.now(tz=datetime.timezone.utc)
     username = shared.folder_name(username)
-    folder = pathlib.Path(save_location) / "OnlyFans" / username / "Livestreams"
-    return folder / f"{username}_{now.strftime('%Y%m%d_%H%M%S')}_live.webm"
+    return placeholder.live_recording_path(
+        save_location, username, now, site_name="OnlyFans", ext="webm"
+    )
 
 
 def live_subscriptions(pages) -> list:

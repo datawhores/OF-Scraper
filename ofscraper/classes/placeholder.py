@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import pathlib
@@ -88,18 +89,146 @@ def _names_site(fmt):
     )
 
 
-def default_media_root():
+def default_media_root(save_location=None, dir_format=None, file_format=None):
     """Save location; Fansly profiles save under ``<save location>/Fansly``,
     unless ``dir_format`` or ``file_format`` already names the site with
     {site_name}: then each site's folder comes from the template, and Fansly
     files don't get a second ``Fansly`` folder. Only the media folder: the
     database path and the {save_location} and {root} values keep the
     ``Fansly`` folder either way."""
-    if sites.is_fansly() and (
-        _names_site(data.get_dirformat()) or _names_site(data.get_fileformat())
-    ):
-        return pathlib.Path(common_paths.get_save_location())
-    return pathlib.Path(site_save_location())
+    base_loc = save_location or common_paths.get_save_location()
+    dir_fmt = dir_format if dir_format is not None else data.get_dirformat()
+    file_fmt = file_format if file_format is not None else data.get_fileformat()
+    if sites.is_fansly():
+        if _names_site(dir_fmt) or _names_site(file_fmt):
+            return pathlib.Path(base_loc)
+        if not save_location:
+            return pathlib.Path(site_save_location())
+        base_path = pathlib.Path(base_loc)
+        if base_path.name.lower() != sites.site_name().lower():
+            return base_path / sites.site_name()
+        return base_path
+    return pathlib.Path(base_loc)
+
+
+def _resolve_media_templates(type_keys, root=None):
+    """Resolve (root_path, dir_format, file_format) with type_options overrides."""
+    type_save = data.get_type_option(type_keys, "save_location")
+    dir_fmt = data.get_type_option(type_keys, "dir_format") or data.get_dirformat()
+    file_fmt = data.get_type_option(type_keys, "file_format") or data.get_fileformat()
+    if root is not None:
+        resolved_root = pathlib.Path(root)
+    else:
+        resolved_root = default_media_root(
+            save_location=type_save or None,
+            dir_format=dir_fmt,
+            file_format=file_fmt,
+        )
+    return resolved_root, dir_fmt, file_fmt
+
+
+DEFAULT_LIVE_DIR_FORMAT = "{sitename}/{model_username}/Livestreams"
+DEFAULT_LIVE_FILE_FORMAT = "{model_username}_{date}_live"
+
+
+def live_recording_base(
+    save_location,
+    username: str,
+    started_at: datetime.datetime,
+    site_name: str | None = None,
+    ext: str = "mp4",
+) -> pathlib.Path:
+    """Resolve the livestream output path without file extension.
+
+    Precedence: ``type_options.livestreams`` -> ``live_options`` ->
+    ``save_location`` + built-in ``{sitename}/{model_username}/Livestreams``
+    and ``{model_username}_{date}_live`` defaults.
+    """
+    resolved_site = site_name or sites.site_name()
+    override_root = (
+        data.get_type_option(("livestreams", "live"), "save_location")
+        or data.get_live_save_location()
+    )
+    root = pathlib.Path(override_root or save_location or common_paths.get_save_location())
+    dir_fmt = (
+        data.get_type_option(("livestreams", "live"), "dir_format")
+        or data.get_live_dirformat()
+        or DEFAULT_LIVE_DIR_FORMAT
+    )
+    file_fmt = (
+        data.get_type_option(("livestreams", "live"), "file_format")
+        or data.get_live_fileformat()
+        or DEFAULT_LIVE_FILE_FORMAT
+    )
+    is_fansly_site = sites.is_fansly() or resolved_site.lower() == "fansly"
+    if is_fansly_site and not (_names_site(dir_fmt) or _names_site(file_fmt)):
+        if root.name.lower() != sites.site_name(sites.FANSLY).lower():
+            root = root / sites.site_name(sites.FANSLY)
+    stamp = started_at.strftime("%Y%m%d_%H%M%S")
+    model_obj = None
+    try:
+        mm = getattr(manager.Manager, "current_model_manager", None)
+        model_obj = mm.get_model(username) if mm else None
+    except Exception:
+        model_obj = None
+    model_id = getattr(model_obj, "id", "") if model_obj else ""
+    try:
+        _, my_username = me.parse_user()
+        s = settings.get_settings()
+        my_id = "anon" if getattr(s, "anon", False) else me.get_id()
+    except Exception:
+        my_username, my_id = "", ""
+    try:
+        active_profile = profile_data.get_active_profile()
+        cfg = config_file.open_config()
+    except Exception:
+        active_profile, cfg = "", {}
+
+    variables = {
+        "config_path": common_paths.get_config_home(),
+        "profile": active_profile,
+        "site_name": resolved_site,
+        "save_location": str(root),
+        "root": root,
+        "my_id": my_id,
+        "my_username": my_username,
+        "user_name": username,
+        "username": username,
+        "model_username": username,
+        "model_id": model_id,
+        "modelObj": model_obj,
+        "first_letter": username[0].capitalize() if username else "U",
+        "response_type": "Livestreams",
+        "media_type": "Videos",
+        "date": stamp,
+        "timestamp": stamp,
+        "ext": ext,
+        "config": cfg,
+        "args": settings.get_args(),
+    }
+    for key, val in list(variables.items()):
+        if "_" in key:
+            variables[key.replace("_", "")] = val
+
+    folder = pathlib.Path(os.path.normpath(str(root / pathlib.Path(dir_fmt.format(**variables)))))
+    stem = file_fmt.format(**variables)
+    if ext and stem.lower().endswith(f".{ext.lower()}"):
+        stem = stem[: -(len(ext) + 1)]
+    return folder / stem
+
+
+def live_recording_path(
+    save_location,
+    username: str,
+    started_at: datetime.datetime,
+    site_name: str | None = None,
+    ext: str = "webm",
+) -> pathlib.Path:
+    """Resolve the livestream output file path with extension."""
+    base = live_recording_base(
+        save_location, username, started_at, site_name=site_name, ext=ext
+    )
+    return base.with_name(f"{base.name}.{ext}")
 
 
 class basePlaceholder:
@@ -348,13 +477,14 @@ class Placeholders(basePlaceholder):
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or default_media_root())
+        type_keys = (ele.responsetype, ele.modified_responsetype, ele.mediatype)
+        root, dir_fmt, _ = _resolve_media_templates(type_keys, root=root)
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
-        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
+        downloadDir = pathlib.Path(dir_fmt.format(**self._variables))
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -371,6 +501,8 @@ class Placeholders(basePlaceholder):
         ext = self._ext
         username = ele.username
         model_id = ele.model_id
+        type_keys = (ele.responsetype, ele.modified_responsetype, ele.mediatype)
+        _, _, file_fmt = _resolve_media_templates(type_keys)
         self._variables.update({"ext": ext})
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
@@ -381,7 +513,7 @@ class Placeholders(basePlaceholder):
         if ele.responsetype.capitalize() == "Profile":
             out = f"{await ele.final_filename}.{ext}"
         else:
-            out = data.get_fileformat().format(**self._variables)
+            out = file_fmt.format(**self._variables)
         out = self._addcount(ele, out)
         log.debug(f"final filename path {out}")
         self._filename = out
@@ -556,14 +688,15 @@ class Textholders(basePlaceholder):
         ele = self._ele
         username = ele.username
         model_id = ele.model_id
-        root = pathlib.Path(root or default_media_root())
+        type_keys = (ele.responsetype, ele.modified_responsetype, "text")
+        root, dir_fmt, _ = _resolve_media_templates(type_keys, root=root)
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
         log.trace(
             f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
         )
 
-        downloadDir = pathlib.Path(data.get_dirformat().format(**self._variables))
+        downloadDir = pathlib.Path(dir_fmt.format(**self._variables))
         final_path = pathlib.Path(
             os.path.normpath(f"{str(root)}/{str(pathlib.Path(downloadDir))}")
         )
@@ -578,6 +711,8 @@ class Textholders(basePlaceholder):
         ext = self._ext
         username = ele.username
         model_id = ele.model_id
+        type_keys = (ele.responsetype, ele.modified_responsetype, "text")
+        _, _, file_fmt = _resolve_media_templates(type_keys)
         self._variables.update({"ext": ext})
         await self.add_common_variables(ele, username, model_id)
         globals().update(self._variables)
@@ -590,7 +725,7 @@ class Textholders(basePlaceholder):
             text = re.sub(" ", data.get_spacereplacer(), text)
             out = f"{text}.{ext}"
         else:
-            out = data.get_fileformat().format(**self._variables)
+            out = file_fmt.format(**self._variables)
         log.debug(f"final filename path {out}")
         self._filename = out
         return out
