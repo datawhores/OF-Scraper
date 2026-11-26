@@ -6,6 +6,7 @@ from rich.text import Text
 from textual import events
 from textual.app import App
 from textual.binding import Binding
+from textual.css.query import NoMatches
 from textual.widgets import Button, ContentSwitcher, Checkbox, Input, SelectionList
 from ofscraper.classes.table.utils.names import get_col_names, get_input_names, get_post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
 from ofscraper.classes.table.utils.lock import mutex
@@ -13,6 +14,7 @@ from ofscraper.classes.table.sections.table import get_styled, get_post_styled
 from ofscraper.classes.table.css import CSS
 from ofscraper.classes.table.const import AMOUNT_PER_PAGE
 from ofscraper.classes.table.compose import composer
+from ofscraper.classes.table.fields.timefield import hms_to_seconds
 from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.table.utils.open_folder as open_folder
 import ofscraper.utils.logs.logger as logger
@@ -29,6 +31,9 @@ POST_COLS_CACHE_KEY = "check_table_visible_post_cols"
 
 
 class InputApp(App):
+    # seconds a Per Page box waits after the last keystroke before redrawing
+    PER_PAGE_DELAY = 0.3
+
     BINDINGS = [
         # priority, so a focused Input (which binds ctrl+d) doesn't take them
         Binding("ctrl+s", "toggle_options_sidebar", priority=True),
@@ -64,6 +69,10 @@ class InputApp(App):
         self.main_page = 1
         self.post_page = 1
         self.cart_page = 1
+        # page size each table was last drawn with, and the pending redraw
+        # while a Per Page value is being typed
+        self._shown_per_page = {}
+        self._per_page_timers = {}
         self._post_sortkey = "number"
         self._post_reverse = False
 
@@ -108,7 +117,7 @@ class InputApp(App):
     # --- UI Events ---
     def on_data_table_header_selected(self, event):
         clean_label = event.label.plain.replace(" ▼", "").replace(" ▲", "")
-        key = re.sub(" ", "_", clean_label).lower()
+        key = re.sub(r"\s+", "_", clean_label.strip()).lower()
         table_id = event.control.id
         if key == "download_cart":
             if table_id == "media_table":
@@ -279,6 +288,53 @@ class InputApp(App):
             self.handle_pagination("post", "post_go")
         elif input_id in ["cart_page_input", "cart_per_page_input"]:
             self.handle_pagination("cart", "cart_go")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        prefix = {
+            "main_per_page_input": "main",
+            "post_per_page_input": "post",
+            "cart_per_page_input": "cart",
+        }.get(event.input.id)
+        if prefix is None:
+            return
+        # redraw once typing pauses, not on every digit
+        pending = self._per_page_timers.get(prefix)
+        if pending is not None:
+            pending.stop()
+        self._per_page_timers[prefix] = self.set_timer(
+            self.PER_PAGE_DELAY, lambda: self._apply_per_page(prefix)
+        )
+
+    def _per_page(self, prefix, *, default_if_blank=None):
+        """Return a positive page size, with an optional default for blank input."""
+        val = str(self.query_one(f"#{prefix}_per_page_input").value or "").strip()
+        if not val:
+            return default_if_blank
+        return int(val) if val.isnumeric() and int(val) > 0 else None
+
+    def _page_rows(self, prefix, rows):
+        """The rows on the current page, as drawn."""
+        size = self._shown_per_page.get(prefix, AMOUNT_PER_PAGE)
+        start = (getattr(self, f"{prefix}_page") - 1) * size
+        return rows[start : start + size]
+
+    def _apply_per_page(self, prefix):
+        self._per_page_timers.pop(prefix, None)
+        try:
+            size = self._per_page(prefix, default_if_blank=AMOUNT_PER_PAGE)
+        except NoMatches:
+            # the app closed while the redraw was waiting
+            return
+        if size is None or self._shown_per_page.get(prefix) == size:
+            return
+        if prefix == "main":
+            self.set_page()
+            self.update_search_info()
+        elif prefix == "post":
+            self.set_post_page()
+            self.update_post_search_info()
+        else:
+            self.update_cart_table()
 
     def on_key(self, event: events.Key) -> None:
         if event.character in {";", "'"}:
@@ -559,15 +615,11 @@ class InputApp(App):
         else:
             rows = [r for r in self.table_data if r.get("download_cart") == "[added]"]
 
-        per_page_node = self.query_one(f"#{prefix}_per_page_input")
-        per_page_val = per_page_node.value
-
-        if per_page_val and str(per_page_val).isnumeric() and int(per_page_val) > 0:
-            num_page = int(per_page_val)
-        else:
+        num_page = self._per_page(prefix)
+        if num_page is None:
             # If empty or invalid, force it back to 100
             num_page = AMOUNT_PER_PAGE
-            per_page_node.value = str(AMOUNT_PER_PAGE)
+            self.query_one(f"#{prefix}_per_page_input").value = str(AMOUNT_PER_PAGE)
 
         # 3. Calculate Boundaries
         total_pages = max((len(rows) + num_page - 1) // num_page, 1)
@@ -611,13 +663,9 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
-            start = (self.main_page - 1) * num_page
-            self._add_items_to_cart(self._filtered_rows[start : start + num_page])
+            self._add_items_to_cart(self._page_rows("main", self._filtered_rows))
         elif active == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
-            start = (self.post_page - 1) * num_page
-            self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=False)
+            self._add_posts_to_cart(self._page_rows("post", self._filtered_post_rows), new_only=False)
 
     def action_select_all_filtered(self) -> None:
         if self.is_sidebar_open:
@@ -652,9 +700,7 @@ class InputApp(App):
             or self.query_one(ContentSwitcher).current != "media_table_page"
         ):
             return
-        num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
-        start = (self.main_page - 1) * num_page
-        self._run_unique_selection(self._filtered_rows[start : start + num_page])
+        self._run_unique_selection(self._page_rows("main", self._filtered_rows))
 
     def action_select_unique_all_filtered(self) -> None:
         if (
@@ -696,9 +742,7 @@ class InputApp(App):
             return
         active = self.query_one(ContentSwitcher).current
         if active == "media_table_page":
-            num_page = int(self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE)
-            start = (self.main_page - 1) * num_page
-            for row in self._filtered_rows[start : start + num_page]:
+            for row in self._page_rows("main", self._filtered_rows):
                 if row.get("download_type") == "unknown" or not row.get("unlocked"):
                     continue
                 if not row["downloaded"] and row["download_cart"] in {
@@ -711,9 +755,7 @@ class InputApp(App):
             self.set_page()
             self.update_cart_info()
         elif active == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
-            start = (self.post_page - 1) * num_page
-            self._add_posts_to_cart(self._filtered_post_rows[start : start + num_page], new_only=True)
+            self._add_posts_to_cart(self._page_rows("post", self._filtered_post_rows), new_only=True)
 
     def action_select_all_undownloaded(self) -> None:
         if self.is_sidebar_open:
@@ -743,28 +785,18 @@ class InputApp(App):
             return
         active_tab = self.query_one(ContentSwitcher).current
         if active_tab == "media_table_page":
-            num_page = int(
-                self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
-            )
-            start = (self.main_page - 1) * num_page
-            for row in self._filtered_rows[start : start + num_page]:
+            for row in self._page_rows("main", self._filtered_rows):
                 if row["download_cart"] == "[added]":
                     row["download_cart"] = "[]"
 
         elif active_tab == "post_table_page":
-            num_page = int(self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE)
-            start = (self.post_page - 1) * num_page
-            self._clear_posts_from_cart(self._filtered_post_rows[start : start + num_page])
+            self._clear_posts_from_cart(self._page_rows("post", self._filtered_post_rows))
 
         elif active_tab == "cart_page":
             cart_rows = [
                 row for row in self.table_data if row.get("download_cart") == "[added]"
             ]
-            num_page = int(
-                self.query_one("#cart_per_page_input").value or AMOUNT_PER_PAGE
-            )
-            start = (self.cart_page - 1) * num_page
-            for row in cart_rows[start : start + num_page]:
+            for row in self._page_rows("cart", cart_rows):
                 row["download_cart"] = "[]"
 
         self.set_page()
@@ -966,6 +998,8 @@ class InputApp(App):
                 is_empty = True
             elif key == "post_date" and str(raw_val) == "Probably Deleted":
                 is_empty = True
+            elif key == "price" and str(raw_val or "").strip().lower() in {"unlocked", "n/a", "n\\a"}:
+                is_empty = True
 
             if not is_empty:
                 if key == "number":
@@ -976,11 +1010,12 @@ class InputApp(App):
                 elif key == "post_media_count":
                     sort_val = int(raw_val or 0)
                 elif key == "price":
+                    price_str = str(raw_val or "").strip().lstrip("$").replace(",", "")
                     sort_val = (
-                        0 if str(raw_val).lower() == "free" else float(raw_val or 0)
+                        0.0 if price_str.lower() in {"", "free"} else float(price_str)
                     )
                 elif key == "length":
-                    sort_val = arrow.get(raw_val or "0:0:0", ["h:m:s"]).timestamp()
+                    sort_val = hms_to_seconds(raw_val)
                 elif key == "post_date":
                     sort_val = arrow.get(raw_val).timestamp()
                 elif key in {"post_id", "media_id"}:
@@ -1070,12 +1105,8 @@ class InputApp(App):
             ]
 
             # 2. Get the current "Per Page" value safely
-            per_page_val = self.query_one("#cart_per_page_input").value
-            num_page = (
-                int(per_page_val)
-                if per_page_val and str(per_page_val).isnumeric()
-                else AMOUNT_PER_PAGE
-            )
+            num_page = self._per_page("cart") or AMOUNT_PER_PAGE
+            self._shown_per_page["cart"] = num_page
 
             # 3. Calculate pagination boundaries
             total_pages = max((len(cart_rows) + num_page - 1) // num_page, 1)
@@ -1144,12 +1175,8 @@ class InputApp(App):
             rows = self._filtered_rows
 
             # 1. Get the current "Per Page" value safely
-            per_page_val = self.query_one("#main_per_page_input").value
-            num_page = (
-                int(per_page_val)
-                if per_page_val and str(per_page_val).isnumeric()
-                else AMOUNT_PER_PAGE
-            )
+            num_page = self._per_page("main") or AMOUNT_PER_PAGE
+            self._shown_per_page["main"] = num_page
 
             # 2. Calculate pagination boundaries
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
@@ -1184,18 +1211,36 @@ class InputApp(App):
         self.update_search_info()
         self.update_cart_info()
 
+    @staticmethod
+    def _two_line_header(title: str) -> str:
+        words = title.split()
+        if len(words) <= 1:
+            return f"\n{title}"
+        best_idx = 1
+        best_diff = float("inf")
+        for i in range(1, len(words)):
+            diff = abs(len(" ".join(words[:i])) - len(" ".join(words[i:])))
+            if diff < best_diff:
+                best_diff = diff
+                best_idx = i
+        return f"{' '.join(words[:best_idx])}\n{' '.join(words[best_idx:])}"
+
     def _insert_visible_table(self, target_table=None):
         table = target_table if target_table is not None else self.table
         table.clear(True)
         table.fixed_rows = 0
         table.zebra_stripes = True
+        table.header_height = 2
 
         for ele in self.visible_media_cols:
-            width = 18
-            width = 50 if ele == "text" else width
-            width = 30 if ele == "other_posts_with_media" else width
-
-            base_label = re.sub("_", " ", ele).title()
+            base_label = self._two_line_header(re.sub("_", " ", ele).title())
+            header_width = max(len(line) for line in base_label.splitlines()) + 4
+            if ele == "text":
+                width = 50
+            elif ele == "other_posts_with_media":
+                width = 30
+            else:
+                width = max(18, header_width)
 
             if str(ele) == self._sortkey:
                 arrow_char = " ▼" if self._reverse else " ▲"
@@ -1206,7 +1251,7 @@ class InputApp(App):
             table.add_column(label, key=str(ele), width=width)
 
     def update_search_info(self):
-        num_page = self.query_one("#main_per_page_input").value or AMOUNT_PER_PAGE
+        num_page = self._per_page("main") or AMOUNT_PER_PAGE
         sort_key = self._sortkey or "number"
         sort_dir = "Desc" if self._reverse else "Asc"
         clean_sort_name = re.sub("_", " ", sort_key).title()
@@ -1407,9 +1452,11 @@ class InputApp(App):
         table.clear(True)
         table.fixed_rows = 0
         table.zebra_stripes = True
+        table.header_height = 2
         for ele in self.visible_post_cols:
-            base_label = re.sub("_", " ", ele).title()
-            width = 45 if ele == "text" else max(16, len(base_label) + 4)
+            base_label = self._two_line_header(re.sub("_", " ", ele).title())
+            header_width = max(len(line) for line in base_label.splitlines()) + 4
+            width = 45 if ele == "text" else max(16, header_width)
             if str(ele) == self._post_sortkey:
                 arrow_char = " ▼" if self._post_reverse else " ▲"
                 label = f"{base_label}{arrow_char}"
@@ -1459,7 +1506,7 @@ class InputApp(App):
                 ("post_text", lambda r, n: n.compare(str(r.get("text", "")))),
                 ("post_post_id", lambda r, n: n.compare(str(r.get("post_id", "")))),
                 ("post_price", lambda r, n: n.compare(str(r.get("_sort_total_cost", 0)))),
-                ("post_post_date", lambda r, n: True if str(r.get("post_date")) == "Probably Deleted" else n.compare(str(r.get("post_date", "")))),
+                ("post_post_date", lambda r, n: n.compare(str(r.get("post_date", "")))),
                 ("post_unlocked", lambda r, n: n.compare(str(r.get("unlocked", "")))),
                 ("post_responsetype", lambda r, n: n.compare(str(r.get("responsetype", "")))),
                 ("post_username", lambda r, n: n.compare(str(r.get("username", "")))),
@@ -1509,8 +1556,8 @@ class InputApp(App):
             table = self.post_table
             table.clear()
             rows = self._filtered_post_rows
-            per_page_val = self.query_one("#post_per_page_input").value
-            num_page = int(per_page_val) if per_page_val and str(per_page_val).isnumeric() else AMOUNT_PER_PAGE
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
+            self._shown_per_page["post"] = num_page
             total_pages = max((len(rows) + num_page - 1) // num_page, 1)
             if self.post_page > total_pages:
                 self.post_page = total_pages
@@ -1526,7 +1573,7 @@ class InputApp(App):
 
     def update_post_search_info(self) -> None:
         try:
-            num_page = self.query_one("#post_per_page_input").value or AMOUNT_PER_PAGE
+            num_page = self._per_page("post") or AMOUNT_PER_PAGE
             sort_dir = "Desc" if self._post_reverse else "Asc"
             clean_sort = re.sub("_", " ", self._post_sortkey or "number").title()
             total_posts = len(self.post_data)

@@ -102,8 +102,7 @@ def composer():
                 yield Button("Columns (v)", id="open_columns_main")
             
             # Inline Pagination
-            with Horizontal(classes="pagination_row"):
-                yield from pagination_bar("main")
+            yield from pagination_bar("main")
 
             with Vertical(id="media_table_main"):
                 yield DataTableExtended(id="media_table")
@@ -184,8 +183,7 @@ def composer():
                 yield Button("Reset Filters", id="reset_post")
                 yield Button("Columns (v)", id="open_columns_post")
 
-            with Horizontal(classes="pagination_row"):
-                yield from pagination_bar("post")
+            yield from pagination_bar("post")
 
             with Vertical(id="post_table_main"):
                 yield DataTableExtended(id="post_table")
@@ -238,8 +236,7 @@ def composer():
                     )
 
             # Inline Pagination
-            with Horizontal(classes="pagination_row"):
-                yield from pagination_bar("cart")
+            yield from pagination_bar("cart")
             with Vertical(id="cart_table_main"):
                 yield DataTableExtended(id="cart_data_table")
 

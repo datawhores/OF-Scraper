@@ -54,4 +54,7 @@ class TextSearch(Vertical):
         exact = self.query_one("#exact_match" if self.filter_name == "text" else f"#{self.filter_name}_exact_match").value
         if exact:
             return search_val.lower() == value.lower()
-        return re.search(search_val, value, flags=re.IGNORECASE) is not None
+        try:
+            return re.search(search_val, value, flags=re.IGNORECASE) is not None
+        except re.error:
+            return search_val.lower() in value.lower()
