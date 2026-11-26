@@ -13,7 +13,6 @@ import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
 import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.console as console
 import ofscraper.utils.live.screens as screens
-from ofscraper.utils.args.parse.commands.main import program
 
 
 class _Live:
@@ -34,9 +33,6 @@ def run(monkeypatch):
     def start(argv, **env):
         monkeypatch.setattr(sys, "argv", ["ofscraper", *argv])
         monkeypatch.setattr(global_args, "args", None)
-        # parse_args registers the subcommands, which can only happen once a process
-        if "manual" in program.commands:
-            monkeypatch.setattr(program, "add_command", lambda *a, **k: None)
         for key, value in env.items():
             monkeypatch.setenv(key, value)  # the bare name is read on every lookup
         monkeypatch.setattr(screens, "get_live", _Live)

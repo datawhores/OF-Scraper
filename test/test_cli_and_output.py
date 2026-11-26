@@ -21,9 +21,6 @@ import ofscraper.utils.args.main as args_main
 def test_usage_error_prints_a_message_and_exits_2(monkeypatch, capsys, argv, message):
     # a mistake on the command line gets click's usage message, not a traceback
     monkeypatch.setattr(sys, "argv", ["OF-Scraper", *argv])
-    # parse_args registers the subcommands each call, and cloup refuses a second
-    # registration; the options tested here are on the main program
-    monkeypatch.setattr(args_main.main.program, "add_command", lambda *a, **k: None)
     with pytest.raises(SystemExit) as exit_info:
         args_main.parse_args()
     assert exit_info.value.code == 2
@@ -49,16 +46,20 @@ import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
 import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.console as console
 from ofscraper.utils.args.accessors.output import low_output
-from ofscraper.utils.args.parse.commands.main import program
 
 
 def _parsed(monkeypatch, argv):
     """Parse argv the way the app does on its first settings read."""
     monkeypatch.setattr(sys, "argv", ["ofscraper", *argv])
     monkeypatch.setattr(global_args, "args", None)
-    # parse_args registers the subcommands, which can only happen once a process
-    if "manual" in program.commands:
-        monkeypatch.setattr(program, "add_command", lambda *a, **k: None)
+
+
+def test_command_line_can_be_parsed_twice(monkeypatch):
+    monkeypatch.setattr(global_args, "args", None)
+    monkeypatch.setattr(sys, "argv", ["ofscraper", "--output", "LOW"])
+    assert args_main.parse_args().output_level == "LOW"
+    monkeypatch.setattr(sys, "argv", ["ofscraper", "--output", "NORMAL"])
+    assert args_main.parse_args().output_level == "NORMAL"
 
 
 def _console(monkeypatch):
