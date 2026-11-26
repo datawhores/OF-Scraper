@@ -246,7 +246,84 @@ def check_ffprobe(ffmpeg_path, report):
         report.add(WARN, "ffprobe", "not found beside ffmpeg or in PATH: media lengths come from ffmpeg instead")
 
 
-def check_keys(config, site, report):
+KEY_FILE_NAMES = {
+    "client-id": ["device_client_id_blob", "client_id.bin", "client_id"],
+    "private-key": ["device_private_key", "private_key.pem", "private_key"],
+}
+
+
+def _key_file_hint(name, value):
+    """Why a key file named in the config isn't there, when it can tell."""
+    value = str(value or "").strip()
+    if not value or pathlib.Path(value).is_file():
+        return None
+    if value.startswith("~"):
+        return f"{name} starts with ~, which isn't expanded: use the full path"
+    path = pathlib.Path(value)
+    if path.is_dir():
+        try:
+            inside = sorted(f.name for f in path.iterdir() if f.is_file() and f.name.lower() in KEY_FILE_NAMES[name])
+        except OSError:
+            inside = []
+        found = f": {', '.join(inside)} {'is' if len(inside) == 1 else 'are'} in it" if inside else ""
+        return f"{name} is a folder, not a file{found}"
+    # in any case: on Linux and in Docker, Client_ID.bin isn't client_id.bin
+    stem, whole = path.stem.lower(), path.name.lower()
+    try:
+        beside = sorted(
+            f.name for f in path.parent.iterdir()
+            if f.is_file() and f.name != path.name
+            and (f.name.lower() in KEY_FILE_NAMES[name] or stem in (f.stem.lower(), f.name.lower()) or f.stem.lower() == whole)
+        )
+    except OSError:
+        return None
+    if beside:
+        return f"{name}: no file at that name, but {', '.join(beside)} {'is' if len(beside) == 1 else 'are'} in that folder"
+    return None
+
+
+def _key_content_hint(name, value):
+    """What a key file that can't be loaded looks like instead, if it's clear."""
+    try:
+        with open(str(value).strip(), "rb") as file:
+            start = file.read(64)
+    except OSError:
+        return None
+    # a JSON file saved by Notepad starts with a byte order mark
+    start = start.removeprefix(b"\xef\xbb\xbf").lstrip()
+    if start.startswith(b"{"):
+        return f"{name} looks like a JSON file, not a key file"
+    if name == "client-id" and start.startswith(b"-----BEGIN"):
+        return "client-id looks like a private key: the two may be swapped"
+    if name == "private-key" and start[:1] == b"\x08":
+        return "private-key looks like a client id: the two may be swapped"
+    return None
+
+
+def _keys_in_auth_file(folder):
+    """The key settings put in auth.json instead of config.json; names only."""
+    import ofscraper.utils.encoding as encoding
+
+    if folder is None:
+        return []
+    try:
+        auth = json.loads(encoding.read_text_file(folder / of_env.getattr("authFile")))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(auth, dict):
+        return []
+    inner = auth.get("auth") if isinstance(auth.get("auth"), dict) else {}
+    # an empty "" or null is a placeholder, not a key put in the wrong file
+    keys = {k for part in (auth, inner) for k, v in part.items() if v is not None and str(v).strip()}
+    return [name for name in KEY_FILE_NAMES if name in keys or name.replace("-", "_") in keys]
+
+
+def _with_hints(problem, hints):
+    hints = [h for h in hints if h]
+    return f"{problem} ({'; '.join(hints)})" if hints else problem
+
+
+def check_keys(config, site, report, folder=None):
     import ofscraper.sites as sites
     import ofscraper.utils.config.data as data
     from ofscraper.commands.scraper.actions.download.utils import keyhelpers
@@ -285,18 +362,24 @@ def check_keys(config, site, report):
     if mode != "manual":
         report.add(PASS, "key files", f"key mode {mode}: no key files needed")
         return
-    if not str(client_id or "").strip() and not str(private_key or "").strip():
-        # the default on a fresh install: a run goes on without them
+    if not str(client_id or "").strip() and not str(private_key or "").strip() and not _keys_in_auth_file(folder):
+        # the default on a fresh install: a run goes on without them (keys
+        # put in auth.json instead are a setup gone wrong, a FAIL below)
         report.add(WARN, "key files", "no key files set up yet: protected (DRM) videos are skipped until client-id and private-key are set")
         return
     problem = keyhelpers.cdm_key_problems(mode, client_id, private_key)
     if problem:
-        report.add(FAIL, "key files", problem)
+        hints = [_key_file_hint("client-id", client_id), _key_file_hint("private-key", private_key)]
+        misplaced = _keys_in_auth_file(folder)
+        if misplaced:
+            hints.append(f"{' and '.join(misplaced)} " + ("is in auth.json: it belongs" if len(misplaced) == 1 else "are in auth.json: they belong") + " in config.json")
+        report.add(FAIL, "key files", _with_hints(problem, hints))
         return
     try:
         keyhelpers.load_device(private_key, client_id)
     except Exception as error:
-        report.add(FAIL, "key files", f"the key files can't be loaded: {type(error).__name__}")
+        hints = [_key_content_hint("client-id", client_id), _key_content_hint("private-key", private_key)]
+        report.add(FAIL, "key files", _with_hints(f"the key files can't be loaded: {type(error).__name__}", hints))
         return
     report.add(PASS, "key files", f"client-id {client_id}, private-key {private_key}")
 
@@ -536,7 +619,7 @@ def run(config=None, profile=None, site=None, online=False):
     check_auth(settings, folder, site, report)
     ffmpeg_path = check_ffmpeg(settings, report)
     check_ffprobe(ffmpeg_path, report)
-    check_keys(settings, site, report)
+    check_keys(settings, site, report, folder)
     check_folders(settings, report)
     check_database(report)
     if online:
