@@ -29,6 +29,8 @@ class PostCollection:
         # Internal dictionary to store posts, using post_id as the key for de-duplication
         self._posts_map = {}
         self._left_out_logged = False
+        # reason -> media the final filters left out ("already downloaded")
+        self.left_out = {}
         log.info(f"Initialized PostCollection for {username}")
 
     @property
@@ -123,7 +125,7 @@ class PostCollection:
         all_media = helpers.seperate_self(all_media)
         all_media = helpers.dupefiltermedia(all_media)
         all_media = helpers.previous_download_filter(
-            all_media, username=self.username, model_id=self.model_id
+            all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
         all_media = helpers.ele_count_filter(all_media)
         all_media = helpers.final_media_sort(all_media)
@@ -141,7 +143,7 @@ class PostCollection:
         log.info("Applying final 'metadata' mode filters to media list...")
         all_media = helpers.seperate_self(all_media)
         all_media = helpers.previous_download_filter(
-            all_media, username=self.username, model_id=self.model_id
+            all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
         all_media = helpers.ele_count_filter(all_media)
         all_media = helpers.final_media_sort(all_media)
@@ -151,20 +153,30 @@ class PostCollection:
         return all_media
 
     def log_left_out(self):
-        """Say once how many media the per-post filters left out, and by which
-        setting, so a run that downloads less than expected says why."""
+        """Say once how many media were left out as already downloaded or by
+        the per-post filters (by setting), so a run that downloads less than
+        expected says why."""
         if self._left_out_logged:
             return
         totals = {}
         for post in self.posts:
             for setting, count in (post.left_out or {}).items():
                 totals[setting] = totals.get(setting, 0) + count
-        if not totals:
+        downloaded = self.left_out.get("already downloaded", 0)
+        if not totals and not downloaded:
             return
         self._left_out_logged = True
-        reasons = ", ".join(f"{count} by {setting}" for setting, count in totals.items())
+        reasons = [f"{count} by {setting}" for setting, count in totals.items()]
+        hint = ""
+        if downloaded:
+            reasons.insert(0, f"{downloaded} already downloaded")
+            if settings.get_settings().command == "metadata":
+                hint = " (--force-all updates their metadata too)"
+            else:
+                hint = " (--force-all downloads them again, or manual --url for one post)"
+        total = downloaded + sum(totals.values())
         log.info(
-            f"[{self.username}] {sum(totals.values())} media left out by filters: {reasons}"
+            f"[{self.username}] {total} media left out: {', '.join(reasons)}{hint}"
         )
 
     def get_media_for_processing(self):

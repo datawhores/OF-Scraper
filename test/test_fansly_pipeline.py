@@ -1344,6 +1344,23 @@ def test_media_the_filters_leave_out_is_reported_once(harness, settings_stub, ca
     with caplog.at_level("INFO"):
         harness.run()
     assert harness.downloads == [101]
-    assert [r.getMessage() for r in caplog.records if "left out by" in r.getMessage()] == [
-        f"[{NAME}] 2 media left out by filters: 2 by --mediatype or download_options.filter"
+    assert [r.getMessage() for r in caplog.records if "media left out" in r.getMessage()] == [
+        f"[{NAME}] 2 media left out: 2 by --mediatype or download_options.filter"
+    ]
+
+
+def test_media_already_downloaded_is_reported_once(harness, caplog):
+    # page by page, media the database marks as downloaded is counted too
+    harness.areas = ["Timeline"]
+    harness.downloaded = {101, 103}
+    harness.pages["Timeline"] = [
+        page(post_dict(1, [101, 102])),
+        page(post_dict(2, [103])),
+    ]
+    with caplog.at_level("INFO"):
+        harness.run()
+    assert harness.downloads == [102]
+    assert [r.getMessage() for r in caplog.records if "media left out" in r.getMessage()] == [
+        f"[{NAME}] 2 media left out: 2 already downloaded"
+        " (--force-all downloads them again, or manual --url for one post)"
     ]
