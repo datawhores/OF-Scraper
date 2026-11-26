@@ -520,9 +520,10 @@ class Placeholders(basePlaceholder):
         elif not self._needs_count(ele):
             return out
         out = re.sub(" $", "", out)
-        # insert count
+        # insert count, before the extension if there is one: only the last
+        # dot, a caption or a date can have dots of its own
         if re.search(r"\.(?:[a-zA-Z0-9]+)$", out):
-            out = re.sub(r"(\.(?!\.))", f"_{ele.count}.", out)
+            out = re.sub(r"(\.[a-zA-Z0-9]+)$", rf"_{ele.count}\1", out)
         else:
             out = f"{out}_{ele.count}"
         return out
@@ -531,7 +532,9 @@ class Placeholders(basePlaceholder):
         unique = set(
             [
                 "filename",
+                "file_name",
                 "only_file_name",
+                "only_filename",
                 "onlyfilename",
                 "original_filename",
                 "originalfilename",
