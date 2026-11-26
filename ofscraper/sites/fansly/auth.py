@@ -198,6 +198,7 @@ def token_prompt(current):
             "name": name,
             "message": "Enter the Fansly authorization token",
             "default": current or "",
+            "secret": True,
             "validate": EmptyInputValidator(),
         }
     )

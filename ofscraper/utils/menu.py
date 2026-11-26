@@ -102,7 +102,6 @@ def main_menu_action():
 def switch_site_helper():
     from InquirerPy.base import Choice
     import ofscraper.prompts.promptConvert as promptClasses
-    from ofscraper.managers.model import ModelManager
     import ofscraper.utils.paths.common as common_paths
 
     target = sites.FANSLY if not sites.is_fansly() else sites.ONLYFANS
@@ -121,10 +120,9 @@ def switch_site_helper():
     if scope == "profile":
         sites.write_profile_site(common_paths.get_profile_path(), target)
     sites.set_active_site(target)
-    settings.update_settings()
+    actions.remove_post_area()
     actions.remove_download_area()
     actions.remove_like_area()
-    manager.Manager.current_model_manager = ModelManager()
     log.info(f"Switched active site to {target_label}")
 
 

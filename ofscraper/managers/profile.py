@@ -1,6 +1,7 @@
 import logging
 import shutil
 from ofscraper.managers.model import ModelManager
+import ofscraper.sites as sites
 import ofscraper.utils.settings as settings
 import ofscraper.utils.profiles.data as data
 import ofscraper.utils.paths.common as common_paths
@@ -98,14 +99,15 @@ class ProfileManager:
     
     @property
     def current_model_manager(self) -> ModelManager:
-        """
-        Gets the ModelManager for the currently active profile.
-        If a manager for this profile doesn't exist, it creates one.
-        """
-        # Check if we've already created a manager for this profile
-        self._add_profile_helper()
-        # Return the manager for the active profile
-        return self.model_managers[self.active_profile]
+        """Get the creator manager for the active profile and site."""
+        profile = self.active_profile
+        site = sites.current_site()
+        cached_site, model_manager = self.model_managers.get(profile, (None, None))
+        if cached_site != site:
+            log.info(f"Creating new ModelManager for profile: '{profile}'")
+            model_manager = ModelManager()
+            self.model_managers[profile] = (site, model_manager)
+        return model_manager
     
     @property
     def active_profile(self) -> str:
@@ -120,10 +122,3 @@ class ProfileManager:
         Returns the current config profile by always checking get_current_config_proifle.
         """
         return data.get_current_config_profile()
-    
-    def _add_profile_helper(self):
-        profile=self.active_profile
-        if profile not in self.model_managers:
-            log.info(f"Creating new ModelManager for profile: '{profile}'")
-            self.model_managers[profile] = ModelManager()
-            

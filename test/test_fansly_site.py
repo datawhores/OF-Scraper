@@ -175,6 +175,37 @@ def test_auth_file_round_trip_and_validation(tmp_path):
     assert fansly_auth.problems({**auth, "authorization_token": "ReplaceMe"})
 
 
+def test_auth_editor_masks_the_stored_token(monkeypatch, fansly_profile):
+    from contextlib import nullcontext
+    from io import StringIO
+
+    from prompt_toolkit.application import create_app_session
+    from prompt_toolkit.data_structures import Size
+    from prompt_toolkit.input import create_pipe_input
+    from prompt_toolkit.output.vt100 import Vt100_Output
+
+    import ofscraper.prompts.promptConvert as prompt_classes
+    import ofscraper.prompts.prompts as prompts
+    import ofscraper.utils.auth.file as auth_file
+
+    drawn = StringIO()
+    output = Vt100_Output(drawn, lambda: Size(rows=24, columns=160), term="xterm")
+    new_user_agent = f"{UA} edited"
+    monkeypatch.setenv("TERM", "xterm")
+    monkeypatch.setattr(prompt_classes.interactive, "require_console", lambda *_: None)
+    monkeypatch.setattr(prompt_classes, "prompt_live", nullcontext)
+    monkeypatch.setattr(prompts, "user_agent_prompt", lambda current: new_user_agent)
+    with create_pipe_input() as pipe, create_app_session(input=pipe, output=output):
+        pipe.send_text("\r")
+        auth_file.edit_auth()
+
+    rendered = drawn.getvalue()
+    assert "Enter the Fansly authorization token" in rendered
+    assert TOKEN not in rendered
+    assert fansly_auth.read_auth()["authorization_token"] == TOKEN
+    assert fansly_auth.read_auth()["user_agent"] == new_user_agent
+
+
 def test_session_id_comes_from_the_token():
     assert fansly_auth.session_id(TOKEN) == SESSION_ID
     assert fansly_auth.session_id("not base64 !!") is None

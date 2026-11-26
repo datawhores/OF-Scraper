@@ -12,9 +12,20 @@ import pytest
 from rich.console import Console
 
 import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
+import ofscraper.managers.manager as manager
+import ofscraper.prompts.promptConvert as prompt_classes
+import ofscraper.sites as sites
+import ofscraper.utils.args.accessors.areas as areas
+import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.logs.stdout as stdout_logs
 import ofscraper.utils.menu as menu
+import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.settings as settings
+from ofscraper.managers.utils.state import EActivity
+from ofscraper.utils.args.main import AutoDotDict
+from ofscraper.utils.args.parse.commands.main import program
 
 ERROR_TEXT = r"could not open logs\[old] [bold]x[/bold]"
 
@@ -30,6 +41,7 @@ def screen(monkeypatch):
     monkeypatch.setattr(
         stdout_logs.settings, "get_settings", lambda: SimpleNamespace(output_level="NORMAL")
     )
+    monkeypatch.setattr(sites, "init_session_site", lambda: None)
     logger = logging.getLogger("shared")
     old_handlers, old_level = logger.handlers[:], logger.level
     stdout_logs.add_stdout_handler(logger, clear=True)
@@ -64,6 +76,57 @@ def _menu(monkeypatch, merge_runner):
     monkeypatch.setattr(menu.prompts, "main_prompt", main_prompt)
     monkeypatch.setattr(menu.merge, "merge_runner", merge_runner)
     return asked
+
+
+@pytest.fixture
+def menu_profile(monkeypatch, tmp_path):
+    monkeypatch.setattr(common_paths, "get_config_home", lambda: tmp_path)
+    monkeypatch.setattr(sites, "_session_site", None)
+    monkeypatch.setattr(sites, "_session_profile", None)
+    monkeypatch.setattr(settings, "settings", {})
+    parsed, command = program.main([], standalone_mode=False, prog_name="OF-Scraper")
+    args = AutoDotDict(parsed, command=command, profile="main_profile")
+    monkeypatch.setattr(global_args, "args", args)
+    monkeypatch.setattr(manager, "Manager", manager.mainManager())
+    return args
+
+
+@pytest.mark.parametrize("scope", ["session", "profile"])
+def test_switch_site_discards_the_previous_creator_manager(monkeypatch, menu_profile, scope):
+    previous = manager.Manager.current_model_manager
+    previous.state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["a creator"])
+    monkeypatch.setattr(prompt_classes, "getChecklistSelection", lambda **kwargs: scope)
+
+    menu.switch_site_helper()
+
+    assert sites.current_site() == sites.FANSLY
+    new_manager = manager.Manager.current_model_manager
+    assert new_manager is not previous
+    assert new_manager.state.get_all_queued_usernames() == []
+    stored_site = sites.read_profile_site(common_paths.get_profile_path())
+    assert stored_site == (sites.FANSLY if scope == "profile" else sites.ONLYFANS)
+
+
+def test_switch_site_clears_command_line_posts(monkeypatch, menu_profile):
+    menu_profile.posts = ["Pinned"]
+    settings.update_settings()
+    assert areas.get_download_area() == {"Pinned"}
+    monkeypatch.setattr(prompt_classes, "getChecklistSelection", lambda **kwargs: "session")
+    menu.switch_site_helper()
+    assert areas.get_download_area() == set()
+
+
+def test_switch_site_refreshes_the_signed_in_account(monkeypatch, menu_profile):
+    import ofscraper.data.api.me as me
+
+    monkeypatch.setattr(profile_data, "currentData", None)
+    monkeypatch.setattr(profile_data, "currentProfile", None)
+    monkeypatch.setattr(me, "scrape_user", lambda: {"id": sites.current_site()})
+    monkeypatch.setattr(prompt_classes, "getChecklistSelection", lambda **kwargs: "session")
+    assert profile_data.get_my_info()["id"] == sites.ONLYFANS
+
+    menu.switch_site_helper()
+    assert profile_data.get_my_info()["id"] == sites.FANSLY
 
 
 def _fail(exc):
@@ -139,7 +202,7 @@ def _main_menu_instruction(monkeypatch):
     return shown["instruction"]
 
 
-def test_main_menu_names_the_postgresql_server_without_the_login(monkeypatch):
+def test_main_menu_names_the_postgresql_server_without_the_login(monkeypatch, menu_profile):
     import ofscraper.db.postgres as postgres
 
     monkeypatch.setattr(
@@ -152,11 +215,11 @@ def test_main_menu_names_the_postgresql_server_without_the_login(monkeypatch):
     else:
         where = "db.example:5433/library"
     instruction = _main_menu_instruction(monkeypatch)
-    assert instruction == f"(Database: PostgreSQL, {where})"
+    assert f"| DB: PostgreSQL ({where}))" in instruction
     assert "s3cret-word" not in instruction and "scraper:" not in instruction
 
 
-def test_main_menu_points_to_the_metadata_setting_on_sqlite(monkeypatch):
+def test_main_menu_names_the_sqlite_database(monkeypatch, menu_profile):
     import ofscraper.db.postgres as postgres
     import ofscraper.utils.config.data as data
 
@@ -164,8 +227,13 @@ def test_main_menu_points_to_the_metadata_setting_on_sqlite(monkeypatch):
         raise AssertionError("the config was read")
 
     monkeypatch.setattr(postgres, "url", lambda: "")
-    # the menu doesn't read the config, which may not be readable
+    # Naming the database doesn't require loading the metadata setting.
     monkeypatch.setattr(data, "get_metadata", unreadable)
-    assert _main_menu_instruction(monkeypatch) == (
-        "(Database: user_data.db files, see the metadata setting)"
-    )
+    assert "| DB: user_data.db)" in _main_menu_instruction(monkeypatch)
+
+
+def test_main_menu_counts_each_queued_creator_once(monkeypatch, menu_profile):
+    state = manager.Manager.current_model_manager.state
+    state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["a creator"])
+    state.set_queue(EActivity.ScrapeActivity.LIKE, ["a creator", "another creator"])
+    assert "| Users: 2 selected |" in _main_menu_instruction(monkeypatch)

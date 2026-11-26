@@ -39,10 +39,10 @@ def _main_menu_status() -> str:
     areas_str = " / ".join(area_parts) if area_parts else "Prompt on run"
 
     mm = getattr(manager.Manager, "current_model_manager", None)
-    selected = getattr(mm, "parsed_models", None) or getattr(mm, "models", None) or []
+    selected = len(mm.state.get_all_queued_usernames()) if mm is not None else 0
     cli_users = getattr(settings.get_settings(), "usernames", None) or []
     users_str = (
-        f"{len(selected)} selected"
+        f"{selected} selected"
         if selected
         else f"{len(cli_users)} from CLI" if cli_users else "Prompt on run"
     )
