@@ -21,6 +21,7 @@ import asyncio
 import contextlib
 import os
 import sqlite3
+import sys
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -492,6 +493,7 @@ def run(folder, apply=False, site=None, target=None, out=print):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
+        prog=os.path.basename(sys.argv[0]),
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument(

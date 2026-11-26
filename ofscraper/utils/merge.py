@@ -46,7 +46,7 @@ def merge_runner():
             )
             console.print("To see what it would do first, without writing anything:")
             console.print(
-                f'python -m ofscraper.commands.postgres_import "{merged}"',
+                f'ofscraper postgres_import "{merged}"',
                 soft_wrap=True,
                 markup=False,
                 emoji=False,

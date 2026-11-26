@@ -44,6 +44,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 | [`post_check`](#post_check) (54 options) | Produces a media table from posts with filterable entries and quick downloads |
 | [`metadata`](#metadata) (86 options) | Modify metadata or db files |
 | [`db`](#db) (61 options) | Print information from the database |
+| [`creator_names`](#creator_names-separate-entry-point) (argparse) | List and record the usernames each creator account has had. |
 | [`move_creator_files`](#move_creator_files-separate-entry-point) (argparse) | Move a creator's downloaded files to match new path settings and update recorded paths. |
 | [`postgres_export`](#postgres_export-separate-entry-point) (argparse) | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
 | [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
@@ -115,9 +116,27 @@ The run reads `auth.json` and `config.json` from the profile. It writes media un
 
 `ofscraper db`, with user selection, area (`-o`) and media filters (type, size, length, downloaded, locked, preview, protected, post and media ids, dates), sorting and a hard limit. `--post-id` and `--media-id` take one id, or several separated by commas or spaces. An id is decimal digits, from any script. A value with no id in it, or with anything else (such as `²` or `-4`), is a usage error. It reads media rows from each selected creator's `user_data.db` and prints them as a table. `-ep`/`--export PATH` also writes a `.csv`. It makes no API calls for the media itself. With several creators, every selected creator's rows go into the one CSV. `--unmark-permanent-skips` narrows the rows to the permanent `skip_download_script` skips and sets them back to not downloaded after printing them.
 
+### `creator_names` (separate entry point)
+
+`ofscraper creator_names [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]` (or `python -m ofscraper.commands.creator_names`, or `python scripts/creator_names.py`). Offline tool using argparse. Lists the usernames each creator account has had from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder), along with first-seen and last-seen dates and the folder name a deleted account would use. `--add` appends a name, and `--seen` sets its date (`2024-03-01` or `2024-03-01T09:30:00+00:00`; UTC unless an offset is given, at most one day ahead, and not allowed for the deleted-account placeholder). `--add` refuses a name or date that would change a deleted account's folder name unless `--force` is given. `--force` doesn't pick that name directly: a name becomes the deleted-account folder name only when its `--seen` date is newer than every other name's last-seen date. File mode reads OnlyFans databases only.
+
+With `--postgres [--site onlyfans|fansly]` (default `onlyfans`, without `--data-dir`), lists and adds names in that site's `profiles` table in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`), with the same listing, CSV output, folder-name rules and refusals. `--add` writes one row (`user_id` is the creator's ID) and its dates in one transaction, kept only if nothing is refused. Requires the PostgreSQL driver.
+
+Run `ofscraper creator_names [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]` (or `python -m ofscraper.commands.creator_names [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]`).
+
+- `--data-dir`: 
+- `--postgres`: use $OFSC_DATABASE_URL, not the files
+- `--site`: with --postgres: the site (default: onlyfans)
+- `--all`: list every account
+- `--find`: accounts that ever used NAME
+- `--add`: record a name
+- `--seen`: with --add, when the name was in use: 2024-03-01 or 2024-03-01T09:30:00+00:00 (UTC unless it has an offset; no more than a day ahead)
+- `--force`: with --add, add the name even if it changes the deleted-account folder name
+- `--csv`: also write the listing to a CSV file
+
 ### `move_creator_files` (separate entry point)
 
-`python -m ofscraper.commands.move_creator_files (DB | --postgres --creator NAME [--site SITE]) [--apply] [--to NAME] [--path-root DIR]`. Uses argparse and is not part of the CLI (see `MOVING_FILES.md`). Works offline on one creator's `user_data.db`: moves files recorded under another of the creator's names to the folder of their current name, and updates `directory` in their `medias` rows to match. Uses only recorded paths, never the scraper's settings. Without `--apply`, prints a JSON report and changes nothing.
+`ofscraper move_creator_files (DB | --postgres --creator NAME [--site SITE]) [--apply] [--to NAME] [--path-root DIR]` (or `python -m ofscraper.commands.move_creator_files`). Offline tool using argparse (see `MOVING_FILES.md`). Works offline on one creator's `user_data.db`: moves files recorded under another of the creator's names to the folder of their current name, and updates `directory` in their `medias` rows to match. Uses only recorded paths, never the scraper's settings. Without `--apply`, prints a JSON report and changes nothing.
 
 - **Target name:** uses the most recently seen name (`profiles.last_seen_at`). If no names have dates and there is more than one, asks for `--to NAME`, which must be a name recorded in the database.
 - **What is moved:** a recorded folder with exactly one path segment matching another of the creator's names (in lower case, as the scraper writes it), followed by one or two of the scraper's own folders (`Posts`, `Images`). Paths where the name is followed by anything else (such as a folder above the library with the same name), or where `{first_letter}` above it would change, are skipped and listed. Only that segment changes; the rest of the path and the file name stay the same.
@@ -125,7 +144,7 @@ The run reads `auth.json` and `config.json` from the profile. It writes media un
 - **No undo file:** row changes are saved together at the end. If a run stops partway, rerun the same command to finish; `--to OLDNAME --apply` moves everything back.
 - **With `--postgres`:** works on one creator's rows in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`). `--creator` identifies the creator the same way as in `recover_collisions`.
 
-Run `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --creator NAME) [OPTIONS]`.
+Run `ofscraper move_creator_files (DATABASE | --postgres --creator NAME) [OPTIONS]` (or `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --creator NAME) [OPTIONS]`).
 
 - `DATABASE`: One creator's user_data.db
 - `--apply`: Move the files and change the rows; without it, only report
@@ -137,9 +156,9 @@ Run `python -m ofscraper.commands.move_creator_files (DATABASE | --postgres --cr
 
 ### `postgres_export` (separate entry point)
 
-`python -m ofscraper.commands.postgres_export FOLDER [--apply] [--site SITE]`. Uses argparse and is not part of the CLI (see `POSTGRESQL.md`). The reverse of `postgres_import`: exports rows from the PostgreSQL database named by `OFSC_DATABASE_URL` back to per-creator SQLite files at `FOLDER/<model_id>/user_data.db` (the default `metadata` layout under a profile's `.data` folder). Reads PostgreSQL in one read-only transaction. Without `--apply`, reports which files would be written. Never modifies an existing `user_data.db`: that creator is skipped and listed, so you can export them to another `FOLDER`. Each file is created with the standard new-database builder (with current tables and all upgrade flags), written to a `.partial` file first, verified by reading it back like `postgres_import`, and only then renamed. `--site` picks the site when PostgreSQL holds rows for more than one.
+`ofscraper postgres_export FOLDER [--apply] [--site SITE]` (or `python -m ofscraper.commands.postgres_export`). Offline tool using argparse (see `POSTGRESQL.md`). The reverse of `postgres_import`: exports rows from the PostgreSQL database named by `OFSC_DATABASE_URL` back to per-creator SQLite files at `FOLDER/<model_id>/user_data.db` (the default `metadata` layout under a profile's `.data` folder). Reads PostgreSQL in one read-only transaction. Without `--apply`, reports which files would be written. Never modifies an existing `user_data.db`: that creator is skipped and listed, so you can export them to another `FOLDER`. Each file is created with the standard new-database builder (with current tables and all upgrade flags), written to a `.partial` file first, verified by reading it back like `postgres_import`, and only then renamed. `--site` picks the site when PostgreSQL holds rows for more than one.
 
-Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
+Run `ofscraper postgres_export FOLDER [OPTIONS]` (or `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`).
 
 - `FOLDER`: folder the user_data.db files go under, one folder per creator
 - `--apply`: write the files; without it, only report
@@ -147,9 +166,9 @@ Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
 
 ### `postgres_import` (separate entry point)
 
-`python -m ofscraper.commands.postgres_import FOLDER [--apply] [--skip-bad-files]`. Uses argparse and is not part of the CLI (see `POSTGRESQL.md`). Imports `user_data.db` files found under `FOLDER` into the PostgreSQL database named by `OFSC_DATABASE_URL`. Original files are never modified: each copy is upgraded like a normal scan, then its rows are converted to PostgreSQL column types and written to that file's site schema. Without `--apply`, reports what would be imported and any blockers (a value a column can't hold, a creator found in two files, a creator already in PostgreSQL, or a file from a newer version). With `--apply`, imports everything in one transaction.
+`ofscraper postgres_import FOLDER [--apply] [--skip-bad-files]` (or `python -m ofscraper.commands.postgres_import`). Offline tool using argparse (see `POSTGRESQL.md`). Imports `user_data.db` files found under `FOLDER` into the PostgreSQL database named by `OFSC_DATABASE_URL`. Original files are never modified: each copy is upgraded like a normal scan, then its rows are converted to PostgreSQL column types and written to that file's site schema. Without `--apply`, reports what would be imported and any blockers (a value a column can't hold, a creator found in two files, a creator already in PostgreSQL, or a file from a newer version). With `--apply`, imports everything in one transaction.
 
-Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
+Run `ofscraper postgres_import FOLDER [OPTIONS]` (or `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`).
 
 - `FOLDER`: folder to search for user_data.db files, or one database file
 - `--apply`: write to PostgreSQL; without it, only report
@@ -158,11 +177,11 @@ Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
 
 ### `recover_collisions` (separate entry point)
 
-`python -m ofscraper.commands.recover_collisions (DB | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--undo FILE] [--path-root DIR]`. Uses argparse and is not part of the CLI (see `COLLISION_RECOVERY.md`). Works offline on one creator's `user_data.db`, finds recorded paths shared by different media, and prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews restoring those flags, or restores them with `--apply`. Never touches media files or contacts OnlyFans.
+`ofscraper recover_collisions (DB | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--undo FILE] [--path-root DIR]` (or `python -m ofscraper.commands.recover_collisions`). Offline tool using argparse (see `COLLISION_RECOVERY.md`). Works offline on one creator's `user_data.db`, finds recorded paths shared by different media, and prints a JSON report. `--apply` resets `downloaded=0` for those media and writes a JSON undo file beside the database. `--undo FILE` previews restoring those flags, or restores them with `--apply`. Never touches media files or contacts OnlyFans.
 
 With `--postgres`, works on one creator's rows in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`), producing the same results as a SQLite file with the same rows. `--creator` takes a username or ID and must match exactly one creator: an ambiguous name (an ID present on both sites, an ID matching another creator's username, or a username shared by two creators) is refused with a list of matches, requiring `--site` or a unique username/ID. Without `--apply`, the connection is read-only. With `--apply`, all updates run in one transaction: the undo file is written first to `--undo-dir` (required with `--apply`; use a folder that's kept, and in Docker a mounted one), and each row is updated only if it still matches what was read, aborting with no changes if the scraper modified a row meanwhile. Once saving starts, the undo file is kept even if the command is interrupted (such as a lost connection or Ctrl-C), and the command notes that commit status is unknown. The report includes the resolved creator (`creator`: site, id, username). The undo file identifies rows by `(media_id, post_id)` rather than `id`, recording prior values plus the server and database. `--undo` restores all rows or none, and refuses a different creator, site, SQLite undo file, or rows changed since. Paths that are absolute only on another OS are refused.
 
-Run `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --creator NAME) [OPTIONS]`.
+Run `ofscraper recover_collisions (DATABASE | --postgres --creator NAME) [OPTIONS]` (or `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --creator NAME) [OPTIONS]`).
 
 - `DATABASE`: One model's user_data.db
 - `--apply`: Apply the previewed recovery or undo operation
@@ -175,9 +194,9 @@ Run `python -m ofscraper.commands.recover_collisions (DATABASE | --postgres --cr
 
 ### `stash_sync` (separate entry point)
 
-`python -m ofscraper.commands.stash_sync (PATH... | --postgres [--site SITE] [--creator NAME]) [--apply] [--scan] [--path-map LOCAL=STASH]`. Uses argparse and is not part of the CLI (see `STASH.md`). Reads creators' `user_data.db` files offline (searching folders such as `<profile>/.data`), or with `--postgres` reads the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (read-only; all creators on both sites unless narrowed with `--site` or `--creator`). Over Stash's GraphQL API, fills empty fields on each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. Fansly databases (`schema_flags` `site=fansly`) get the `Fansly` studio and links instead of OnlyFans ones, plus @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. Never overwrites existing Stash values, never contacts OnlyFans or Fansly, and without `--apply` only prints a JSON report.
+`ofscraper stash_sync (PATH... | --postgres [--site SITE] [--creator NAME]) [--apply] [--scan] [--path-map LOCAL=STASH]` (or `python -m ofscraper.commands.stash_sync`). Offline tool using argparse (see `STASH.md`). Reads creators' `user_data.db` files offline (searching folders such as `<profile>/.data`), or with `--postgres` reads the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (read-only; all creators on both sites unless narrowed with `--site` or `--creator`). Over Stash's GraphQL API, fills empty fields on each downloaded file's scene or image: performer, studio, date, title, details, code, URL and source tags. Fansly databases (`schema_flags` `site=fansly`) get the `Fansly` studio and links instead of OnlyFans ones, plus @mentioned creators as performers, the media ID as code, a preview tag, hashtags as tags, and a gallery per post or message. Never overwrites existing Stash values, never contacts OnlyFans or Fansly, and without `--apply` only prints a JSON report.
 
-Run `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`.
+Run `ofscraper stash_sync (PATH... | --postgres) [OPTIONS]` (or `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`).
 
 - `PATHS`: user_data.db files, or folders to search for them (e.g. <profile>/.data)
 - `--postgres`: read the PostgreSQL database $OFSC_DATABASE_URL names instead of user_data.db files; give no paths with it
@@ -196,9 +215,7 @@ Run `python -m ofscraper.commands.stash_sync (PATH... | --postgres) [OPTIONS]`.
 ### Scripts in `scripts/`
 
 - `scripts/commit_version.sh`: CI helper. Works out the commit-based version string, hashes and push type from git for the build workflows.
-- `scripts/creator_names.py`: `python scripts/creator_names.py [--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]`. Lists the usernames each creator account has had from the `profiles` table of every `<data-dir>/<model_id>/user_data.db` (default: the main profile's `.data` folder), along with first-seen and last-seen dates and the folder name a deleted account would use. `--add` appends a name, and `--seen` sets its date (`2024-03-01` or `2024-03-01T09:30:00+00:00`; UTC unless an offset is given, at most one day ahead, and not allowed for the deleted-account placeholder). `--add` refuses a name or date that would change a deleted account's folder name unless `--force` is given. `--force` doesn't pick that name directly: a name becomes the deleted-account folder name only when its `--seen` date is newer than every other name's last-seen date. File mode reads OnlyFans databases only.
-
-With `--postgres [--site onlyfans|fansly]` (default `onlyfans`, without `--data-dir`), lists and adds names in that site's `profiles` table in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment (see `POSTGRESQL.md`), with the same listing, CSV output, folder-name rules and refusals. `--add` writes one row (`user_id` is the creator's ID) and its dates in one transaction, kept only if nothing is refused. Requires the PostgreSQL driver and the scraper from the same checkout.
+- `scripts/creator_names.py`: Compatibility wrapper that calls `ofscraper creator_names` (`ofscraper/commands/creator_names.py`).
 - `scripts/determine_docker_stable_dev_tags.py`: Older CI helper that the current Docker image workflow doesn't call. Asks the GitHub API for commit timestamps to pick Docker image tags.
 - `scripts/entry/`: Docker internals. `entrypoint.sh`, `lib_user_setup.sh`, `lib_paths.sh` and `lib_permissions.sh` set up the container user, the data and config paths and the permissions, then start the app.
 - `scripts/lint/`: CI lint helper. `python scripts/lint/check_blind_except.py [--update]` counts ruff's BLE001 (blind except) and S110 (try/except/pass) findings per file in `ofscraper/data/api` and `ofscraper/db` and fails when a count differs from `blind_except_baseline.json`. `--update` rewrites the baseline; commit it after removing findings.

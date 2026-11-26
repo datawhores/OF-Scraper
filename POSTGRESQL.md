@@ -43,13 +43,15 @@ Turning PostgreSQL on does not migrate your existing `user_data.db` files. Use `
 1. **Close the scraper.** Any file written to while it is being copied is refused.
 2. **Run a dry run** to preview what will be imported:
    ```bash
-   python -m ofscraper.commands.postgres_import <folder>
+   ofscraper postgres_import <folder>
    ```
    `<folder>` is searched for `user_data.db` files (your profile's `.data` folder is the usual one), and `OFSC_DATABASE_URL` sets the target database, as above. Without `--apply`, nothing is written to PostgreSQL; the command only reports how many files, creators, and rows it found for each site, plus anything blocking the import.
 3. **Apply the import:**
    ```bash
-   python -m ofscraper.commands.postgres_import <folder> --apply
+   ofscraper postgres_import <folder> --apply
    ```
+
+`python -m ofscraper.commands.<tool>` also works for the offline tools on this page.
 
 | Option | What it does |
 |---|---|
@@ -88,12 +90,12 @@ Unsetting `OFSC_DATABASE_URL` returns to your existing `user_data.db` files as t
 1. **Close the scraper.** Anything the scraper saves while the export runs is not included in the exported files.
 2. **Run a dry run** to preview the export:
    ```bash
-   python -m ofscraper.commands.postgres_export <folder>
+   ofscraper postgres_export <folder>
    ```
    Without `--apply`, nothing is written; the command reports how many creators and rows it found and which creators already have a file in `<folder>`.
 3. **Write the files:**
    ```bash
-   python -m ofscraper.commands.postgres_export <folder> --apply
+   ofscraper postgres_export <folder> --apply
    ```
 
 Each creator with rows in PostgreSQL gets a file at `<folder>/<creator_id>/user_data.db`. This matches a profile's `.data` folder layout unless you changed the `metadata` setting; if you did, move each file to where your setting puts it. `OFSC_DATABASE_URL` sets which database is read, as above.
@@ -138,7 +140,7 @@ Exported files contain what the scraper reads from PostgreSQL. For files you pre
 `stash_sync` (see [STASH.md](STASH.md)) reads from PostgreSQL when you pass `--postgres` instead of paths to `user_data.db` files:
 
 ```bash
-python -m ofscraper.commands.stash_sync --postgres
+ofscraper stash_sync --postgres
 ```
 
 **Note:** `stash_sync` is a separate tool and doesn't read the scraper's settings (`config.json`). Set `OFSC_DATABASE_URL` in the environment where you run the command; an address listed only in a `.env` file referenced by `config.json` is not seen. In Docker, a variable set under `environment:` is already set for commands run in the container. The PostgreSQL driver is also required.
@@ -158,13 +160,13 @@ python -m ofscraper.commands.stash_sync --postgres
 
 ```bash
 # Preview changes (read-only)
-python -m ofscraper.commands.recover_collisions --postgres --creator <username or id>
+ofscraper recover_collisions --postgres --creator <username or id>
 
 # Apply changes and save an undo file
-python -m ofscraper.commands.recover_collisions --postgres --creator <username or id> --apply --undo-dir <folder>
+ofscraper recover_collisions --postgres --creator <username or id> --apply --undo-dir <folder>
 
 # Restore changes from an undo file
-python -m ofscraper.commands.recover_collisions --postgres --creator <username or id> --undo <undo file> --apply
+ofscraper recover_collisions --postgres --creator <username or id> --undo <undo file> --apply
 ```
 
 Like `stash_sync --postgres`, it reads `OFSC_DATABASE_URL` from the environment it is run in and requires the PostgreSQL driver. Given a `user_data.db` path instead, it still works on that file (and notes if `OFSC_DATABASE_URL` is set that the file holds nothing scraped since PostgreSQL was turned on). Passing a file and `--postgres` together is refused.
@@ -229,11 +231,11 @@ Like `stash_sync --postgres`, it reads `OFSC_DATABASE_URL` from the environment 
       | **Showing only what is new since the last run** | `get_all_medias_sync` | Take the newest non-empty `posted_at` from its rows; this matches the newest `posted_at` in a SQLite file. |
 
     - *SQLite-only by design:* the GUI's Merge Databases and the download paths it updates when moving the OnlyFans folder work on `user_data.db` files by design, so with PostgreSQL on they change only those files.
-- **Standalone tools that do work with PostgreSQL:** `stash_sync`, `recover_collisions`, `move_creator_files`, and `scripts/creator_names.py` all work on PostgreSQL when passed `--postgres`. Each reads `OFSC_DATABASE_URL` only from the environment it is run in (doesn't read the scraper's settings), and warns when given files while PostgreSQL is on:
+- **Standalone tools that do work with PostgreSQL:** `stash_sync`, `recover_collisions`, `move_creator_files`, and `creator_names` all work on PostgreSQL when passed `--postgres`. Each reads `OFSC_DATABASE_URL` only from the environment it is run in (doesn't read the scraper's settings), and warns when given files while PostgreSQL is on:
   - See [Syncing to Stash](#syncing-to-stash), [Recovering filename collisions](#recovering-filename-collisions), and [Moving a creator's files](#moving-a-creators-files) above.
-  - For `scripts/creator_names.py`:
+  - For `creator_names` (`python scripts/creator_names.py` also works):
     ```bash
-    python scripts/creator_names.py --postgres [--site onlyfans|fansly]
+    ofscraper creator_names --postgres [--site onlyfans|fansly]
     ```
     All of its usual options work (`--all`, `--find`, `--csv`, `--add MODEL_ID NAME [--seen DATE] [--force]`).
 
