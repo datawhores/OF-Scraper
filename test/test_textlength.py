@@ -125,3 +125,104 @@ def test_a_trailing_separator_alone_is_not_logged_as_a_cut(fake_settings, caplog
     with caplog.at_level("DEBUG", logger="shared"):
         assert base().text_trunicate("Good_") == "Good"
     assert "cut to" not in caplog.text
+
+
+# A post's media and its text file get the same {text} (#744): real settings,
+# a real post and the real placeholder classes.
+
+from naming_helpers import naming  # noqa: F401  (fixture)
+
+
+@pytest.mark.parametrize(
+    "replacer, expected",
+    [("-", "one-two-three-four"), ("_", "one_two_three_four"),
+     (".", "one.two.three.four"), (" ", "one two three four")],
+)
+def test_media_and_text_files_cut_the_caption_alike(naming, replacer, expected):
+    text, (media,) = naming(
+        "{text}.{ext}", "one two three four five six",
+        "--text-type", "word", "--textlength", "4", "--space-replacer", replacer,
+    )
+    assert (text, media) == (f"{expected}.txt", f"{expected}.jpg")
+
+
+@pytest.mark.parametrize(
+    "url, expected",
+    [("https://example.invalid/my-pic.jpg", "my_pic"),  # the file name
+     (None, "2026_10_31")],  # no file name either: the post's date
+)
+def test_media_with_no_usable_caption_uses_the_cleaned_file_name_or_date(
+    naming, monkeypatch, url, expected
+):
+    """A caption that cleans to nothing (only HTML here): a media file's
+    {text} falls back to its file name, then the date, cleaned once there
+    (the "-" becomes "_")."""
+    import naming_helpers
+
+    make_post = naming_helpers.make_post
+
+    def post_with_url(caption, media=1):
+        post = make_post(caption, media)
+        for item in post.all_media:
+            item._media["files"]["full"]["url"] = url
+        return post
+
+    monkeypatch.setattr(naming_helpers, "make_post", post_with_url)
+    _, (media,) = naming(
+        "{text}.{ext}", "<br />", "--space-replacer", "-", text=False
+    )
+    assert media == f"{expected}.jpg"
+
+
+@pytest.mark.parametrize("caption", ["<p> </p>", "  ", "<br />\n<br />", "???"])
+def test_media_with_a_caption_of_only_spaces_uses_the_file_name(
+    naming, monkeypatch, caption
+):
+    """A caption that cleans to nothing, or to nothing but spaces (or the
+    space_replacer standing for them), names nothing: {text} falls back to
+    the media's file name, not "-" or the post id."""
+    import naming_helpers
+
+    make_post = naming_helpers.make_post
+
+    def post_with_url(text, media=1):
+        post = make_post(text, media)
+        for item in post.all_media:
+            item._media["files"]["full"]["url"] = "https://example.invalid/my-pic.jpg"
+        return post
+
+    monkeypatch.setattr(naming_helpers, "make_post", post_with_url)
+    _, (media,) = naming(
+        "{text}.{ext}", caption, "--space-replacer", "-", text=False
+    )
+    assert media == "my_pic.jpg"
+
+
+def test_a_profile_image_with_no_text_uses_the_cleaned_date_and_file_name(
+    naming, monkeypatch
+):
+    """A profile image's {text} is its date and its text, or its file name
+    when it has none, cleaned once ("-" and ":" go, spaces become the
+    space_replacer). A profile image's own name doesn't use file_format, so
+    this reads the {text} the placeholders hand on (e.g. to a naming script)."""
+    import asyncio
+
+    import naming_helpers
+    import ofscraper.classes.placeholder as placeholder
+
+    make_post = naming_helpers.make_post
+    built = []
+
+    def profile_post(caption, media=1):
+        post = make_post(caption, media)
+        profile = naming_helpers.posts_.Post(post.post, 1, "u", "profile")
+        for item in profile.all_media:
+            item._media["files"]["full"]["url"] = "https://example.invalid/my-pic.jpg"
+        built.append(profile)
+        return profile
+
+    monkeypatch.setattr(naming_helpers, "make_post", profile_post)
+    naming("{text}.{ext}", None, "--space-replacer", "~", text=False)
+    names = placeholder.Placeholders(built[0].all_media[0], "jpg")
+    asyncio.run(names.createfilename())
+    assert names._variables["text"] == "2026_10_31~120000+0000~my_pic_2026_10_31"
