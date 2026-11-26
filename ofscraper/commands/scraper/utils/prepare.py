@@ -34,17 +34,14 @@ def check_uniquename():
     """True when every file name template in use (file_options and each
     type_options entry but the livestream one, whose names hold the start
     time) makes names that tell files apart"""
-    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS
+    from ofscraper.utils.config import naming_check
 
-    formats = [data.get_fileformat()] + [
-        section["file_format"]
-        for name, section in data.get_type_options().items()
-        if name.strip().lower() not in LIVE_TYPE_KEYS
-        and isinstance(section.get("file_format"), str)
-        and section["file_format"].strip()
-    ]
     unique = re.compile("text|filename|post_id|postid|media_id|mediaid|custom")
-    return all(unique.search(format) for format in formats)
+    return all(
+        unique.search(str(template))
+        for setting, template, known, _effect in naming_check.templates()
+        if known is naming_check.FILE_PLACEHOLDERS
+    )
 
 
 def unique_name_warning():

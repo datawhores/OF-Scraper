@@ -677,17 +677,12 @@ def _device(path):
 
 
 def _check_path(save):
-    """The folder the free-space limit is measured at: OFSC_DISK_SPACE_CHECK_PATH,
-    or when that is empty the disk that holds the save folder, measured at
-    its nearest folder that is there, a link followed first
-    (free.get_check_paths' rule)."""
-    measured = of_env.getattr("DISK_SPACE_CHECK_PATH")
-    if measured:
-        return measured
-    path = save.resolve()
-    while not path.exists() and path.parent != path:
-        path = path.parent
-    return path
+    """The folder the free-space limit is measured at for this save folder,
+    as a run measures it: OFSC_DISK_SPACE_CHECK_PATH, or when that is empty
+    free.measured_at(save)."""
+    import ofscraper.utils.system.free as free
+
+    return of_env.getattr("DISK_SPACE_CHECK_PATH") or free.measured_at(save)
 
 
 # where Linux and macOS mount drives and shares; a missing save folder whose
@@ -716,15 +711,15 @@ def check_folders(config, report):
     import ofscraper.utils.config.data as data
     import ofscraper.utils.paths.common as common_paths
 
-    # the save location, then each live_options or type_options one: "save
-    # folder (type_options.videos)"
+    # the save location, then each live_options or type_options one, named
+    # by its section: "save folder (type_options.videos)"
     saves = {
-        "save folder" if setting == "file_options.save_location"
-        else f"save folder ({setting.rsplit('.', 1)[0]})": pathlib.Path(os.path.expanduser(path))
+        "" if setting == "file_options.save_location" else f" ({setting.rsplit('.', 1)[0]})":
+            pathlib.Path(os.path.expanduser(path))
         for setting, path in common_paths.get_save_locations(_config(config)).items()
     }
-    for name, save in saves.items():
-        _check_save(report, name, save)
+    for which, save in saves.items():
+        _check_save(report, f"save folder{which}", save)
     temp = _get(data.get_TempDir, config)
     if temp:
         temp = pathlib.Path(os.path.expanduser(temp))
@@ -739,8 +734,8 @@ def check_folders(config, report):
     if not limit:
         report.add(PASS, "free-space limit", "off")
         return
-    for name, save in saves.items():
-        _check_limit(report, name.replace("save folder", "free-space limit"), limit, save)
+    for which, save in saves.items():
+        _check_limit(report, f"free-space limit{which}", limit, save)
 
 
 def _check_save(report, name, save):

@@ -113,9 +113,10 @@ def template_problem(template, known, effect=DOWNLOAD_EFFECT):
     return None
 
 
-def _templates():
+def templates():
     """(setting, template, placeholders it can use, what happens when it
-    can't be filled in) for every folder and file name template"""
+    can't be filled in) for every folder and file name template: the
+    file_options ones, the live_options ones and each type_options one set"""
     import ofscraper.utils.config.data as data
 
     out = [
@@ -127,10 +128,11 @@ def _templates():
     for name, section in data.get_type_options().items():
         live = name.strip().lower() in LIVE_TYPE_KEYS
         for key, known in (("dir_format", DIR_PLACEHOLDERS), ("file_format", FILE_PLACEHOLDERS)):
-            out.append((
-                f"type_options.{name}.{key}", section.get(key) or "",
-                LIVE_PLACEHOLDERS if live else known, LIVE_EFFECT if live else DOWNLOAD_EFFECT,
-            ))
+            if section.get(key):
+                out.append((
+                    f"type_options.{name}.{key}", section[key],
+                    LIVE_PLACEHOLDERS if live else known, LIVE_EFFECT if live else DOWNLOAD_EFFECT,
+                ))
     return out
 
 
@@ -168,16 +170,11 @@ def problems():
             f"{setting} is {json.dumps(chosen)}, which {why},"
             " so a space is used"
         )
-    for setting, template, known, effect in _templates():
+    dated = False
+    for setting, template, known, effect in templates():
         problem = template_problem(str(template), known, effect)
         if problem:
             out.append(f"{setting} {json.dumps(template)} {problem}")
-    # before, a "/" in the date (and "\" on Windows) made nested folders
-    date = data.get_date()
-    separators = "/\\" if on_windows() else "/"
-    date_nests = isinstance(date, str) and any(sep in date for sep in separators)
-    dated = False
-    for setting, template, known, _effect in _templates():
         if not setting.endswith(".dir_format") or not isinstance(template, str):
             continue
         if FULL_PATH.match(template):
@@ -191,7 +188,10 @@ def problems():
         # livestream folders take the start time, not the date setting
         if known is not LIVE_PLACEHOLDERS and re.search(r"\{date[}:!]", template):
             dated = True
-    if date_nests and dated:
+    # before, a "/" in the date (and "\" on Windows) made nested folders
+    date = data.get_date()
+    separators = "/\\" if on_windows() else "/"
+    if dated and isinstance(date, str) and any(sep in date for sep in separators):
         out.append(
             f"file_options.date {json.dumps(date)} has a folder separator, but {{date}}"
             " in dir_format now fills one folder, so dates no longer nest. Use"

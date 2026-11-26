@@ -22,27 +22,30 @@ def _get_save_locations():
         key = (str(config), None)
     cached = _save_locations
     if cached[0] != key:
-        cached = (key, tuple(dict.fromkeys(common_paths.get_save_locations().values())))
+        cached = (key, tuple(common_paths.get_save_locations().values()))
         _save_locations = cached
     return cached[1]
 
 
+def measured_at(folder):
+    """Where a folder's free space is measured: the folder, or when it isn't
+    made yet its nearest existing folder, which is on the same disk; a link
+    is followed first, even to a folder that's missing, so the disk is the
+    target's."""
+    path = pathlib.Path(folder).resolve()
+    while not path.exists() and path.parent != path:
+        path = path.parent
+    return path
+
+
 def get_check_paths():
-    """OFSC_DISK_SPACE_CHECK_PATH when set, else the disk of each folder files
-    are saved under: save_location and the live_options and type_options
-    ones. A folder not made yet is measured on its nearest existing folder,
-    which is on the same disk; a link is followed first, even to a folder
-    that's missing, so the disk is the target's."""
+    """OFSC_DISK_SPACE_CHECK_PATH when set, else where each folder files are
+    saved under is measured: save_location and the live_options and
+    type_options ones"""
     path = of_env.getattr("DISK_SPACE_CHECK_PATH")
     if path:
         return [path]
-    out = []
-    for location in _get_save_locations():
-        path = pathlib.Path(location).resolve()
-        while not path.exists() and path.parent != path:
-            path = path.parent
-        out.append(path)
-    return list(dict.fromkeys(out))
+    return list(dict.fromkeys(measured_at(folder) for folder in _get_save_locations()))
 
 
 def get_free():
