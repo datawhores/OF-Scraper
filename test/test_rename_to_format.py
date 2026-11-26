@@ -1217,3 +1217,73 @@ def test_old_folders_spelt_in_another_case_than_the_save_location_are_removed(mo
     removed = tool._remove_emptied([r"C:\Media\alice\Posts\a.jpg"], r"c:\media")
 
     assert removed == fs.removed == [r"C:\Media\alice\Posts", r"C:\Media\alice"]
+
+def test_emptied_folders_are_removed_under_a_type_options_root(tmp_path):
+    # a file moved out of a type_options save_location leaves its folders
+    # empty there, outside the main save location
+    old = tmp_path / "videos" / "alice" / "Posts" / "a.mp4"
+    old.parent.mkdir(parents=True)
+    removed = tool._remove_emptied([str(old)], str(tmp_path / "downloads"), str(tmp_path / "videos"))
+    assert removed == [str(old.parent), str(old.parent.parent)]
+    assert (tmp_path / "videos").is_dir()
+
+
+def test_a_row_without_a_media_type_is_left_when_a_media_type_entry_is_set(tmp_path):
+    # which root the file belongs under depends on its media type
+    library = Library(tmp_path)
+    library.post(501)
+    path = library.add("abcdef.jpg", post_id=501, kind=None)
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["type_options"] = {"videos": {"save_location": str(tmp_path / "videos")}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+
+    result = library.run()
+
+    assert result["to_rename"] == 0
+    assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{mediatype}")}]
+    assert result["type_options"] == config["type_options"]
+
+
+@pytest.mark.parametrize("area", ["messages", "Inbox", "unknown"])
+def test_a_row_without_an_area_is_left_when_an_area_entry_is_set(tmp_path, area):
+    # a download would put the file under the entry's folder; which area
+    # it's from isn't recorded
+    library = Library(tmp_path)
+    library.post(501)
+    path = library.add("abcdef.jpg", post_id=501, area=None, media_id=42)
+    library.formats("renamed", "{media_id}.{ext}")
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["responsetype"] = {"message": "Inbox"}
+    config["type_options"] = {area: {"dir_format": "special"}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+
+    result = library.run(apply=True)
+
+    assert result["renamed"] == 0
+    assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{response_type}")}]
+    assert path.is_file()
+
+
+def test_an_unknown_type_entry_does_not_block_a_rename_without_an_area(tmp_path):
+    library = Library(tmp_path)
+    library.post(501)
+    library.add("abcdef.jpg", post_id=501, area=None, media_id=42)
+    library.formats("renamed", "{media_id}.{ext}")
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["type_options"] = {"mesages": {"dir_format": "other"}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+
+    result = library.run(apply=True)
+
+    assert result["renamed"] == 1
+    assert result["left"] == []
+    assert library.files() == ["renamed/42.jpg"]
+
+
+def test_a_save_root_inside_another_is_never_removed(tmp_path):
+    outer, inner = tmp_path / "data", tmp_path / "data" / "of"
+    old = inner / "alice" / "Posts" / "a.jpg"
+    old.parent.mkdir(parents=True)
+    removed = tool._remove_emptied([str(old)], str(inner), str(outer))
+    assert removed == [str(old.parent), str(old.parent.parent)]
+    assert inner.is_dir()

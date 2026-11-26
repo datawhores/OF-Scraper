@@ -43,6 +43,7 @@ from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.filters.media.filters import undated_first
 from ofscraper.classes.table.utils.post_metrics import build_post_centric_rows
+from ofscraper.classes.placeholder import media_type_keys
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_files_downloaded,
@@ -1327,6 +1328,8 @@ async def row_gather(username, model_id):
                 # not columns; where the file went, if it was downloaded
                 "directory": directory,
                 "filename": filename,
+                # what its type_options entry is looked up by, as a download does
+                "type_keys": media_type_keys(ele),
             }
         )
 

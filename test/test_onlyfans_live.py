@@ -357,7 +357,8 @@ def install_session(monkeypatch, client, model_manager=None):
     )
 
 
-def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path):
+@pytest.mark.parametrize("use_model_id", [False, True])
+def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path, use_model_id):
     onlyfans_settings(live=True, usernames=["creator_a", "creator_d"])
     install_session(monkeypatch, Client(Response(200, {"isActive": False})))
 
@@ -367,6 +368,11 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
             {"id": 2, "username": "creator_b", "hasStream": True},
             {"id": 4, "username": "creator_d", "hasStream": True},
         ]])
+
+    if use_model_id:
+        import ofscraper.utils.config.file as config_file
+        monkeypatch.setattr(config_file, "open_config", lambda: {
+            "live_options": {"dir_format": "{sitename}/{model_id}/Livestreams"}})
 
     recorded = []
     reads = []
@@ -384,8 +390,8 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
     asyncio.run(live.run(False, asyncio.Event()))
     folder = tmp_path / "OnlyFans"
     assert sorted(recorded) == [
-        ("creator_a", folder / "creator_a" / "Livestreams", "s" * 30, "ffmpeg", False),
-        ("creator_d", folder / "creator_d" / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_a", folder / ("1" if use_model_id else "creator_a") / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_d", folder / ("4" if use_model_id else "creator_d") / "Livestreams", "s" * 30, "ffmpeg", False),
     ]
     assert len(reads) == 2  # auth.json is read for each recording
 
@@ -1647,3 +1653,33 @@ def test_failed_polls_warn_once_per_failure_streak(monkeypatch, onlyfans_setting
         "OnlyFans livestream check failed: network down",
         "OnlyFans livestream check failed: network down again",
     ]
+
+
+
+
+def test_live_options_and_type_options_override_onlyfans_path(monkeypatch, tmp_path):
+    import ofscraper.utils.config.file as config_file
+
+    when = datetime.datetime(2026, 11, 23, 8, 5, 9, tzinfo=datetime.timezone.utc)
+    cfg = {
+        "live_options": {
+            "save_location": str(tmp_path / "live_root"),
+            "dir_format": "{sitename}/streams/{model_username}",
+            "file_format": "rec_{model_username}_{date}",
+        },
+        "type_options": {},
+    }
+    monkeypatch.setattr(config_file, "open_config", lambda: cfg)
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "live_root" / "OnlyFans" / "streams" / "creator_a" / "rec_creator_a_20261123_080509.webm"
+    )
+
+    cfg["type_options"] = {
+        "livestreams": {
+            "save_location": str(tmp_path / "type_live"),
+            "dir_format": "{model_username}/VODs",
+        }
+    }
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "type_live" / "creator_a" / "VODs" / "rec_creator_a_20261123_080509.webm"
+    )

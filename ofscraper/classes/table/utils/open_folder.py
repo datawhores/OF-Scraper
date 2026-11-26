@@ -162,7 +162,31 @@ def row_target(row, root=None, dir_format=None) -> Target:
         file = stored_file(row)
         if file is not None and _is_file(file):
             return Target(absolute(file), select=True)
+    if root is None and dir_format is None and row:
+        root, dir_format = type_templates(row)
     return creator_target((row or {}).get("username"), root, dir_format)
+
+
+def type_templates(row):
+    """(root, dir_format) a type_options entry sets for the row, looked up by
+    the keys its download uses (placeholder.media_type_keys, which the check
+    command stores on the row: an archived post's folder is the archived
+    one), or (None, None) when none is set"""
+    import ofscraper.utils.config.data as data
+
+    if not data.get_type_options():
+        return None, None
+    from ofscraper.classes.placeholder import media_templates
+
+    keys = row.get("type_keys")
+    if keys is None:
+        # a row made without them: its area, the area's folder, its media type
+        from ofscraper.classes.of.posts import responsetype_folder
+
+        area = row.get("responsetype")
+        keys = (area, responsetype_folder(area) if area else None, row.get("mediatype"))
+    root, dir_format, _ = media_templates(tuple(keys))
+    return root, dir_format
 
 
 def open_command(target: Target, system=None):

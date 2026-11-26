@@ -529,7 +529,8 @@ def path_env(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("cls", ["Placeholders", "Textholders"])
 def test_fansly_files_go_under_a_fansly_folder(fansly, path_env, cls):
-    holder = getattr(placeholder, cls)(SimpleNamespace(username=CREATOR, model_id=CREATOR_ID), "mp4")
+    holder = getattr(placeholder, cls)(SimpleNamespace(username=CREATOR, model_id=CREATOR_ID,
+                          responsetype="Timeline", modified_responsetype="Timeline", mediatype="Videos"), "mp4")
     path = asyncio.run(holder.getmediadir(create=False))
     assert pathlib.Path(path) == path_env / "data" / "Fansly" / CREATOR / "Timeline" / "Videos"
     # an explicit root (the temp folder) is left alone
@@ -544,7 +545,8 @@ SITE_DIR_FORMAT = "{site_name}/{model_username}/{response_type}/{media_type}/"
 def test_site_name_in_dir_format_skips_the_fansly_folder(fansly, path_env, monkeypatch, cls):
     # the templates name the site, so each site gets one folder of its own
     monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: SITE_DIR_FORMAT)
-    ele = SimpleNamespace(username=CREATOR, model_id=CREATOR_ID)
+    ele = SimpleNamespace(username=CREATOR, model_id=CREATOR_ID,
+                          responsetype="Timeline", modified_responsetype="Timeline", mediatype="Videos")
     path = asyncio.run(getattr(placeholder, cls)(ele, "mp4").getmediadir(create=False))
     assert pathlib.Path(path) == path_env / "data" / "Fansly" / CREATOR / "Timeline" / "Videos"
     fansly.site = "onlyfans"
@@ -571,7 +573,8 @@ def test_which_templates_name_the_site(fmt, names):
 def test_site_name_in_file_format_skips_the_fansly_folder(fansly, path_env, monkeypatch):
     monkeypatch.setattr(placeholder.data, "get_fileformat",
                         lambda *a, **k: "{site_name}_{filename}.{ext}")
-    holder = placeholder.Placeholders(SimpleNamespace(username=CREATOR, model_id=CREATOR_ID), "mp4")
+    holder = placeholder.Placeholders(SimpleNamespace(username=CREATOR, model_id=CREATOR_ID,
+                          responsetype="Timeline", modified_responsetype="Timeline", mediatype="Videos"), "mp4")
     path = asyncio.run(holder.getmediadir(create=False))
     assert pathlib.Path(path) == path_env / "data" / CREATOR / "Timeline" / "Videos"
 

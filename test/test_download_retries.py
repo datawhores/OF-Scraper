@@ -100,7 +100,7 @@ def _download(tmp_path, monkeypatch, drm, have, status=200):
     mgr._add_download_job_task = _noop
     mgr._remove_download_job_task = _noop
     mgr._total_change_helper = _noop
-    mgr._downloadspace = lambda: None
+    mgr._downloadspace = lambda *a: None
 
     async def _get_data(*args):
         return saved
@@ -193,7 +193,7 @@ def _download_resume_error(tmp_path, monkeypatch, drm, errors):
     mgr._add_download_job_task = _noop
     mgr._remove_download_job_task = _noop
     mgr._total_change_helper = _noop
-    mgr._downloadspace = lambda: None
+    mgr._downloadspace = lambda *a: None
 
     async def _get_data(*args):
         return saved

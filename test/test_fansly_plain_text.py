@@ -52,6 +52,9 @@ def written_text(monkeypatch, tmp_path, post):
         async def init(self):
             return self
 
+        def templates(self):
+            return path.parent, "", "{text}.{ext}"
+
     async def _no_script(path):
         pass
 

@@ -790,3 +790,56 @@ def get_verify_all_integrity(config=None):
         "verify_all_integrity",
         "download_options.verify_all_integrity",
     )
+
+
+@wrapper.config_reader
+def get_live_save_location(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.save_location")
+    return strip_path_quotes(val) if isinstance(val, str) else ""
+
+
+@wrapper.config_reader
+def get_live_dirformat(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.dir_format")
+    return val if isinstance(val, str) else ""
+
+
+@wrapper.config_reader
+def get_live_fileformat(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.file_format")
+    return val if isinstance(val, str) else ""
+
+
+TYPE_OPTION_FIELDS = ("save_location", "dir_format", "file_format")
+
+
+@wrapper.config_reader
+def get_type_options(config=None):
+    """{type: {field: value}} with only the fields an entry takes; an entry
+    that isn't an object is left out. What it reads is recorded, as
+    _lookup records, for the notes on what the rewrite of config.json drops."""
+    if not config:
+        return {}
+    raw = config.get("type_options")
+    if not isinstance(raw, dict):
+        return {}
+    cleaned = {}
+    for name, section in raw.items():
+        if not isinstance(section, dict):
+            continue
+        entry = {field: section[field] for field in TYPE_OPTION_FIELDS if isinstance(section.get(field), str)}
+        if "save_location" in entry:
+            entry["save_location"] = strip_path_quotes(entry["save_location"])
+        if _reads is not None:
+            # a field it takes is read even when it holds something else,
+            # which the rewrite then names as such
+            _reads.add(f"type_options.{name}")
+            _reads.update(f"type_options.{name}.{field}" for field in TYPE_OPTION_FIELDS if field in section)
+        cleaned[str(name)] = entry
+    return cleaned

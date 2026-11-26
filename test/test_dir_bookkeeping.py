@@ -45,6 +45,9 @@ def save_root(tmp_path, monkeypatch):
     root = tmp_path / "root"
     (root / "model" / "Posts").mkdir(parents=True)
     monkeypatch.setattr(paths.common_paths, "get_save_location", lambda: str(root))
+    # the save location as stubbed here, and no type_options ones
+    monkeypatch.setattr(paths.common_paths, "get_save_locations",
+                        lambda: {"file_options.save_location": paths.common_paths.get_save_location()})
     dated = []
     monkeypatch.setattr(paths, "set_time", lambda p, t: dated.append(pathlib.Path(p)))
     monkeypatch.setattr(common_globals, "log", logging.getLogger("test"), raising=False)
@@ -80,3 +83,14 @@ def test_samefile_error_does_not_raise(save_root, monkeypatch):
     paths.addGlobalDir(root / "model" / "Posts")
     paths.setDirectoriesDate()
     assert dated == [(root / "model" / "Posts").resolve()]
+
+
+def test_folders_under_a_type_options_root_are_dated_up_to_it(save_root, tmp_path, monkeypatch):
+    root, dated = save_root
+    videos = tmp_path / "videos"
+    (videos / "model" / "Posts").mkdir(parents=True)
+    monkeypatch.setattr(paths.common_paths, "get_save_locations", lambda: {
+        "file_options.save_location": str(root), "type_options.videos.save_location": str(videos)})
+    paths.addGlobalDir(videos / "model" / "Posts")
+    paths.setDirectoriesDate()
+    assert set(dated) == {(videos / "model" / "Posts").resolve(), (videos / "model").resolve()}

@@ -348,7 +348,7 @@ class FanslyStreamDownloadManager(DownloadManager):
         temp = pathlib.Path(tempholderObj.tempfilepath)
         if not settings.get_settings().auto_resume:
             shutil.rmtree(segment_folder(temp), ignore_errors=True)
-        self._downloadspace()
+        self._downloadspace(ele)
 
         try:
             try:

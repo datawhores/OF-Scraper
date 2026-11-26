@@ -151,6 +151,9 @@ def pick_variant(variants: list):
 
 def utc_start(started_at) -> datetime.datetime:
     """Stream start in UTC from milliseconds or seconds; now when unknown."""
+    if isinstance(started_at, datetime.datetime):
+        return (started_at.astimezone(datetime.timezone.utc) if started_at.tzinfo
+                else started_at.replace(tzinfo=datetime.timezone.utc))
     if started_at:
         try:
             value = float(started_at)
@@ -170,35 +173,46 @@ def folder_name(username) -> str:
     return name or "unknown"
 
 
-def recording_base(save_location, username, started_at) -> pathlib.Path:
+def recording_base(save_location, username, started_at, *, model_id=None) -> pathlib.Path:
     """``{save_location}/Fansly/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live``"""
-    stamp = utc_start(started_at).strftime("%Y%m%d_%H%M%S")
-    username = folder_name(username)
-    folder = pathlib.Path(save_location) / "Fansly" / username / "Livestreams"
-    return folder / f"{username}_{stamp}_live"
+    import ofscraper.classes.placeholder as placeholder
+
+    path = placeholder.live_recording_path(
+        save_location, folder_name(username), utc_start(started_at),
+        site_name="Fansly", ext="mp4", model_id=model_id, reserve_suffix=_CHAT_SUFFIX,
+    )
+    return path.with_suffix("")
 
 
-def part_path(base: pathlib.Path, n: int) -> pathlib.Path:
-    return base.with_name(f"{base.name}.mp4" if n == 1 else f"{base.name}_part{n}.mp4")
+_CHAT_SUFFIX = "_chat.jsonl"
 
 
-def next_part_number(base: pathlib.Path) -> int:
+def part_path(base: pathlib.Path, n: int, *, started_at=None) -> pathlib.Path:
+    import ofscraper.classes.placeholder as placeholder
+
+    suffix = ".mp4" if n == 1 else f"_part{n}.mp4"
+    if len(suffix) > len(_CHAT_SUFFIX):
+        base = placeholder.fit_with_suffix(base, suffix, started_at)
+    return base.with_name(f"{base.name}{suffix}")
+
+
+def next_part_number(base: pathlib.Path, *, started_at=None) -> int:
     n = 1
-    while part_path(base, n).exists():
+    while part_path(base, n, started_at=started_at).exists():
         n += 1
     return n
 
 
-def reserve_part(base: pathlib.Path) -> pathlib.Path:
+def reserve_part(base: pathlib.Path, *, started_at=None) -> pathlib.Path:
     """Create the next free part file exclusively and return it.
 
     Only a file this recorder created is ever handed to ffmpeg, counted as a
     part or deleted, even when another process records the same stream.
     """
     base.parent.mkdir(parents=True, exist_ok=True)
-    n = next_part_number(base)
+    n = next_part_number(base, started_at=started_at)
     while True:
-        path = part_path(base, n)
+        path = part_path(base, n, started_at=started_at)
         try:
             with open(path, "x"):
                 return path
@@ -211,7 +225,7 @@ def sidecar_path(base: pathlib.Path) -> pathlib.Path:
 
 
 def chat_path(base: pathlib.Path) -> pathlib.Path:
-    return base.with_name(f"{base.name}_chat.jsonl")
+    return base.with_name(f"{base.name}{_CHAT_SUFFIX}")
 
 
 # ------------------------------------------------------------------ ffmpeg
@@ -338,6 +352,7 @@ class LiveRecorder:
         # parts and chat file listed by an earlier run of the same stream
         self.earlier = {"parts": [], "chat": None}
         self.base = None
+        self.started_at = None
         self.end_reason = None
         self.sidecar = {}
 
@@ -418,8 +433,10 @@ class LiveRecorder:
                     self._update_stream(channel)
                     mask_url_secrets(channel.get("playbackUrl"))
                 if self.base is None:
+                    self.started_at = utc_start(self.stream.get("startedAt"))
                     self.base = recording_base(self.save_location, self.username,
-                                               self.stream.get("startedAt"))
+                                               self.started_at,
+                                               model_id=self.stream.get("accountId"))
                     self.base.parent.mkdir(parents=True, exist_ok=True)
                     self._read_earlier_sidecar()
                 # chat starts with the first channel that came back, so a
@@ -465,7 +482,7 @@ class LiveRecorder:
         if scheme not in self.schemes:
             log.info(f"{self.username}: skipping a variant URL with scheme {scheme or 'none'!r}")
             return False, False
-        out = reserve_part(self.base)
+        out = reserve_part(self.base, started_at=self.started_at)
         log.info(f"{self.username}: recording livestream to {out.name}")
         try:
             await self.ffmpeg_runner(

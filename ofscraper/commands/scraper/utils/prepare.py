@@ -7,7 +7,6 @@ import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.utils.config.data as data
 
 
 log = logging.getLogger("shared")
@@ -31,22 +30,17 @@ def prepare(menu=False):
 
 
 def check_uniquename():
-    format = data.get_fileformat()
-    if re.search("text", format):
-        return True
-    elif re.search("filename", format):
-        return True
-    elif re.search("post_id", format):
-        return True
-    elif re.search("postid", format):
-        return True
-    elif re.search("media_id", format):
-        return True
-    elif re.search("mediaid", format):
-        return True
-    elif re.search("custom", format):
-        return True
-    return False
+    """True when every file name template in use (file_options and each
+    type_options entry but the livestream one, whose names hold the start
+    time) makes names that tell files apart"""
+    from ofscraper.utils.config import naming_check
+
+    unique = re.compile("text|filename|post_id|postid|media_id|mediaid|custom")
+    return all(
+        unique.search(str(template))
+        for setting, template, known, _effect in naming_check.templates()
+        if known is naming_check.FILE_PLACEHOLDERS
+    )
 
 
 def unique_name_warning():
