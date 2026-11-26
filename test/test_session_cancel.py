@@ -129,9 +129,11 @@ def test_cancel_while_reading_an_error_body_closes_the_response():
 def test_timeout_around_a_request_ends_it():
     calls = []
     release = asyncio.Event()
+    arrived = asyncio.Event()
 
     async def silent(request):
         calls.append(1)
+        arrived.set()
         await release.wait()
         return web.Response(text="late")
 
@@ -141,12 +143,22 @@ def test_timeout_around_a_request_ends_it():
             async with sessionManager(
                 retries=3, wait_min=0, wait_max=0, log=QUIET
             ) as c:
+                deadlines = []
 
                 async def request():
-                    async with c.requests_async(url=url):
-                        pass
+                    async with asyncio.timeout(None) as deadline:
+                        deadlines.append(deadline)
+                        async with c.requests_async(url=url):
+                            pass
 
-                outer = asyncio.create_task(asyncio.wait_for(request(), 0.3))
+                outer = asyncio.create_task(request())
+                # Start the timeout once the server has the request, so a
+                # slow machine can't time out before the request is sent.
+                got_there = asyncio.create_task(arrived.wait())
+                await asyncio.wait({got_there, outer}, timeout=3)
+                got_there.cancel()
+                if deadlines and not outer.done():
+                    deadlines[0].reschedule(asyncio.get_running_loop().time() + 0.3)
                 done, _ = await asyncio.wait({outer}, timeout=3)
                 result = outer.exception() if outer in done else "still running"
                 while not outer.done():
