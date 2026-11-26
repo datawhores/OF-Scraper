@@ -9,6 +9,7 @@ from ofscraper.utils.args.parse.arguments.advanced_program import (
     no_cache_option,
     update_profile_option,
     auth_fail,
+    migrate_sqlite_to_postgres_option,
 )
 
 advanced_options_desc = "Advanced Program Options"
@@ -26,4 +27,12 @@ advanced_options_tuple = (
 # Create the option group
 advanced_options = click.option_group(
     advanced_options_desc, *advanced_options_tuple, help=advanced_options_help
+)
+# the main program's: --migrate-sqlite-to-postgres runs in place of a scrape
+# and exits, so a subcommand doesn't take it
+main_advanced_options = click.option_group(
+    advanced_options_desc,
+    *advanced_options_tuple,
+    migrate_sqlite_to_postgres_option,
+    help=advanced_options_help,
 )
