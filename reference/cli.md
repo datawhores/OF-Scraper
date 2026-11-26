@@ -798,6 +798,14 @@ Run script in the background. Set value for how many minutes between script runs
 
 **Dest:** `daemon` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
+#### `--daemon-jitter`
+
+**Type:** float range · **Default:** `0.0` · **Commands:** main program
+
+Add a random delay up to this many minutes to each --daemon interval (default 0)
+
+**Dest:** `daemon_jitter` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
+
 #### `--live`
 
 **Type:** flag · **Default:** off · **Commands:** main program

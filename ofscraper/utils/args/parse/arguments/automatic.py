@@ -12,6 +12,13 @@ daemon_option = click.option(
     type=float,
 )
 
+daemon_jitter_option = click.option(
+    "--daemon-jitter",
+    help="Add a random delay up to this many minutes to each --daemon interval (default 0)",
+    type=click.FloatRange(min=0),
+    default=0.0,
+)
+
 action_option = click.option(
     "-a",
     "--action",
