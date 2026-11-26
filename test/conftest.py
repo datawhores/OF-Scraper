@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import os
 import shutil
@@ -30,6 +31,7 @@ import ofscraper.main.open.load  # noqa: E402,F401
 import cloup  # noqa: E402
 import pytest  # noqa: E402
 
+import ofscraper.main.close.exit_status as exit_status  # noqa: E402
 from ofscraper.utils.args.parse.commands.main import program  # noqa: E402
 
 
@@ -64,3 +66,35 @@ def _restore_subcommands():
     for section, commands in sections:
         section.commands.clear()
         section.commands.update(commands)
+
+
+@pytest.fixture(autouse=True)
+def _reset_exit_status():
+    # exit_status holds process-wide state (e.g. PARTIAL from an incomplete scan
+    # or failed creator); reset it around every test so one test can't leak its
+    # status into the next test in the same worker (#853).
+    exit_status.reset()
+    try:
+        yield
+    finally:
+        exit_status.reset()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_event_loop():
+    # On Python 3.11-3.13 without uvloop (Windows/macOS), calling
+    # asyncio.get_event_loop() on a fresh worker before set_event_loop() emits
+    # DeprecationWarning instead of raising RuntimeError (#853). Detaching the
+    # loop before each test and closing any loop left behind after prevents
+    # both that warning and ResourceWarning on 3.14+.
+    asyncio.set_event_loop(None)
+    try:
+        yield
+    finally:
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = None
+        asyncio.set_event_loop(None)
+        if loop is not None and not loop.is_closed():
+            loop.close()
