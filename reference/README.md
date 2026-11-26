@@ -94,7 +94,7 @@ The older documentation doesn't cover these:
   - Livestream recording (`--live`, `--live-watch`, `--live-interval`, `--live-max`, `--live-chat`).
   - Fansly media save under `<save location>/Fansly`, unless `dir_format` or `file_format` uses `{site_name}`, which then names each site's folder.
   - Fansly databases carry a `site` row in `schema_flags`.
-- **OnlyFans livestream recording** (`--live`, `--live-watch`, `--live-interval`, `--live-max`): records in a Chromium browser, so it needs the optional `live` extra (`pip install "ofscraper[live]"`, then `playwright install chromium`). Saves `.webm` files under `<save location>/OnlyFans/<username>/Livestreams`.
+- **OnlyFans livestream recording** (`--live`, `--live-watch`, `--live-interval`, `--live-max`): records in a Chromium browser, from the optional `live` extra. The first run at a terminal offers to install the extra and the browser ([`INSTALL_EXTRAS`](env.md#install_extras)); by hand, it's `pip install "ofscraper[live]"`, then `playwright install chromium`. Saves `.webm` files under `<save location>/OnlyFans/<username>/Livestreams`.
 - **`file_options.filename_collision`** (environment default `FILENAME_COLLISION_DEFAULT`): decides what happens when two media would get the same file name.
 - **`recover_collisions`** (`python -m ofscraper.commands.recover_collisions`): repairs databases where different media were recorded under one path. See [COLLISION_RECOVERY.md](../COLLISION_RECOVERY.md).
 - **`stash_sync`** (`python -m ofscraper.commands.stash_sync`): copies the OnlyFans and Fansly details of downloaded files into Stash. See [STASH.md](../STASH.md).

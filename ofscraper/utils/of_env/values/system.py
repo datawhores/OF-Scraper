@@ -50,6 +50,13 @@ def load_system_config():
     # OFSC_DATABASE_URL: A PostgreSQL connection URL, such as postgresql://user:password@host:5432/database. Empty (the default) keeps one SQLite file per creator. With a URL, every creator's rows are kept in that PostgreSQL database instead; this needs the optional driver (the `postgres` extra, included in the Docker image).
     config["OFSC_DATABASE_URL"] = os.getenv("OFSC_DATABASE_URL", "")
 
+    # INSTALL_EXTRAS: Whether a feature that needs an optional extra installs it the first time it's used: the `live` packages and the Chromium browser for OnlyFans livestreams, and the `postgres` driver when `OFSC_DATABASE_URL` is set. It asks first, and only at a terminal: the daemon, runs without a terminal (cron, services) and root under sudo are given the install command instead. They go into the Python running OF-Scraper, with pip, or with uv when that Python has no pip, using `OFSC_PROXY` when set. When False, or when the install is declined or fails, the feature stops and says how to install the extra. The standalone download never installs anything.
+    # Default: True
+    config["INSTALL_EXTRAS"] = os.getenv("OFSC_INSTALL_EXTRAS", "True").strip().lower() in (
+        "true",
+        "1",
+    )
+
     # Free Space
     config["DISK_SPACE_CHECK_PATH"] = os.getenv("OFSC_DISK_SPACE_CHECK_PATH", "/")
 

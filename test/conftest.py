@@ -19,6 +19,8 @@ _scratch_home = tempfile.mkdtemp(
 os.environ["HOME"] = _scratch_home
 os.environ["USERPROFILE"] = _scratch_home
 os.environ.pop("OFSC_CONFIG_DIR", None)
+# Never pip install a missing optional extra (psycopg, Playwright) during tests.
+os.environ["OFSC_INSTALL_EXTRAS"] = "False"
 atexit.register(shutil.rmtree, _scratch_home, ignore_errors=True)
 
 # The app's entry module imports ofscraper's packages in an order that avoids

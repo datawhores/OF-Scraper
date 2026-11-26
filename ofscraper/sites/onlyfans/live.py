@@ -435,7 +435,8 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
     opts = shared.options()
     if opts["chat"]:
         log.warning("--live-chat only applies to Fansly; OnlyFans recordings have no chat file")
-    if not live_capture.playwright_ready():
+    # a thread: it may start Playwright, whose sync API won't run in this loop
+    if not await asyncio.to_thread(live_capture.playwright_ready):
         return
     save_location = common_paths.get_save_location()
     ffmpeg = ffmpeg_finder.get_ffmpeg() or None
