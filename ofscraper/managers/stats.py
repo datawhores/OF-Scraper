@@ -522,6 +522,15 @@ class StatsManager:
 
         return self._stats[username][activity_enum]
     
+    def failed_count(self) -> int:
+        """Total failed items recorded across all users and activities."""
+        total = 0
+        for activity_dict in self._stats.values():
+            for stat_obj in activity_dict.values():
+                total += getattr(stat_obj, "failed_count", 0)
+                total += getattr(stat_obj, "posts_failed", 0)
+        return total
+
     def print_global_summary(self):
         """Builds and logs a grand total summary across all models and activities."""
         if not self._stats:

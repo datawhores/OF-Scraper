@@ -267,7 +267,7 @@ async def scrape_posts(
                 yield batch
 
     except Exception as E:
-        incomplete.mark_incomplete(model_id, area.api, repr(E))
+        incomplete.mark_incomplete(model_id, area.api, f"{type(E).__name__}: {E}")
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
     finally:

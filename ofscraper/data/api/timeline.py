@@ -365,7 +365,7 @@ async def scrape_timeline_posts(
                 yield batch
 
     except Exception as e:
-        incomplete.mark_incomplete(model_id, API, repr(e))
+        incomplete.mark_incomplete(model_id, API, f"{type(e).__name__}: {e}")
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
 

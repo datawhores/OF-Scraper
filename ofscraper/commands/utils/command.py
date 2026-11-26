@@ -13,6 +13,7 @@ from ofscraper.commands.utils.strings import (
     data_str,
     progress_str,
 )
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
 
@@ -24,6 +25,7 @@ def log_user_failure(username, error, what=None):
     stays at traceback level."""
     what = f" {what}" if what else ""
     log.warning(f"[{username}]{what} failed: {type(error).__name__}: {error}")
+    exit_status.record(exit_status.PARTIAL)
 
 
 class CommandManager:

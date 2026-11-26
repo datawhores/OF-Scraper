@@ -38,8 +38,12 @@ class DelayedKeyboardInterrupt:
         self._held.append(signum)
 
 
+class SigtermInterrupt(KeyboardInterrupt):
+    """SIGTERM in daemon mode: takes the KeyboardInterrupt cleanup path, then exits 0."""
+
+
 def _raise_keyboard_interrupt(signum, frame):
-    raise KeyboardInterrupt
+    raise SigtermInterrupt
 
 
 def sigterm_as_keyboard_interrupt():

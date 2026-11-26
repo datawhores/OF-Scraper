@@ -54,6 +54,7 @@ from ofscraper.utils.args.accessors.areas import (
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.settings as settings
+import ofscraper.main.close.exit_status as exit_status
 from ofscraper.managers.postcollection import PostCollection
 
 log = logging.getLogger("shared")
@@ -66,6 +67,7 @@ def log_area_failure(username, area, error):
     log.warning(f"[{username}] {area} failed: {type(error).__name__}: {error}")
     log.traceback_(error)
     log.traceback_(traceback.format_exc())
+    exit_status.record(exit_status.PARTIAL)
 
 
 @run

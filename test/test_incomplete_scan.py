@@ -169,6 +169,33 @@ def test_failed_page_keeps_fetched_posts_and_records_rescan(
     assert any(f"[a creator] {api} scan is incomplete" in w for w in shown)
 
 
+def _failed_request():
+    # what sessionmanager raises after the retries: the error carries the
+    # request it was for, headers included (#243)
+    from aiohttp import ClientResponseError, RequestInfo
+    from multidict import CIMultiDict, CIMultiDictProxy
+    from yarl import URL
+
+    url = URL("https://example.invalid/api2/v2/posts")
+    headers = CIMultiDictProxy(
+        CIMultiDict({"sign": "fake-sign-in-header", "Cookie": "sess=fake-sess-in-cookie"})
+    )
+    return ClientResponseError(
+        RequestInfo(url, "GET", headers, url), (), status=429, message="Too Many Requests"
+    )
+
+
+@pytest.mark.parametrize("area", AREAS)
+def test_stopped_scan_warning_leaves_out_the_request_headers(
+    monkeypatch, cache, explicit_after, warnings, area
+):
+    entry = setup_area(monkeypatch, area)
+    scan(entry, FakeClient([page([2001]), _failed_request()]))
+    shown = "\n".join(warnings())
+    assert "scan stopped early" in shown and "429" in shown
+    assert "fake-sign-in-header" not in shown and "fake-sess-in-cookie" not in shown
+
+
 @pytest.mark.parametrize("area", AREAS)
 def test_complete_scan_records_nothing(monkeypatch, cache, explicit_after, warnings, area):
     entry = setup_area(monkeypatch, area)
@@ -225,6 +252,127 @@ def test_rescan_record_cleared_only_after_a_complete_saved_scan(
     assert cache.get(key) == AFTER
     write.set_after_checks(MODEL_ID, module.API)
     assert cache.get(key) is None
+
+
+@pytest.mark.parametrize("failure", FAILURES)
+def test_run_whose_timeline_requests_all_fail_exits_partial(
+    monkeypatch, cache, explicit_after, failure
+):
+    import ofscraper.main.close.exit_status as exit_status
+    import ofscraper.main.open.run as run
+
+    entry = setup_area(monkeypatch, "timeline")
+    monkeypatch.setattr(run, "check_database", lambda: None)
+    monkeypatch.setattr(
+        run, "start_manager", lambda: scan(entry, FakeClient([FAILURES[failure]()]))
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        run.main()
+
+    assert exc.value.code == exit_status.PARTIAL
+
+
+def _undated_scans():
+    """Areas scanned without a start date: each fetches with a client and
+    returns what it found."""
+    from ofscraper.data.api import highlights, labels, paid, pinned
+
+    async def all_purchases(c):
+        return await paid.process_tasks_all_paid(await paid.create_tasks_scrape_paid(c))
+
+    async def fansly_purchases(c):
+        return await post.process_paid_post(MODEL_ID, "a creator", c)
+
+    return {
+        "pinned": (lambda c: pinned.get_pinned_posts(MODEL_ID, c=c), []),
+        "stories": (lambda c: highlights.get_stories_post(MODEL_ID, c=c), []),
+        "highlight list": (lambda c: highlights.get_highlight_post(MODEL_ID, c=c), []),
+        # the list came back, the highlight's stories didn't
+        "highlight": (
+            lambda c: highlights.get_highlight_post(MODEL_ID, c=c),
+            [{"list": [{"id": 5}], "hasMore": False}],
+        ),
+        "purchased": (lambda c: paid.get_paid_posts("a creator", MODEL_ID, c=c), []),
+        "all purchased": (all_purchases, []),
+        "fansly purchased": (fansly_purchases, []),
+        "label list": (lambda c: labels.get_labels(MODEL_ID, c=c), []),
+        # the list came back, the label's posts didn't
+        "label": (
+            lambda c: labels.get_labels(MODEL_ID, c=c),
+            [{"list": [{"id": 5, "name": "a label"}], "hasMore": False}],
+        ),
+        "fansly wall list": (lambda c: labels.get_labels(MODEL_ID, c=c), []),
+        "fansly wall": (
+            lambda c: labels.get_labels(MODEL_ID, c=c),
+            [
+                {
+                    "success": True,
+                    "response": [
+                        {
+                            "id": str(MODEL_ID),
+                            "hasMainWall": False,
+                            "walls": [{"id": "5", "name": "a wall", "pos": 1}],
+                        }
+                    ],
+                }
+            ],
+        ),
+    }
+
+
+@pytest.mark.parametrize("failure", FAILURES)
+@pytest.mark.parametrize(
+    "area",
+    ["pinned", "stories", "highlight list", "highlight", "purchased", "all purchased",
+     "fansly purchased", "label list", "label", "fansly wall list", "fansly wall"],
+)
+def test_run_whose_undated_scan_fails_exits_partial(monkeypatch, cache, area, failure):
+    import ofscraper.main.close.exit_status as exit_status
+    import ofscraper.main.open.run as run
+    from ofscraper.data.api import labels, paid
+    import ofscraper.utils.live.updater as progress_utils
+
+    fetch, pages_before = _undated_scans()[area]
+    monkeypatch.setattr(
+        progress_utils,
+        "api",
+        SimpleNamespace(
+            add_overall_task=Mock(return_value=1),
+            update_overall_task=Mock(),
+            remove_overall_task=Mock(),
+            add_job_task=Mock(return_value=2),
+            remove_job_task=Mock(),
+        ),
+    )
+    # traceback_ is added to loggers by the app's log setup
+    monkeypatch.setattr(
+        logging.getLogger("shared"), "traceback_", lambda *a, **k: None, raising=False
+    )
+    monkeypatch.setattr(paid, "update_check", Mock())
+    monkeypatch.setattr(paid, "cache", cache)
+    monkeypatch.setattr(labels, "update_check", Mock())
+    monkeypatch.setattr(
+        labels,
+        "settings",
+        SimpleNamespace(get_settings=lambda: SimpleNamespace(label=None)),
+    )
+    monkeypatch.setattr(post.free, "check_free_size", lambda: True)
+    monkeypatch.setattr(post.sites, "is_fansly", lambda: area.startswith("fansly"))
+    monkeypatch.setattr(post.operations, "make_post_table_changes", AsyncMock())
+    client = FakeClient([*pages_before, FAILURES[failure]()])
+    monkeypatch.setattr(run, "check_database", lambda: None)
+
+    async def go():
+        return await fetch(client)
+
+    monkeypatch.setattr(run, "start_manager", lambda: asyncio.run(go()))
+
+    with pytest.raises(SystemExit) as exc:
+        run.main()
+
+    assert exc.value.code == exit_status.PARTIAL
+    assert client.pages == []  # the failing request was made
 
 
 def test_post_id_lookup_does_not_clear_the_record(monkeypatch, cache, explicit_after):

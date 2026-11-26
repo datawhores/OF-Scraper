@@ -82,6 +82,25 @@ Which site a run uses is decided in this order:
 
 The media path comes from `file_options.dir_format` (`{model_username}/{responsetype}/{mediatype}/`) and `file_options.file_format` (`{filename}.{ext}`). See [placeholders.md](placeholders.md).
 
+## Exit codes
+
+When more than one problem happens in a run, the most severe code wins (ordered below from least to most severe):
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything ran. Skipped files are fine. |
+| `2` | Usage error (command-line mistake, such as a `-u` name no creator has). Any of the codes below it wins over a `-u` name not found. |
+| `4` | Partial: at least one creator, area or download failed. |
+| `5` | Site unavailable (OnlyFans maintenance). Try again later. |
+| `3` | Login failed (`--auth-fail` or an unreadable auth file). |
+| `6` | Configuration error (unreadable config, or a configured database that can't be reached). |
+| `1` | Unexpected error. |
+| `130` | Interrupted with Ctrl+C. |
+
+In `--daemon` mode, each pass logs its outcome and resets the status for the next pass. Stopping the daemon with `SIGTERM` exits `0`. Outside the daemon, `SIGTERM` isn't caught: the signal ends the run, and a shell reports `143`.
+
+**Docker restart policies:** a file or creator that keeps failing makes every run exit `4`. With `restart: on-failure` on a one-off run, Docker starts the container again straight after each run, so it loops without a pause. Run the container with `--daemon` and `restart: unless-stopped` instead: the daemon waits between passes, and a failed pass doesn't stop it.
+
 ## Features added since 3.14.7
 
 The older documentation doesn't cover these:
