@@ -49,6 +49,12 @@ def _verify():
     return mod.main
 
 
+def _rename_to_format():
+    import ofscraper.commands.rename_to_format as mod
+
+    return mod.main
+
+
 TOOLS = {
     "stash_sync": (
         _stash_sync,
@@ -77,6 +83,10 @@ TOOLS = {
     "verify": (
         _verify,
         "Check downloaded files against the database, offline",
+    ),
+    "rename_to_format": (
+        _rename_to_format,
+        "Rename a creator's downloaded files to the current file_format and dir_format",
     ),
 }
 

@@ -49,6 +49,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 | [`postgres_export`](#postgres_export-separate-entry-point) (argparse) | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
 | [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
 | [`recover_collisions`](#recover_collisions-separate-entry-point) (argparse) | Find recorded paths shared by different media and reset downloaded flags to re-download. |
+| [`rename_to_format`](#rename_to_format-separate-entry-point) (argparse) | Rename a creator's downloaded files to the current file_format and dir_format, offline. |
 | [`stash_sync`](#stash_sync-separate-entry-point) (argparse) | Sync downloaded media metadata from OF-Scraper databases into Stash. |
 | [`verify`](#verify-separate-entry-point) (argparse) | Check downloaded files against the database, offline. |
 
@@ -192,6 +193,26 @@ Run `ofscraper recover_collisions (DATABASE | --postgres --creator NAME) [OPTION
 - `--site`: With --postgres, the creator's site (default: the site that has the creator)
 - `--creator`: With --postgres, the one creator to work on, by a username or id that no other creator has
 - `--undo-dir`: With --postgres, the folder --apply writes the undo file to: needed with --apply, and it must be a folder that is kept (in Docker, a mounted one)
+
+### `rename_to_format` (separate entry point)
+
+`ofscraper rename_to_format (DB [--username NAME] [--config PATH] [--profile NAME] [--path-root DIR] [--sample N] | --undo FILE) [--apply]` (or `python -m ofscraper.commands.rename_to_format`). Offline tool using argparse (see `RENAMING_FILES.md`). Works offline on one creator's `user_data.db`: gives the files its `medias` rows record the names a download would now give them under the current `file_format` and `dir_format`, and sets `directory` and `filename` in those rows to match. Reads the scraper's `config.json` (`--config`, `--profile`, as the scraper's own options) but never writes it, and refuses a missing or broken one. Without `--apply`, prints a JSON report and changes nothing.
+
+- **New names:** built by the download's placeholder code (`ofscraper/classes/placeholder.py`) from what the database holds: the media row, its post, message or story row, the `labels` table and the creator's name (`--username`, default the name seen last). A name that needs a value the database doesn't hold is left and listed: a video's `{quality}` (and `{filename}`, which includes it) when the recorded name doesn't show it, `{text}` of a story or of text saved with `sanitize_text` on, `{label}` of a labelled post, `{count}` in a post with several media, the price placeholders, `{my_id}`, `{my_username}`, `{modelObj}` and `{args}`. A set `naming_script` is refused.
+- **Per-file handling:** a file is renamed when its new place is free, never onto an existing file. A file whose new place is taken, recorded by another row, or the new name of another file too is left and listed with its rows unchanged. A file already at its new place with the recorded size only gets its rows changed. Removes old folders left empty, up to the save location.
+- **Undo:** with `--apply`, a JSON undo file listing every rename and row change is written beside the database first. `--undo FILE` previews putting back what is still as the run left it, and does it with `--apply`. If a run is stopped (an error or Ctrl-C), the files renamed so far get their old names back and no row changes; the undo file is removed when every file is back at its old name and kept otherwise. A file that can't be renamed is listed and the rest go on.
+- **PostgreSQL:** not supported. While `OFSC_DATABASE_URL` is set, a preview warns that the file doesn't reach PostgreSQL, and `--apply` (also with `--undo`) is refused.
+
+Run `ofscraper rename_to_format (DATABASE | --undo FILE) [OPTIONS]` (or `python -m ofscraper.commands.rename_to_format (DATABASE | --undo FILE) [OPTIONS]`).
+
+- `DATABASE`: One creator's user_data.db
+- `--apply`: Rename the files and change the rows; writes an undo file first. Without it, only report
+- `--username`: The recorded name to build {model_username} from (default: the name seen last)
+- `--config`, `-cg`: The scraper's config.json, or its folder, as the scraper's --config (default: the scraper's)
+- `--profile`, `-r`: The scraper profile, for {profile} (default: config.json's main_profile)
+- `--path-root`: Original working directory for relative recorded paths
+- `--sample`: List up to N of the renames (default 20; 0 lists all)
+- `--undo`: Preview putting back what an --apply changed, from its undo file; with --apply, put it back
 
 ### `stash_sync` (separate entry point)
 
