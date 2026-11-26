@@ -512,6 +512,10 @@ SEPARATE_COMMANDS = {
         "[--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]",
         "List and record the usernames each creator account has had.",
     ),
+    "doctor": (
+        "[--config PATH] [--profile NAME] [--site SITE] [--json] [--online]",
+        "Check the setup without running a scrape.",
+    ),
     "move_creator_files": (
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Move a creator's downloaded files to match new path settings and update recorded paths.",

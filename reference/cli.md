@@ -45,6 +45,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 | [`metadata`](#metadata) (86 options) | Modify metadata or db files |
 | [`db`](#db) (61 options) | Print information from the database |
 | [`creator_names`](#creator_names-separate-entry-point) (argparse) | List and record the usernames each creator account has had. |
+| [`doctor`](#doctor-separate-entry-point) (argparse) | Check the setup without running a scrape. |
 | [`move_creator_files`](#move_creator_files-separate-entry-point) (argparse) | Move a creator's downloaded files to match new path settings and update recorded paths. |
 | [`postgres_export`](#postgres_export-separate-entry-point) (argparse) | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
 | [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
@@ -135,6 +136,23 @@ Run `ofscraper creator_names [--all | --find NAME | --add MODEL_ID NAME [--seen 
 - `--seen`: with --add, when the name was in use: 2024-03-01 or 2024-03-01T09:30:00+00:00 (UTC unless it has an offset; no more than a day ahead)
 - `--force`: with --add, add the name even if it changes the deleted-account folder name
 - `--csv`: also write the listing to a CSV file
+
+### `doctor` (separate entry point)
+
+`ofscraper doctor [--config PATH] [--profile NAME] [--site SITE] [--json] [--online]` (or `python -m ofscraper.commands.doctor`). Offline tool using argparse. Checks the setup and prints one line per check: `PASS`, `WARN`, `FAIL` or `SKIP`. Exits 1 when any check fails, else 0. Changes nothing, makes no connection and never asks a question: `config.json` is read as plain JSON (a missing or broken file is a finding, and the rest is checked with the defaults), not through the normal start.
+
+- **Checks:** the config file (`--config` is found as a run finds it); the profile and its site (`site.json`, or `--site`); that site's auth file (OnlyFans: `auth.json` present with `sess`, `auth_id`, `user_agent` and `x-bc` set as text that isn't only spaces; Fansly: `fansly_auth.json` as `problems()` judges it; a missing file is `WARN`, as a run asks for the login), the other site's being `SKIP`; ffmpeg, found as a download finds it (config, pyffmpeg, `PATH`) and failing below version 6, with its version and where it was found (pyffmpeg isn't imported: a binary it hasn't unpacked yet is reported as such, with no version); ffprobe beside it or in `PATH` (`WARN` if missing); the key files in `manual` key mode, which must exist and load as a Widevine device (neither set is `WARN`, the fresh-install default: a run skips protected videos until they're set; `cdrm` mode is reported, and its server isn't contacted; `SKIP` for a Fansly profile, whose videos have no DRM); the save folder and the temp folder (when set) exist, with free space (a missing save folder is `WARN`, as a run makes it, but `FAIL` when its drive is missing on Windows, or on Linux and macOS when nothing is there below `/` or a place drives are mounted (`/mnt`, `/media`, `/Volumes`, `/net`, `/run/media/<user>`), as the drive or share likely isn't mounted); the free-space limit (`system_free_min`), warning when `OFSC_DISK_SPACE_CHECK_PATH` is on another disk than the save folder (an empty value measures the save folder's disk); and the database setting (`OFSC_DATABASE_URL`, shown without the login, failing when its driver isn't installed).
+- **`--online`:** also connects. PostgreSQL is checked first (`POSTGRES.check()`: the server version, or why it can't be used), then the scraper is started as a run starts (settings, config, logs, folders, no scrape), the login is checked with the scraper's own session (`auth_status`: logged in, rejected, or couldn't be checked), and for OnlyFans it says which signing-rule source answered and why others didn't. With `STASH_URL` set, Stash is asked for its version. It isn't read-only: the start may rewrite `config.json` and create folders, and the signing rule and Fansly's device id are kept as a run keeps them. The login check is skipped when the config file or the auth file failed offline or the auth file isn't there, since the start would stop to ask about them.
+- **Secrets:** auth values, the database password and key contents are never printed; fields are named. The output is meant for public issues: the home folder is shown as `~`, and the login name, where it's a folder name in another path, as `<user>`.
+- **`--json`:** prints `{"ok": ..., "results": [{"status", "check", "detail"}]}`; anything the `--online` start prints goes to stderr.
+
+Run `ofscraper doctor [--config PATH] [--profile NAME] [--site SITE] [--json] [--online]` (or `python -m ofscraper.commands.doctor [--config PATH] [--profile NAME] [--site SITE] [--json] [--online]`).
+
+- `--config`: The config file or folder, as for a run's --config
+- `--profile`: The profile to check (default: the config's main profile)
+- `--site`: Check this site's auth file, not the profile's site
+- `--json`: Print the results as JSON
+- `--online`: Also connect: PostgreSQL, the login, the signing rules and Stash. Not read-only: it starts the scraper as a run does
 
 ### `move_creator_files` (separate entry point)
 

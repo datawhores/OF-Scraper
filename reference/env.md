@@ -40,8 +40,8 @@ The app reads these with `os.getenv` where it uses them, not through `of_env.get
 | `DISPLAY` | **Default:** `None` · **Read in:** `ofscraper/classes/table/utils/open_folder.py`.<br>Check table, Linux only: with neither this nor `WAYLAND_DISPLAY` set there's no desktop, so Open Download Folder and `o` show the folder's path instead of running `xdg-open`. |
 | `OFSC_FANSLY_API_BASE` | **Default:** `f'https://{API_HOST}/api/v1/'` · **Read in:** `ofscraper/sites/fansly/constants.py`.<br>Base URL of the Fansly API that Fansly requests go to. |
 | `OFSC_FANSLY_AUTH_FILE_NAME` | **Default:** `'fansly_auth.json'` · **Read in:** `ofscraper/sites/fansly/constants.py`.<br>Name of the Fansly credentials file in the profile folder. |
-| `STASH_API_KEY` | **Default:** `None` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync` only: the Stash API key, for a Stash with a password. `--api-key` overrides it. |
-| `STASH_URL` | **Default:** `DEFAULT_URL` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync` only: Stash's GraphQL URL. `--url` overrides it. |
+| `STASH_API_KEY` | **Default:** `None` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync`: the Stash API key, for a Stash with a password. `--api-key` overrides it. `ofscraper doctor --online` sends it too. |
+| `STASH_URL` | **Default:** `DEFAULT_URL` · **Read in:** `ofscraper/commands/stash_sync.py`.<br>`stash_sync`: Stash's GraphQL URL. `--url` overrides it. `ofscraper doctor --online` checks Stash only when this is set. |
 | `WAYLAND_DISPLAY` | **Default:** `None` · **Read in:** `ofscraper/classes/table/utils/open_folder.py`.<br>Check table, Linux only: see `DISPLAY`. |
 
 ## Downloads and actions

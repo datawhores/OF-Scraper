@@ -922,10 +922,11 @@ class PostgresBackend:
                     [flag],
                 )
 
-    def check(self):
+    def check(self, site=None):
         """The startup check: connect, and stop with one sentence if the
-        server can't be used. Returns the server's version text."""
-        schema = self.where({}, True)
+        server can't be used. Returns the server's version text. With a
+        site, its schema is used without reading the settings."""
+        schema = schema_name(site) if site else self.where({}, True)
         conn = self.connect(schema, True, timeout=of_env.getattr("DATABASE_TIMEOUT"))
         try:
             version = conn.info.server_version

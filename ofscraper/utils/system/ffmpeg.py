@@ -1,6 +1,9 @@
+import importlib.util
 import os
+import platform
 import shutil
 import subprocess
+import sys
 import re
 import logging
 import ofscraper.utils.settings as settings
@@ -17,6 +20,73 @@ _ffprobe_path: str | None = None
 _ffprobe_checked: bool = False
 
 
+def ffmpeg_version(path: str | None):
+    """What `path -version` says: (is it ffmpeg, the version text or None,
+    the major version or None for a build without one, e.g. from git).
+    Raises OSError or SubprocessError when it can't be run."""
+    result = run(
+        [path, "-version"],
+        capture_output=True,
+        text=True,
+        check=False,
+        encoding="utf-8",
+        level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
+        name="ffmpeg",
+    )
+    output = result.stdout + result.stderr
+    if not re.search(r"ffmpeg version", output, re.IGNORECASE):
+        log.debug(f"Full output from '{path}':\n{output}")
+        return False, None, None
+    text = re.search(r"ffmpeg version\s+(\S+)", output, re.IGNORECASE)
+    # the major version number (e.g., "ffmpeg version 6.1.1" -> 6)
+    major = re.search(r"ffmpeg version\s+([0-9]+)\.", output, re.IGNORECASE)
+    return True, text.group(1) if text else None, int(major.group(1)) if major else None
+
+
+def pyffmpeg_bin():
+    """Where pyffmpeg keeps its ffmpeg, without importing pyffmpeg: importing
+    it makes ~/.pyffmpeg, and FFmpeg() unpacks its ffmpeg (about 190 MB)
+    there. (is pyffmpeg installed, the path the binary is or will be at)."""
+    try:
+        installed = importlib.util.find_spec("pyffmpeg") is not None
+    except (ImportError, ValueError):
+        # ValueError: a module put in sys.modules without a spec
+        installed = "pyffmpeg" in sys.modules
+    # pyffmpeg's misc.Paths rule
+    windows = platform.system().lower() == "windows"
+    home = os.environ.get("USERPROFILE" if windows else "HOME")
+    if not installed or not home:
+        return installed, None
+    return True, os.path.join(home, ".pyffmpeg", "bin", "ffmpeg.exe" if windows else "ffmpeg")
+
+
+def find_ffmpeg(configured: str | None):
+    """The ffmpeg get_ffmpeg() would use, without keeping it or unpacking
+    pyffmpeg's: (path, where it was found, version text), or (None, None,
+    None). Each place is tried in get_ffmpeg's order: the setting, pyffmpeg,
+    then PATH. A pyffmpeg ffmpeg that isn't unpacked yet is what a run would
+    use; it's given with no version, as only unpacking it could tell."""
+
+    def candidates():
+        yield "config", configured
+        installed, bundled = pyffmpeg_bin()
+        if installed and bundled and not os.path.exists(bundled):
+            yield "pyffmpeg, not unpacked yet: a run unpacks it", bundled
+        elif installed:
+            yield "pyffmpeg", bundled
+        yield "PATH", shutil.which("ffmpeg")
+
+    for source, path in candidates():
+        if source.startswith("pyffmpeg,"):
+            return path, source, None
+        if _is_valid_ffmpeg(path):
+            try:
+                return path, source, ffmpeg_version(path)[1]
+            except (OSError, subprocess.SubprocessError):
+                continue
+    return None, None, None
+
+
 def _is_valid_ffmpeg(path: str | None) -> bool:
     """
     Checks if a given path is a real, executable FFmpeg binary and validates
@@ -28,23 +98,10 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
 
     log.debug(f"Running validation check on candidate path: {path}")
     try:
-        result = run(
-            [path, "-version"],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-            level=env.getattr("FFMPEG_SUBPROCESS_LEVEL"),
-            name="ffmpeg",
-        )
-        output = result.stdout + result.stderr
+        is_ffmpeg, _version, major_version = ffmpeg_version(path)
 
-        if re.search(r"ffmpeg version", output, re.IGNORECASE):
-            # Extract the major version number (e.g., "ffmpeg version 6.1.1" -> "6")
-            version_match = re.search(r"ffmpeg version\s+([0-9]+)\.", output, re.IGNORECASE)
-            
-            if version_match:
-                major_version = int(version_match.group(1))
+        if is_ffmpeg:
+            if major_version is not None:
                 if major_version < 6:
                     log.warning(
                         f"⚠️ Invalid FFmpeg version {major_version}.x detected at '{path}'.\n"
@@ -61,7 +118,6 @@ def _is_valid_ffmpeg(path: str | None) -> bool:
             log.info(
                 f"Path '{path}' is executable, but output did not confirm it's FFmpeg."
             )
-            log.debug(f"Full output from '{path}':\n{output}")
             return False
 
     except (OSError, subprocess.SubprocessError):

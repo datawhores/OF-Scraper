@@ -17,7 +17,7 @@ def config_context():
             p = pathlib.Path(common_paths.get_config_path())
             # valid JSON that isn't an object of settings, e.g. a list,
             # is broken the same way as a syntax error
-            config_file.unwrap(json.loads(encoding.read_text_file(p)))
+            config_file.checked(encoding.read_text_file(p))
         except FileNotFoundError:
             config_file.make_config()
             continue

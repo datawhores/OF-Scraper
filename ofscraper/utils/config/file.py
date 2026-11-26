@@ -78,6 +78,14 @@ def unwrap(config):
     return wrapped
 
 
+def checked(configText):
+    """The settings in config.json's text, as the run accepts them: strict
+    JSON holding an object of settings. Raises json.JSONDecodeError or
+    NotAnObjectError for a file the run stops at and asks to be fixed
+    (config_context); json_loads's repair of backslashes is not applied."""
+    return unwrap(json.loads(configText))
+
+
 def open_config():
     import ofscraper.utils.config.utils.context as config_context
 
