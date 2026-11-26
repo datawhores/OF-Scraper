@@ -184,7 +184,7 @@ The minimum free disk space. Once free space drops below it, scraping of further
 
 **Default:** `0` · **CLI override:** `--max-post-count` · **Env default:** [`MAX_COUNT_DEFAULT`](env.md#max_count_default) · **Read by:** `get_max_post_count()` in `ofscraper/utils/config/data.py`
 
-The most media items (not posts) to download or process per creator, after all other filters. 0 means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
+The most media items (not posts) to download or process per creator, after all other filters. The newest are kept, and the log says how many the cap left out; `--media-sort` and `--media-desc` order the kept items but don't change which are kept. 0 or a negative value means no cap. The `-xc`/`--max-post-count` and `-mxc`/`--max-media-count` options both override it, and they set the same value.
 
 ### `download_options.verify_all_integrity`
 
