@@ -43,6 +43,12 @@ def _creator_names():
     return mod.main
 
 
+def _verify():
+    import ofscraper.commands.verify as mod
+
+    return mod.main
+
+
 TOOLS = {
     "stash_sync": (
         _stash_sync,
@@ -67,6 +73,10 @@ TOOLS = {
     "creator_names": (
         _creator_names,
         "List and record usernames each creator account has had",
+    ),
+    "verify": (
+        _verify,
+        "Check downloaded files against the database, offline",
     ),
 }
 
