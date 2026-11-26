@@ -376,3 +376,27 @@ def test_a_failure_part_way_keeps_nothing_and_a_rerun_works(tmp_path, pg, monkey
 
     assert code == 0, said
     assert counts(pg["onlyfans"])["medias"] == 5
+
+
+def test_a_merged_file_is_migrated_with_the_option(tmp_path, pg):
+    """Merge Databases, then ofscraper --migrate-sqlite-to-postgres on the file."""
+    import ofscraper.db.merge as merge
+
+    old = tmp_path / "old"
+    current_file(old / "111" / "user_data.db", 111, name="creator_a")
+    current_file(old / "222" / "user_data.db", 222, name="creator_b")
+    merged = tmp_path / "merged" / "user_data.db"
+    failed, completed, _ = asyncio.run(merge.MergeDatabase()(old, merged))
+    assert not failed and len(completed) == 2
+
+    importer.migrate(merged)
+
+    assert counts(pg["onlyfans"])["models"] == 2
+    assert {
+        row[0] for row in server(f"SELECT DISTINCT model_id FROM {pg['onlyfans']}.posts")
+    } == {111, 222}
+    # a second run finds both creators there already and changes nothing
+    with pytest.raises(SystemExit) as exit_info:
+        importer.migrate(merged)
+    assert exit_info.value.code == 1
+    assert counts(pg["onlyfans"])["models"] == 2

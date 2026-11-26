@@ -36,7 +36,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 | Command | Summary |
 |---|---|
-| [Main program (no command)](#main-program-no-command) (103 options) | OF-Scraper Options |
+| [Main program (no command)](#main-program-no-command) (104 options) | OF-Scraper Options |
 | [`manual`](#manual) (52 options) | Manually download media by providing a list of URLs or IDs |
 | [`msg_check`](#msg_check) (52 options) | Produces a media table from messages with filterable entries and quick downloads |
 | [`story_check`](#story_check) (50 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
@@ -56,7 +56,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-**Options:** 103 · **`--help` summary:** OF-Scraper Options
+**Options:** 104 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -151,7 +151,7 @@ Run `python -m ofscraper.commands.postgres_export FOLDER [OPTIONS]`.
 
 Run `python -m ofscraper.commands.postgres_import FOLDER [OPTIONS]`.
 
-- `FOLDER`: folder to search for user_data.db files
+- `FOLDER`: folder to search for user_data.db files, or one database file
 - `--apply`: write to PostgreSQL; without it, only report
 - `--skip-bad-files`: with --apply, bring in the files that can be and leave out the rest
 - `--staging`: folder for the working copies, which need as much room as the files (default: the system's temporary folder)
@@ -1127,6 +1127,14 @@ Get up-to-date profile info instead of using cache
 Quit on authentication failure rather than prompting
 
 **Dest:** `auth_fail` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
+
+#### `--migrate-sqlite-to-postgres`
+
+**Type:** path · **Default:** none · **Commands:** main program
+
+Copy a user_data.db file (such as the one Merge Databases writes), or a folder of them, into the PostgreSQL database OFSC_DATABASE_URL names, then exit
+
+**Dest:** `migrate_sqlite_to_postgres` · **Defined in:** `ofscraper/utils/args/parse/arguments/advanced_program.py`
 
 ### Other options
 

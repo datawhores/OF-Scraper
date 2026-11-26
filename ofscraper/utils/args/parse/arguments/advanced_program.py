@@ -44,6 +44,14 @@ client_id_option = click.option(
     default=None,
 )
 
+migrate_sqlite_to_postgres_option = click.option(
+    "--migrate-sqlite-to-postgres",
+    "migrate_sqlite_to_postgres",
+    help="Copy a user_data.db file (such as the one Merge Databases writes), or a folder of them, into the PostgreSQL database OFSC_DATABASE_URL names, then exit",
+    default=None,
+    type=click.Path(exists=True),
+)
+
 auth_fail = click.option(
     "-al",
     "--auth-fail",

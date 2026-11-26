@@ -57,6 +57,16 @@ Turning PostgreSQL on does not migrate your existing `user_data.db` files. Use `
 | `--staging <folder>` | Sets where temporary working copies are placed. Working copies need as much free space as the source files. |
 | `--skip-bad-files` | Imports the files that can be imported and skips (and lists) the ones that cannot. Exits with code `1` if any file was skipped, or `0` only if every file came in. |
 
+### In one step, after merging
+
+If you merged your databases into one file with the menu's **Merge Databases**, bring that file in with one command:
+
+```bash
+ofscraper --migrate-sqlite-to-postgres <path to the merged user_data.db>
+```
+
+It does what `postgres_import --apply` does, for that file, then exits. It also takes a folder of `user_data.db` files. It writes everything or nothing: if a value can't be stored, or a creator is already in PostgreSQL, it says why and writes nothing. Once a merge is done with PostgreSQL turned on, the merge screen prints this command with the merged file's path.
+
 ### How import works
 
 - **Your files are never changed.** Each file is copied to a working folder and upgraded the same way a scan upgrades it, so files last used by an older version come in too.

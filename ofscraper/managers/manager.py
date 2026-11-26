@@ -88,7 +88,19 @@ class mainManager:
         return self._stats_manager
 
     def pick(self):
-        if settings.get_settings().command in [
+        migrate = getattr(settings.get_settings(), "migrate_sqlite_to_postgres", None)
+        if migrate:
+            import ofscraper.commands.postgres_import as postgres_import
+
+            try:
+                postgres_import.migrate(migrate)
+            except SystemExit as exc:
+                # a failed migration exits with its code, which skips the
+                # shutdown in start(); 130 is shut down by main.open.run
+                if exc.code != 130:
+                    exit_manager.shutdown()
+                raise
+        elif settings.get_settings().command in [
             "post_check",
             "msg_check",
             "paid_check",
