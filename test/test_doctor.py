@@ -3,6 +3,7 @@
 import json
 import os
 import pathlib
+import re
 import sys
 
 import pytest
@@ -14,6 +15,14 @@ import ofscraper.utils.system.ffmpeg as ffmpeg
 
 SECRET = "s3cret-value-that-must-not-show-0123456789"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) a test agent"
+
+
+@pytest.fixture(autouse=True)
+def no_subscription_request(monkeypatch):
+    """--online's subscription count never reaches the site in these tests."""
+    import ofscraper.data.api.me as me
+
+    monkeypatch.setattr(me, "parse_subscriber_count", lambda: (3, 1))
 
 
 @pytest.fixture
@@ -531,6 +540,67 @@ def test_offline_points_at_online(home):
     assert result(doctor.run(), "login")[0] == "SKIP"
 
 
+def online_logged_in(home, monkeypatch, config, count):
+    import ofscraper.data.api.init as init
+    import ofscraper.data.api.me as me
+
+    write_config(home, config)
+    write_auth(home)
+    monkeypatch.delenv("OFSC_DEFAULT_USER_LIST", raising=False)
+    monkeypatch.delenv("OFSC_DEFAULT_BLACK_LIST", raising=False)
+    monkeypatch.setattr(doctor, "start", lambda *a: None)
+    monkeypatch.setattr(init, "auth_status", lambda: ("UP", None))
+    if isinstance(count, Exception):
+        def fail():
+            raise count
+        monkeypatch.setattr(me, "parse_subscriber_count", fail)
+    else:
+        monkeypatch.setattr(me, "parse_subscriber_count", lambda: count)
+    return doctor.run(online=True)
+
+
+def test_online_reports_the_subscription_count(home, monkeypatch):
+    report = online_logged_in(home, monkeypatch, {"main_profile": "main_profile"}, (12, 30))
+    assert result(report, "subscriptions") == ("PASS", "12 active, 30 expired")
+    assert [r for r in report.results if r["check"] == "creator filters"] == []
+
+
+def test_online_warns_at_no_active_subscriptions(home, monkeypatch):
+    status, detail = result(online_logged_in(home, monkeypatch, {"main_profile": "main_profile"}, (0, 4)), "subscriptions")
+    assert status == "WARN" and detail.startswith("0 active, 4 expired")
+
+
+def test_online_names_the_creator_filters(home, monkeypatch, capsys):
+    """List names are often creator names, and the output goes into public
+    issues: the filters are named with how many lists, never the lists."""
+    config = {"advanced_options": {"default_user_list": "VIP,old", "default_black_list": ["skip"]}}
+    status, detail = result(online_logged_in(home, monkeypatch, config, (5, 0)), "creator filters")
+    assert status == "WARN"
+    assert "default_user_list (2 lists)" in detail and "default_black_list (1 list)" in detail
+    assert not {"vip", "old", "skip"} & set(re.findall(r"[a-z]+", detail.lower()))
+    config = {"advanced_options": {"default_user_list": "main,vip"}}
+    report = online_logged_in(home, monkeypatch, config, (5, 0))
+    assert [r for r in report.results if r["check"] == "creator filters"] == []
+
+
+def test_online_subscription_count_that_fails_is_a_warning(home, monkeypatch):
+    report = online_logged_in(home, monkeypatch, {"main_profile": "main_profile"}, KeyError("subscriptions"))
+    assert result(report, "subscriptions") == ("WARN", "the count couldn't be read: KeyError")
+
+
+def test_online_skips_the_count_when_the_login_fails(home, monkeypatch):
+    import ofscraper.data.api.init as init
+    import ofscraper.data.api.me as me
+
+    write_config(home, {"main_profile": "main_profile"})
+    write_auth(home)
+    monkeypatch.setattr(doctor, "start", lambda *a: None)
+    monkeypatch.setattr(init, "auth_status", lambda: ("DOWN", None))
+    monkeypatch.setattr(me, "parse_subscriber_count", lambda: pytest.fail("asked for the count"))
+    report = doctor.run(online=True)
+    assert [r for r in report.results if r["check"] == "subscriptions"] == []
+
+
 # --- review follow-up ---
 
 def test_online_postgres_check_parses_no_command_line(home, monkeypatch, capsys):
@@ -920,6 +990,26 @@ def test_the_users_scripts_folder_of_the_preferred_scheme(home, tmp_path, monkey
     assert result(doctor.run(), "ofscraper on PATH")[0] == "PASS"
 
 
+def test_a_count_that_cant_be_read_says_why(home, monkeypatch):
+    import httpx
+
+    import ofscraper.data.api.init as init
+    import ofscraper.data.api.me as me
+
+    def unreachable():
+        raise httpx.ConnectError("[Errno 111] Connection refused", request=httpx.Request("GET", "https://onlyfans.com/api2/v2/subscriptions/count/all"))
+
+    write_config(home, {"main_profile": "main_profile"})
+    write_auth(home)
+    monkeypatch.setattr(doctor, "start", lambda *a: None)
+    monkeypatch.setattr(init, "auth_status", lambda: ("UP", None))
+    monkeypatch.setattr(me, "parse_subscriber_count", unreachable)
+    status, detail = result(doctor.run(online=True), "subscriptions")
+    assert status == "WARN" and "Couldn't reach onlyfans.com (connection failed)" in detail
+    monkeypatch.setattr(me, "parse_subscriber_count", lambda: (_ for _ in ()).throw(KeyError("subscriptions")))
+    assert result(doctor.run(online=True), "subscriptions") == ("WARN", "the count couldn't be read: KeyError")
+
+
 def test_key_mode_cdrm_with_a_malformed_server_address(home, monkeypatch):
     """An OFSC_CDRM_URL that urlsplit can't parse (an unclosed IPv6
     bracket) still gets the warning, without naming a host or crashing."""
@@ -1021,3 +1111,25 @@ def test_empty_key_placeholders_in_auth_json_arent_named(home, empty):
     status, detail = result(doctor.run(), "key files")
     assert status == "FAIL" and "private-key is in auth.json: it belongs in config.json" in detail
     assert "client-id and" not in detail
+
+
+@pytest.mark.parametrize("lists", ["active,expired", "Expired, ofscraper.active", "active,expired,vip"])
+def test_active_and_expired_together_are_every_subscription(home, monkeypatch, lists):
+    """A run reads active subscriptions for active and expired ones for
+    expired (subscriptions.py activeHelper, expiredHelper): both is all."""
+    config = {"advanced_options": {"default_user_list": lists}}
+    report = online_logged_in(home, monkeypatch, config, (5, 3))
+    assert [r for r in report.results if r["check"] == "creator filters"] == []
+
+
+def test_active_alone_is_still_a_creator_filter(home, monkeypatch):
+    config = {"advanced_options": {"default_user_list": "active"}}
+    assert result(online_logged_in(home, monkeypatch, config, (5, 3)), "creator filters")[0] == "WARN"
+
+
+def test_offline_hint_names_the_subscription_count(home):
+    write_config(home, {"main_profile": "main_profile"})
+    status, detail = result(doctor.run(), "login")
+    assert status == "SKIP" and "subscription count" in detail
+    status, detail = result(doctor.run(site="fansly"), "login")
+    assert status == "SKIP" and "subscription count" not in detail
