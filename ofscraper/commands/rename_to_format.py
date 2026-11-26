@@ -333,12 +333,15 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
     """Each media row with the path a download would now give it, or why
     it can't be made: {rowid: (path or None, why)}."""
     import ofscraper.utils.config.data as config_data
-    from ofscraper.utils.config.naming_check import MEDIA_TYPES, type_name
+    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, MEDIA_TYPES, type_name
 
     placeholder, RecordedPost, RecordedMedia, RenamePlaceholders = _classes()
     out = {}
+    names = {type_name(name) for name in config_data.get_type_options()}
     # "text" is the caption files', which have no row here
-    by_media_type = any(type_name(name) in MEDIA_TYPES - {"text"} for name in config_data.get_type_options())
+    by_media_type = bool(names & (MEDIA_TYPES - {"text"}))
+    # an entry for an area (or its folder name)
+    by_area = bool(names - MEDIA_TYPES - set(LIVE_TYPE_KEYS))
     with _offline(placeholder):
         for row in media:
             post_id = str(row["post_id"])
@@ -381,10 +384,12 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
                 out[row["rowid"]] = (None, f"the new name can't be made ({type(error).__name__}: {error})")
                 continue
             missing = sorted(set(MARKED.findall(built)))
-            # with no media type, a media-type entry can't be matched, so
-            # which folder the file belongs in isn't known
+            # with no media type or area, an entry for one can't be matched,
+            # so which folder the file belongs in isn't known
             if not row["media_type"] and by_media_type:
                 missing = sorted(set(missing) | {"mediatype"})
+            if not row["api_type"] and by_area:
+                missing = sorted(set(missing) | {"response_type"})
             if missing or "\ue000" in str(path) or "\ue001" in str(path):
                 values = ", ".join(f"{{{name}}}" for name in missing) or "a value"
                 out[row["rowid"]] = (None, NEEDS.format(values))
@@ -674,11 +679,14 @@ def _is_there(path):
 
 def _remove_emptied(moved, *roots):
     """Remove the old folders the renames left empty, up to the root they
-    are in: the save location or a type_options one."""
+    are in: the save location or a type_options one. A root is never
+    removed, also when it's inside another one."""
     removed = []
     for old in sorted({os.path.dirname(old) for old in moved}, key=len, reverse=True):
         folder = old
-        while any(_inside(folder, root) for root in roots):
+        while not any(_same_folder(folder, root) for root in roots) and any(
+            _inside(folder, root) for root in roots
+        ):
             try:
                 os.rmdir(folder)
             except OSError:
@@ -693,10 +701,14 @@ def _inside(folder, root):
     a disk that doesn't tell case apart finds `root` however it is spelt."""
     parent = os.path.dirname(folder)
     while parent != folder:
-        if os.path.normcase(parent) == os.path.normcase(root) or _same_file(parent, root):
+        if _same_folder(parent, root):
             return True
         folder, parent = parent, os.path.dirname(parent)
     return False
+
+
+def _same_folder(folder, root):
+    return os.path.normcase(folder) == os.path.normcase(root) or _same_file(folder, root)
 
 
 def _write_undo(undo_file, record):

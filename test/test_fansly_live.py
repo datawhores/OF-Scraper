@@ -2145,3 +2145,23 @@ def test_live_path_uses_stream_account_id_without_cached_models(monkeypatch, tmp
     monkeypatch.setattr(recorder, "_record_part", record)
     asyncio.run(recorder.run())
     assert recorder.base.parent == tmp_path / "Fansly" / "123"
+
+
+def test_a_shortened_name_leaves_room_for_later_parts_and_the_sidecars(tmp_path, monkeypatch):
+    """The name was shortened to fit "<name>.mp4" only, so a reconnect's
+    "_part2.mp4" or the "_chat.jsonl" sidecar went over the limit"""
+    import ofscraper.classes.placeholder as placeholder
+
+    limit = 60
+
+    def final_path(path):  # a system whose names hold 60 characters
+        path = pathlib.Path(path)
+        if len(path.name) <= limit:
+            return path
+        stem, ext = (path.name[:-11], path.name[-11:]) if path.name.endswith("_000000.mp4") else (path.stem, path.suffix)
+        return path.with_name(stem[: limit - len(ext)] + ext)
+
+    monkeypatch.setattr(placeholder, "final_path", final_path)
+    base = live.recording_base(tmp_path, "a" * 80, STARTED_MS)
+    for made in (live.part_path(base, 1), live.part_path(base, 99), live.sidecar_path(base), live.chat_path(base)):
+        assert len(made.name) <= limit, made.name

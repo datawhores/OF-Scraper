@@ -427,12 +427,9 @@ class DownloadManager:
         type_options entry sets for it) is below the free-space limit"""
         import ofscraper.classes.placeholder as placeholder
 
-        folder = None
-        if ele is not None:
-            folder = placeholder.media_templates(placeholder.media_type_keys(ele))[0]
-            # save_location's own disk: the plain alert
-            if folder == placeholder.default_media_root():
-                folder = None
+        if settings.get_settings().system_free_min <= 0:
+            return  # no limit: nothing to measure
+        folder = None if ele is None else system.save_folder(placeholder.media_type_keys(ele))
         if not system.check_free_size(folder):
             system.alert_full(folder)
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))

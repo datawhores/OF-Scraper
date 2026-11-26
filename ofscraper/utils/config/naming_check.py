@@ -232,7 +232,13 @@ def problems():
     import ofscraper.classes.placeholder as placeholder
 
     _root, dir_fmt, file_fmt = placeholder.live_templates()
-    if not placeholder.live_names_apart(dir_fmt, file_fmt):
+    try:
+        apart = placeholder.live_names_apart(dir_fmt, file_fmt)
+    except ValueError:
+        # a template that isn't valid ("{date"): named above already, and
+        # its recordings use the default names, which hold the start time
+        apart = True
+    if not apart:
         out.append(
             f"The livestream names ({json.dumps(dir_fmt)}, {json.dumps(file_fmt)}) have no"
             " {date} or {timestamp}, so the start time is added to each file name to"

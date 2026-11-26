@@ -896,3 +896,28 @@ def test_type_options_names_for_the_same_type_are_named(path_options):
         " type_options.Messages is used"
     ) in naming_check.problems()
     assert placeholder.media_templates(("Messages", "Messages", "Images"))[1] == "b"
+
+
+@pytest.mark.parametrize("dir_format", ["/elsewhere/{model_username}", "C:/elsewhere/{model_username}"])
+def test_a_full_path_live_folder_stays_under_the_save_location(path_options, tmp_path, dir_format):
+    import datetime
+    import pathlib
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": dir_format}
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
+    assert pathlib.Path(result).is_relative_to(tmp_path)
+
+
+def test_a_broken_live_template_doesnt_hide_the_other_warnings(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["file_options"]["dir_format"] = "{nope}/x"
+    config["live_options"] = {"file_format": "{date"}
+    save()
+    lines = naming_check.problems()
+    assert any(line.startswith('file_options.dir_format "{nope}/x"') for line in lines)
+    assert any(line.startswith('live_options.file_format "{date"') for line in lines)

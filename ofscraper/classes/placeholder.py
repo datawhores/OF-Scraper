@@ -259,7 +259,9 @@ def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, mode
         stem = stem[: -(len(ext) + 1)]
     if not live_names_apart(dir_fmt, file_fmt):
         stem = f"{stem}_{stamp}"
-    return pathlib.Path(os.path.normpath(str(root / folder)), f"{stem}.{ext}")
+    # joined as Placeholders.getmediadir joins: a folder that's a full path
+    # stays under the root, as the startup check says
+    return pathlib.Path(os.path.normpath(f"{root}/{folder}"), f"{stem}.{ext}")
 
 
 def final_path(path):

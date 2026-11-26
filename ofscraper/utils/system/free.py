@@ -27,6 +27,33 @@ def _get_save_location():
     return cached[1]
 
 
+# the folder each kind of file is saved under, as _save_location is cached:
+# keyed on config.json's modification time and the site, and replaced whole
+_save_folders = (None, {})
+
+
+def save_folder(type_keys):
+    """The type_options save folder files of these types (a media file's
+    placeholder.media_type_keys) go to, or None for save_location's own"""
+    import ofscraper.classes.placeholder as placeholder
+    import ofscraper.sites as sites
+
+    global _save_folders
+    config = pathlib.Path(common_paths.get_config_path())
+    try:
+        key = (str(config), config.stat().st_mtime_ns, sites.site_name())
+    except OSError:
+        key = (str(config), None, sites.site_name())
+    cached = _save_folders
+    if cached[0] != key:
+        cached = (key, {})
+        _save_folders = cached
+    if type_keys not in cached[1]:
+        root = placeholder.media_templates(type_keys)[0]
+        cached[1][type_keys] = None if root == placeholder.default_media_root() else root
+    return cached[1][type_keys]
+
+
 def measured_at(folder):
     """Where a folder's free space is measured: the folder, or when it isn't
     made yet its nearest existing folder, which is on the same disk; a link

@@ -210,3 +210,25 @@ def test_a_full_override_disk_stops_only_its_files(measured, tmp_path, monkeypat
     DownloadManager._downloadspace(None, _media("Images"))
     with pytest.raises(Exception):
         DownloadManager._downloadspace(None, _media("Videos"))
+
+
+def test_the_folder_a_download_goes_to_is_worked_out_once(measured, tmp_path, monkeypatch):
+    """the check runs before every download; config.json was read again
+    each time, even with no limit"""
+    import ofscraper.classes.placeholder as placeholder
+    from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+
+    save, live, videos = (tmp_path / name for name in ("downloads", "live", "videos"))
+    for folder in (save, live, videos):
+        folder.mkdir()
+    _write_overrides(tmp_path, save, live, videos)
+    calls = []
+    real = placeholder.media_templates
+    monkeypatch.setattr(placeholder, "media_templates", lambda *a, **k: calls.append(a) or real(*a, **k))
+    for _ in range(3):
+        DownloadManager._downloadspace(None, _media("Videos"))
+    assert len(calls) == 1
+    monkeypatch.setattr(settings, "get_settings", lambda: SimpleNamespace(system_free_min=0))
+    measured.calls.clear()
+    DownloadManager._downloadspace(None, _media("Images"))
+    assert len(calls) == 1 and measured.calls == []

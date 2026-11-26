@@ -178,8 +178,15 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
         save_location, folder_name(username), utc_start(started_at),
         site_name="Fansly", ext="mp4", model_id=model_id,
     )
-    # part_path adds .mp4, or _part<n>.mp4
-    return path.with_name(path.stem)
+    # part_path adds .mp4 or _part<n>.mp4, and the sidecars .json and
+    # _chat.jsonl: shortened with room for the longest of them (a stand-in
+    # as long, which the shortening keeps whole), so each fits
+    room = placeholder.final_path(path.with_name(f"{path.stem}{_LONGEST_SUFFIX}"))
+    return room.with_name(room.name[: -len(_LONGEST_SUFFIX)])
+
+
+# as long as "_chat.jsonl" and "_part<n>.mp4" below part 100
+_LONGEST_SUFFIX = "_000000.mp4"
 
 
 def part_path(base: pathlib.Path, n: int) -> pathlib.Path:

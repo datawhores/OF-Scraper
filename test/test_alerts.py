@@ -395,6 +395,7 @@ def test_a_full_type_options_disk_isnt_announced_as_recovered(sent, monkeypatch,
     from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
 
     main, videos = tmp_path / "main", tmp_path / "videos"
+    monkeypatch.setattr(free, "_save_folders", (None, {}))  # nothing cached by other tests
     sent.settings.system_free_min = 10
     room = {main: 50, videos: 5}
     monkeypatch.setattr(free, "get_free", lambda folder=None: room[folder or main])

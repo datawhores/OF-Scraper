@@ -1242,3 +1242,28 @@ def test_a_row_without_a_media_type_is_left_when_a_media_type_entry_is_set(tmp_p
     assert result["to_rename"] == 0
     assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{mediatype}")}]
     assert result["type_options"] == config["type_options"]
+
+
+def test_a_row_without_an_area_is_left_when_an_area_entry_is_set(tmp_path):
+    # a download would put the file under the entry's folder; which area
+    # it's from isn't recorded
+    library = Library(tmp_path)
+    library.post(501)
+    path = library.add("abcdef.jpg", post_id=501, area=None)
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["type_options"] = {"messages": {"save_location": str(tmp_path / "msgs")}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+
+    result = library.run()
+
+    assert result["to_rename"] == 0
+    assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{response_type}")}]
+
+
+def test_a_save_root_inside_another_is_never_removed(tmp_path):
+    outer, inner = tmp_path / "data", tmp_path / "data" / "of"
+    old = inner / "alice" / "Posts" / "a.jpg"
+    old.parent.mkdir(parents=True)
+    removed = tool._remove_emptied([str(old)], str(inner), str(outer))
+    assert removed == [str(old.parent), str(old.parent.parent)]
+    assert inner.is_dir()
