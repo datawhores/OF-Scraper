@@ -198,7 +198,7 @@ When true, `ffprobe` checks ordinary (non-DRM) video and audio downloads and Fan
 
 **Default:** `""` · **Env default:** [`FFMPEG_DEFAULT`](env.md#ffmpeg_default) · **Read by:** `get_ffmpeg()` in `ofscraper/utils/config/data.py`
 
-The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. Surrounding quotes are stripped.
+The path to the ffmpeg executable. It is needed for DRM decryption and merging and for Fansly streams (version 6 or newer for DRM). If the path is empty or invalid, the app tries `OFSC_FFMPEG_DEFAULT`, then the pyffmpeg bundle, then `PATH`. An ffmpeg that crashes reading a small MPEG-TS test file (some static builds do on newer Linux systems) is skipped with a warning, and used only if no other is found. Surrounding quotes are stripped.
 
 ## `cdm_options`
 
