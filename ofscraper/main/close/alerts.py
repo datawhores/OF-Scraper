@@ -21,6 +21,29 @@ DAEMON_PASS = "daemon_pass"
 
 _lock = threading.Lock()
 _failing = set()
+_loaded = False
+
+
+def _ensure_loaded_locked():
+    global _loaded
+    if _loaded:
+        return
+    _loaded = True
+    try:
+        import ofscraper.main.close.status_file as status_file
+
+        _failing.update(status_file.read_failing_alerts())
+    except Exception as e:
+        log.debug(f"alert state not loaded from status file: {e}")
+
+
+def _save_state(kinds):
+    try:
+        import ofscraper.main.close.status_file as status_file
+
+        status_file.set_failing_alerts(kinds)
+    except Exception as e:
+        log.debug(f"alert state not saved to status file: {e}")
 
 
 def _site_and_profile():
@@ -77,9 +100,12 @@ def _send(kind, message):
 def failing(kind, message):
     """Announce that kind has started failing; quiet while it stays failing."""
     with _lock:
+        _ensure_loaded_locked()
         if kind in _failing:
             return False
         _failing.add(kind)
+        snapshot = set(_failing)
+    _save_state(snapshot)
     _send(kind, message)
     return True
 
@@ -87,9 +113,12 @@ def failing(kind, message):
 def recovered(kind, message):
     """Announce that kind works again, if it was failing."""
     with _lock:
+        _ensure_loaded_locked()
         if kind not in _failing:
             return False
         _failing.discard(kind)
+        snapshot = set(_failing)
+    _save_state(snapshot)
     _send(kind, message)
     return True
 
@@ -124,6 +153,15 @@ def _has_free_space():
         return False
 
 
-def reset():
+def current():
+    """The kinds failing now."""
+    with _lock:
+        _ensure_loaded_locked()
+        return set(_failing)
+
+
+def reset(reload=False):
+    global _loaded
     with _lock:
         _failing.clear()
+        _loaded = not reload

@@ -117,6 +117,12 @@ def finish(outcome="ok", error=None):
         return None
     if getattr(settings.get_settings(), "discord_level", None) == "SUMMARY":
         send_discord(message(_record))
+    try:
+        import ofscraper.main.close.status_file as status_file
+
+        status_file.finish_pass(_record, outcome=outcome)
+    except Exception as e:
+        log.debug(f"status file not updated at pass end: {e}")
     return _record
 
 

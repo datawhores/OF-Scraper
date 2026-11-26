@@ -63,8 +63,10 @@ def check_login_after_failure(error):
         return
     import ofscraper.main.close.alerts as alerts
     import ofscraper.main.close.exit_status as exit_status
+    import ofscraper.main.close.status_file as status_file
 
     exit_status.record(exit_status.AUTH)
+    status_file.set_auth("failed")
     alerts.failing(alerts.LOGIN, f"{_site_label()} rejected the login during the run; update the auth")
     raise LoginRejected(f"{_site_label()} rejected the login") from error
 
@@ -89,7 +91,9 @@ def check_auth(include_main_menu=False):
         if status != "UP":
             log.info("Auth Failed")
             import ofscraper.main.close.alerts as alerts
+            import ofscraper.main.close.status_file as status_file
 
+            status_file.set_auth("failed")
             # before any prompt: in a daemon under Docker's tty: true a
             # prompt waits forever, so at least the wait is announced
             alerts.failing(alerts.LOGIN, f"{_site_label()} rejected the login; update the auth")
@@ -120,6 +124,8 @@ def check_auth(include_main_menu=False):
                 raise AuthCheckLeft("back to the main menu")
         else:
             import ofscraper.main.close.alerts as alerts
+            import ofscraper.main.close.status_file as status_file
 
+            status_file.set_auth("ok")
             alerts.recovered(alerts.LOGIN, f"{_site_label()} login works again")
             break

@@ -18,6 +18,7 @@ from contextlib import contextmanager
 import arrow
 
 import ofscraper.main.close.final.run_record as run_record
+import ofscraper.main.close.status_file as status_file
 
 log = logging.getLogger("shared")
 
@@ -28,6 +29,7 @@ def scrape_context_manager():
     # Before yield as the enter method
     start = datetime.now()
     run_record.start()
+    status_file.start_pass()
     from ofscraper.utils.checkers import new_pass
 
     new_pass()

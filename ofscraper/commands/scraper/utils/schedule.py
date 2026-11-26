@@ -1,6 +1,7 @@
 import arrow
 import schedule
 import logging
+from datetime import timezone
 from dateutil import tz
 import time
 import traceback
@@ -10,6 +11,7 @@ import ofscraper.utils.args.mutators.before as before_arg
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.logs.logger as logger
 import ofscraper.managers.manager as manager
+import ofscraper.main.close.status_file as status_file
 from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 import ofscraper.utils.settings as settings
 
@@ -60,6 +62,7 @@ def set_schedule(*functs, wakeup=None):
             # as a local wall-clock time
             next = arrow.now(tz.tzlocal()).shift(minutes=settings.get_settings().daemon)
             log.debug(f"Next run at ~ {next.format('MM-DD hh:mm:ss A')}")
+            status_file.set_next_pass(next.datetime.astimezone(timezone.utc))
             job = schedule.every().day.at(next.format("HH:mm:ss")).do(
                 schedule_helper, *functs, wakeup=wakeup
             )
