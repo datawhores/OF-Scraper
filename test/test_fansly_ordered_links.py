@@ -40,6 +40,9 @@ class Collection:
     def get_posts_for_text_download(self):
         return []
 
+    def log_left_out(self):
+        pass
+
     @property
     def all_media(self):
         return list(self.media)

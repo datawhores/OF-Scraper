@@ -28,6 +28,7 @@ class PostCollection:
         self.mode = mode
         # Internal dictionary to store posts, using post_id as the key for de-duplication
         self._posts_map = {}
+        self._left_out_logged = False
         log.info(f"Initialized PostCollection for {username}")
 
     @property
@@ -128,6 +129,7 @@ class PostCollection:
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for download.")
+        self.log_left_out()
         return all_media
 
     def get_media_for_metadata(self) -> list:
@@ -145,7 +147,25 @@ class PostCollection:
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for metadata.")
+        self.log_left_out()
         return all_media
+
+    def log_left_out(self):
+        """Say once how many media the per-post filters left out, and by which
+        setting, so a run that downloads less than expected says why."""
+        if self._left_out_logged:
+            return
+        totals = {}
+        for post in self.posts:
+            for setting, count in (post.left_out or {}).items():
+                totals[setting] = totals.get(setting, 0) + count
+        if not totals:
+            return
+        self._left_out_logged = True
+        reasons = ", ".join(f"{count} by {setting}" for setting, count in totals.items())
+        log.info(
+            f"[{self.username}] {sum(totals.values())} media left out by filters: {reasons}"
+        )
 
     def get_media_for_processing(self):
         if settings.get_settings().command == "metadata":

@@ -10,6 +10,24 @@ import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")
 
+# Each per-post media filter, with the setting a user would change to keep
+# what it leaves out (reported by PostCollection.log_left_out).
+MEDIA_FILTERS = (
+    ("--mediatype or download_options.filter", helpers.mediatype_type_filter),
+    ("--after or --before", helpers.posts_date_filter_media),
+    ("--only-timed or --skip-timed", helpers.temp_post_filter),
+    ("--filter", helpers.post_text_filter),
+    ("--neg-filter or block_ads", helpers.post_neg_text_filter),
+    ("--protected-only or --normal-only", helpers.download_type_filter),
+    ("--mass-only or --mass-skip", helpers.mass_msg_filter),
+    (
+        "--length-min, --length-max, length_min or length_max",
+        helpers.media_length_filter,
+    ),
+    ("--media-id", helpers.media_id_filter),
+    ("--post-id", helpers.post_id_filter),
+)
+
 
 class Post(base.base):
     """
@@ -53,6 +71,9 @@ class Post(base.base):
 
         self.media_for_metadata = []
         self.media_to_download = []
+        # setting -> how many of this post's media the filters left out,
+        # counted the first time the filters run (None until then)
+        self.left_out = None
 
     # --------------------------------------------------------------------------------
     # --- Action Preparation & Marking Methods ---
@@ -385,14 +406,12 @@ class Post(base.base):
         Private helper to run a list of media through all configured filters.
         """
         media = helpers.sort_by_date(media)
-        media = helpers.mediatype_type_filter(media)
-        media = helpers.posts_date_filter_media(media)
-        media = helpers.temp_post_filter(media)
-        media = helpers.post_text_filter(media)
-        media = helpers.post_neg_text_filter(media)
-        media = helpers.download_type_filter(media)
-        media = helpers.mass_msg_filter(media)
-        media = helpers.media_length_filter(media)
-        media = helpers.media_id_filter(media)
-        media = helpers.post_id_filter(media)
+        left_out = {}
+        for setting, step in MEDIA_FILTERS:
+            before = len(media)
+            media = step(media)
+            if len(media) < before:
+                left_out[setting] = left_out.get(setting, 0) + before - len(media)
+        if self.left_out is None:
+            self.left_out = left_out
         return media

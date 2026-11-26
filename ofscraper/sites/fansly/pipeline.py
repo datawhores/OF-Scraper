@@ -745,6 +745,8 @@ async def run(ele, c, collection=None):
             if (not ended or stop.requested.is_set()) and collection is None:
                 # a scan that was interrupted or failed isn't recorded as finished
                 labels_api.discard_finished_labels(model_id)
+        # pages are picked one at a time; say once what the filters left out
+        run_.collection.log_left_out()
         if not stopped:
             # videos saved without sound: check their audio again (silent.py)
             await recheck_silent(username, model_id, run_.collection.all_media)
