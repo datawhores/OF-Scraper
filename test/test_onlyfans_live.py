@@ -94,6 +94,16 @@ class Client:
         yield self.response
 
 
+class PagedClient(Client):
+    def __init__(self, *responses):
+        super().__init__(iter(responses))
+
+    @contextlib.asynccontextmanager
+    async def requests_async(self, url=None, **kwargs):
+        self.urls.append(url)
+        yield next(self.response)
+
+
 @pytest.mark.parametrize("response, expected", [
     (Response(200, {"isActive": True}), True),
     (Response(200, {"isActive": True, "isFinished": True}), False),
@@ -339,7 +349,9 @@ def install_session(monkeypatch, client, model_manager=None):
         manager,
         "Manager",
         SimpleNamespace(
-            session=SimpleNamespace(aget_ofsession=aget_ofsession),
+            session=SimpleNamespace(
+                aget_ofsession=aget_ofsession, aget_subscription_session=aget_ofsession
+            ),
             model_manager=model_manager,
         ),
     )
@@ -503,10 +515,10 @@ def serve_models(monkeypatch, fake_get_models, by_name=None, lists=None, expired
     import ofscraper.data.api.subscriptions.subscriptions as subs
     from ofscraper.data.models.utils import retriver
 
-    async def listed(*_):
+    async def listed(*_, **kwargs):
         return [m.model for m in await fake_get_models()]
 
-    async def expired_subs(*_):
+    async def expired_subs(*_, **kwargs):
         return list(expired)
 
     async def members(names):
@@ -969,6 +981,60 @@ def test_the_active_list_is_read_strictly(monkeypatch):
         asyncio.run(scan(True))
 
 
+def test_a_partial_subscription_lookup_is_retried(monkeypatch, onlyfans_settings):
+    onlyfans_settings(live_watch=True, usernames=["ALL"], userlist=["active"],
+                      blacklist=[], renewal=True)
+    first = Response(200, {"list": [{"id": 1, "username": "first"}], "hasMore": True})
+    last = Response(200, {"list": [{"id": 2, "username": "second", "hasStream": True}]})
+    client = PagedClient(first, Response(500), first, last, first, last)
+    install_session(monkeypatch, client,
+                    model_manager=SimpleNamespace(filter_models=list))
+
+    async def check():
+        token = live._TARGET_CACHE.set({})
+        try:
+            with pytest.raises(RuntimeError, match="HTTP 500"):
+                await live.get_online_streams(client)
+            assert await live.get_online_streams(client) == [{"accountId": 2, "username": "second"}]
+        finally:
+            live._TARGET_CACHE.reset(token)
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("member_lookup_fails", [False, True])
+def test_a_failed_blacklist_lookup_is_retried(monkeypatch, onlyfans_settings, member_lookup_fails):
+    import ofscraper.data.api.subscriptions.individual as individual
+
+    onlyfans_settings(live_watch=True, usernames=["first", "second"],
+                      username_search="individual", blacklist=["blocked"])
+    creators = [{"id": i, "username": name, "hasStream": True}
+                for i, name in [(1, "first"), (2, "second")]]
+
+    async def profiles(_):
+        return creators
+
+    lists = Response(200, {"list": [{"id": 7, "name": "blocked"}]})
+    members = Response(200, {"list": [creators[0]]})
+    failure = Response(500, error=asyncio.TimeoutError())
+    failed_scan = [lists, failure] if member_lookup_fails else [failure]
+    client = PagedClient(*failed_scan, lists, members)
+    monkeypatch.setattr(individual, "get_subscription", profiles)
+    install_session(monkeypatch, client,
+                    model_manager=SimpleNamespace(filter_models=list))
+
+    async def check():
+        token = live._TARGET_CACHE.set({})
+        try:
+            with pytest.raises((RuntimeError, asyncio.TimeoutError)):
+                await live.get_online_streams(client)
+            assert await live.get_online_streams(client) == [{"accountId": 2, "username": "second"}]
+        finally:
+            live._TARGET_CACHE.reset(token)
+
+    asyncio.run(check())
+
+
 def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
     monkeypatch, onlyfans_settings, caplog
 ):
@@ -1008,6 +1074,45 @@ def test_a_named_creator_on_a_black_list_is_left_out_not_looked_up_again(
     assert results == [[], [], []]
     assert looked_up == []
     assert "Could not look up" not in caplog.text
+
+
+@pytest.mark.parametrize("blacklist", [
+    "ofscraper.active", "active", "ofscraper.expired", "expired", "ofscraper.main", "main",
+])
+def test_individual_targets_respect_builtin_blacklists(monkeypatch, onlyfans_settings, blacklist):
+    import ofscraper.data.api.subscriptions.individual as individual
+
+    onlyfans_settings(live_watch=True, usernames=["creator_a", "creator_b"],
+                      username_search="individual", blacklist=[blacklist])
+    creators = [{"id": i, "username": name, "hasStream": True}
+                for i, name in [(1, "creator_a"), (2, "creator_b")]]
+
+    async def profiles(_):
+        return creators
+
+    class BlacklistClient(Client):
+        @contextlib.asynccontextmanager
+        async def requests_async(self, url=None, **kwargs):
+            self.urls.append(url)
+            subscription_urls = [of_env.getattr(key).format(0) for key in
+                                 ("subscriptionsActiveEP", "subscriptionsExpiredEP")]
+            yield Response(200, {"list": creators[:1] if url in subscription_urls else []})
+
+    client = BlacklistClient(None)
+    monkeypatch.setattr(individual, "get_subscription", profiles)
+    install_session(monkeypatch, client, model_manager=SimpleNamespace(filter_models=list))
+
+    async def check():
+        token = live._TARGET_CACHE.set({})
+        try:
+            for _ in range(2):
+                assert await live.get_online_streams(
+                    client, checks=Client(Response(200, {"isActive": True}))
+                ) == [{"accountId": 2, "username": "creator_b"}]
+        finally:
+            live._TARGET_CACHE.reset(token)
+
+    asyncio.run(check())
 
 
 def test_a_name_that_keeps_missing_is_looked_up_less_often(monkeypatch, onlyfans_settings, caplog):

@@ -1179,6 +1179,43 @@ def test_fansly_individual_search_queries_target_channel_without_following_list(
     assert len(recorded) == 1
     assert not any(u == live_api.ONLINE_URL for u, _ in client.calls)
 
+@pytest.mark.parametrize("search_mode", ["individual", None])
+def test_numeric_username_and_account_id_keep_both_targets(monkeypatch, fansly_settings, search_mode):
+    from ofscraper.sites.fansly import api, constants
+
+    numeric = CREATOR_B[0]
+    fansly_settings(live=True, usernames=(numeric, CREATOR_B[1]), username_search=search_mode)
+    client = FakeClient({
+        constants.api_url(f"account?usernames={numeric},{CREATOR_B[1]}"): {"success": True, "response": [
+            {"id": CREATOR_A[0], "username": numeric},
+            {"id": CREATOR_B[0], "username": CREATOR_B[1]},
+        ]},
+        constants.api_url(f"account?ids={numeric}"): {"success": True, "response": [
+            {"id": CREATOR_B[0], "username": CREATOR_B[1]},
+        ]},
+        live_api.ONLINE_URL: online_response(),
+        live_api.channel_url(CREATOR_A[0]): channel_response(CREATOR_A[0], ""),
+        live_api.channel_url(CREATOR_B[0]): channel_response(CREATOR_B[0], ""),
+    })
+    install_session(monkeypatch, client)
+
+    async def following(*args):
+        return []
+
+    monkeypatch.setattr(api, "following_ids", following)
+    polls = []
+
+    async def poll_twice(watcher, stop=None):
+        for _ in range(2):
+            polls.append(await watcher.fetch_online())
+
+    monkeypatch.setattr(live.LiveWatcher, "run", poll_twice)
+    asyncio.run(live.run(watch=False))
+    assert [[s["accountId"] for s in poll] for poll in polls] == [
+        [CREATOR_A[0], CREATOR_B[0]], [CREATOR_A[0], CREATOR_B[0]],
+    ]
+
+
 def test_fansly_list_search_ignores_unfollowed_usernames(monkeypatch, fansly_settings):
     from ofscraper.sites.fansly import api as fansly_api
 

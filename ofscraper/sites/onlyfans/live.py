@@ -107,13 +107,31 @@ async def still_live(c, username):
 
 
 async def _list_members(names) -> list:
-    """The members of the user's OnlyFans lists called ``names``, read like
-    lists.get_otherlist and get_blacklist but without their screen."""
+    """Members of custom lists or built-in subscription lists, read strictly."""
     import ofscraper.data.api.subscriptions.lists as lists
+    import ofscraper.data.api.subscriptions.subscriptions as subscriptions
+    from ofscraper.managers.model import ModelManager
 
     names = {str(n).strip().lower() for n in names or () if str(n).strip()}
-    chosen = [x for x in await lists.get_lists() if str(x.get("name")).lower() in names] if names else []
-    return await lists.get_list_users(chosen) if chosen else []
+    if not names:
+        return []
+    reserved = ModelManager.built_in_lists("RESERVED")
+    active = bool(names & (reserved | ModelManager.built_in_lists("ACTIVE")))
+    expired = bool(names & (reserved | ModelManager.built_in_lists("EXPIRED")))
+    custom = names - ModelManager.built_in_lists("RESERVED", "ACTIVE", "EXPIRED")
+    chosen = [x for x in await lists.get_lists(strict=True) if str(x.get("name")).lower() in custom] if custom else []
+    members = await lists.get_list_users(chosen, strict=True) if chosen else []
+    if active or expired:
+        async with manager.Manager.session.aget_subscription_session(
+            sem_count=of_env.getattr("SUBSCRIPTION_SEMS"),
+        ) as c:
+            if active:
+                async for page in subscriptions.scrape_subscriptions_active(c, strict=True):
+                    members.extend(page)
+            if expired:
+                async for page in subscriptions.scrape_subscriptions_disabled(c, strict=True):
+                    members.extend(page)
+    return members
 
 
 async def _fetch_models(c, cache: dict, names=None) -> list:
@@ -131,10 +149,10 @@ async def _fetch_models(c, cache: dict, names=None) -> list:
         return [Model(x) for x in await individual.get_subscription(list(names))]
     chosen = ModelManager.user_lists()
     members = await _list_members(chosen - ModelManager.built_in_lists("RESERVED", "ACTIVE", "EXPIRED"))
-    expired = await subscriptions.expiredHelper(None, c)
+    expired = await subscriptions.expiredHelper(None, c, strict=True)
     named = members + (expired if chosen & ModelManager.built_in_lists("EXPIRED") else [])
     cache["named_ids"] = {u.get("id") for u in named}
-    found = await subscriptions.activeHelper(None, c) + expired
+    found = await subscriptions.activeHelper(None, c, strict=True) + expired
     return [Model(x) for x in found + members]
 
 

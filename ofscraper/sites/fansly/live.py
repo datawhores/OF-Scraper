@@ -831,12 +831,12 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 by_key = {}
                 for m in models:
                     target = {"accountId": str(m.id), "username": m.name}
-                    by_key[m.name.lower()] = target
-                    by_key[str(m.id)] = target
+                    for key in {m.name.lower(), str(m.id)}:
+                        by_key.setdefault(key, []).append(target)
                 keys = [str(u).lower() for u in unresolved]
                 for key in keys:
                     if key in returned:
-                        resolved_cache[key] = by_key.get(key)
+                        resolved_cache[key] = by_key.get(key, [])
                 count_misses(lookups["misses"], keys, [k for k in keys if k not in returned])
 
             if unfollowed_only:
@@ -850,21 +850,22 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 if followed is not None:
                     for u in pending:
                         key = str(u).lower()
-                        target = resolved_cache.get(key)
-                        unfollowed_cache[key] = (
-                            target if target and target["accountId"] not in followed else None
-                        )
+                        unfollowed_cache[key] = [
+                            target for target in resolved_cache.get(key, [])
+                            if target["accountId"] not in followed
+                        ]
 
             out, seen = [], set()
             for u in names:
                 key = str(u).lower() if u else None
                 if unfollowed_only and key in unfollowed_cache:
-                    target = unfollowed_cache[key]
+                    targets = unfollowed_cache[key]
                 else:
-                    target = resolved_cache.get(key) if key else None
-                if target and target["accountId"] not in seen:
-                    seen.add(target["accountId"])
-                    out.append(target)
+                    targets = resolved_cache.get(key, [])
+                for target in targets:
+                    if target["accountId"] not in seen:
+                        seen.add(target["accountId"])
+                        out.append(target)
             return out
 
         async def _streams_for_targets(targets):
