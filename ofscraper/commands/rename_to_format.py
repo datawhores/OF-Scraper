@@ -45,15 +45,19 @@ import re
 import sqlite3
 import stat
 import sys
+import unicodedata
 import uuid
 from collections import Counter, defaultdict
 from contextlib import closing
 from pathlib import Path
 
+import psutil
+
 import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
 from ofscraper.commands import move_creator_files as mover
 from ofscraper.commands.recover_collisions import _unconfirmed
+from ofscraper.utils.paths.spelling import Spellings
 
 FILES_NOTICE = mover.FILES_NOTICE.replace("move_creator_files", "rename_to_format").replace(
     " To work on PostgreSQL, give --postgres and --creator in place of the file.",
@@ -458,13 +462,13 @@ def plan(conn, settings, username=None, path_root=None):
     }
     # each recorded file once, with every row that records it, however
     # they spell it on a disk that tells some spellings apart only
-    key = _path_key()
+    spelt = _Spellings()
+    key = spelt.key
     files = defaultdict(list)
     for row in recorded:
         old = mover._full(Path(row["directory"], row["filename"]), path_root)
         files[key(old)].append((old, row))
     planned = []
-    folders = {}
     for found in sorted(files.values(), key=lambda found: min(old for old, _row in found)):
         rows = [row for _old, row in found]
         if not any(row["downloaded"] for row in rows):
@@ -474,7 +478,7 @@ def plan(conn, settings, username=None, path_root=None):
         # say how the file is spelt
         downloaded = {row["media_id"] for row in rows if row["downloaded"]}
         spellings = sorted({old for old, row in found if row["media_id"] in downloaded})
-        old = _spelt_on_disk(spellings[0], key, folders) or spellings[0]
+        old = spelt.find(spellings[0]) or spellings[0]
         result["files"] += 1
         new_paths = {built[row["rowid"]] for row in rows if row["rowid"] in built}
         whys = {why for _path, why in new_paths if why}
@@ -561,34 +565,17 @@ def _is_file(path):
         return False
 
 
-def _spelt_on_disk(path, key, folders):
-    """`path` with its name spelt as the disk spells it, which on a disk
-    that doesn't tell case apart can differ from how a row spells it; None
-    when it isn't there. `folders` keeps each folder's names once read."""
-    folder = os.path.dirname(path)
-    if folder not in folders:
-        try:
-            names = os.listdir(folder)
-        except OSError:
-            names = []
-        spelt = defaultdict(list)
-        for name in names:
-            spelt[key(os.path.join(folder, name))].append(os.path.join(folder, name))
-        folders[folder] = spelt
-    found = folders[folder].get(key(path), [])
-    return found[0] if len(found) == 1 else None
-
-
-def _two_names(old, new):
+def _two_names(old, new, listdir=os.listdir):
     """`old` and `new`, one file, are two names of it (a hard link), not
-    one name spelt two ways on a disk that doesn't tell case apart."""
+    one name spelt two ways on a disk that doesn't tell case apart.
+    `listdir` can be a cached one, for a plan that asks of many names."""
     old_folder, new_folder = os.path.dirname(old), os.path.dirname(new)
     if not _same_file(old_folder, new_folder):
         return True
     if os.path.basename(old) == os.path.basename(new):
         return False
     try:
-        names = os.listdir(old_folder)
+        names = listdir(old_folder)
     except OSError:
         return False
     return os.path.basename(old) in names and os.path.basename(new) in names
@@ -609,28 +596,74 @@ def _where(old, new):
     return at_old, at_new
 
 
-def _path_key():
-    """A path as the disk tells paths apart: os.path.normcase, and lower
-    case on a disk that doesn't tell case apart (macOS's, whose normcase
-    keeps case). That is tried on the nearest folder that is there."""
-    folds = {}
+class _Spellings(Spellings):
+    """Spellings, with the Unicode rule a rename needs: the NFC and NFD
+    spellings of a name are one name only where the disk says so (an APFS
+    volume, or a folder where both find one file and they aren't a hard
+    link's two names). verify's key folds them always; here that could take
+    two files for one. Used while the plan is made, before anything is
+    renamed, so what it reads stays true."""
 
-    def folds_case(folder):
-        if folder not in folds:
-            name, parent = os.path.basename(folder), os.path.dirname(folder)
-            if parent == folder:
-                folds[folder] = False
-            elif name.swapcase() != name and os.path.lexists(folder):
-                folds[folder] = _same_file(folder, os.path.join(parent, name.swapcase()))
+    def __init__(self):
+        super().__init__()
+        self._apfs_devices = None
+        self._on_apfs = {}
+        self._listed = {}
+
+    def _devices(self):
+        if self._apfs_devices is None:
+            try:
+                mounts = psutil.disk_partitions(all=True)
+            except (OSError, psutil.Error):
+                mounts = []
+            devices = set()
+            for mount in mounts:
+                if mount.fstype.lower() == "apfs":
+                    with contextlib.suppress(OSError):
+                        devices.add(os.stat(mount.mountpoint).st_dev)
+            self._apfs_devices = devices
+        return self._apfs_devices
+
+    def on_apfs(self, folder):
+        if folder not in self._on_apfs:
+            if not self._devices():
+                answer = False
             else:
-                folds[folder] = folds_case(parent)
-        return folds[folder]
+                try:
+                    answer = os.stat(folder).st_dev in self._devices()
+                except (FileNotFoundError, NotADirectoryError):
+                    parent = os.path.dirname(folder)
+                    answer = parent != folder and self.on_apfs(parent)
+                except OSError:
+                    answer = False
+            self._on_apfs[folder] = answer
+        return self._on_apfs[folder]
 
-    def key(path):
+    def _apfs_spelling(self, path):
+        folder, name = os.path.split(path)
+        if not name:
+            return path
+        if not name.isascii() and self.on_apfs(folder):
+            name = unicodedata.normalize("NFC", name)
+        if not folder.isascii():
+            folder = self._apfs_spelling(folder)
+        return os.path.join(folder, name)
+
+    def _listdir(self, folder):
+        # each folder read once, not once per name in it
+        if folder not in self._listed:
+            self._listed[folder] = frozenset(os.listdir(folder))
+        return self._listed[folder]
+
+    def key(self, path):
         path = os.path.normcase(path)
-        return path.lower() if folds_case(os.path.dirname(path)) else path
-
-    return key
+        normalized = unicodedata.normalize("NFC", path)
+        if normalized != path:
+            if _same_file(path, normalized) and not _two_names(path, normalized, self._listdir):
+                path = normalized
+            else:
+                path = self._apfs_spelling(path)
+        return path.lower() if self.folds_case(os.path.dirname(path)) else path
 
 
 def rename_file(old, new):
