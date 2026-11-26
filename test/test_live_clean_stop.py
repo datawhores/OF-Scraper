@@ -192,6 +192,10 @@ def test_force_stop_kills_ffmpeg_without_waiting_for_q(monkeypatch, watcher):
         assert started.wait(5)
     finally:
         thread.force_stop()
+    # force_stop() waits up to 1 s for the loop's cleanup and the thread exits
+    # just after, so join before checking (#815). A run that sent q instead
+    # would wait 15 s before killing, longer than this join.
+    thread.join(5)
     assert not thread.is_alive()
     assert all(proc.calls == ["kill"] for proc in processes)
 

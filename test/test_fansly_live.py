@@ -810,6 +810,9 @@ def test_live_thread_stops_cleanly():
     t = live.LiveThread(True, runner)
     t.start()
     t.stop(timeout=5)
+    # stop() returns once the recording has ended; the thread itself exits
+    # just after, so wait for that before checking it (#815)
+    t.join(5)
     assert not t.is_alive() and runner.stopped
 
 
@@ -1045,6 +1048,7 @@ def test_one_shot_run_and_watch_thread_never_record_the_same_creator_at_once():
         assert recorded == ["watch"]
     finally:
         thread.stop(timeout=5)
+    thread.join(5)  # the thread exits just after stop() returns (#815)
     assert not thread.is_alive()
     # once the watch thread's recording ended, the creator can be recorded again
     asyncio.run(asyncio.wait_for(one_shot(), timeout=5))
