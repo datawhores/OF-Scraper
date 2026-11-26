@@ -145,15 +145,14 @@ def test_check_mode_leaves_the_marks_alone(fake_cache):
 @pytest.fixture
 def warnings_logged(monkeypatch):
     logged = []
-    monkeypatch.setattr(
-        labels,
-        "log",
-        SimpleNamespace(
-            debug=lambda *a, **k: None,
-            traceback_=lambda *a, **k: None,
-            warning=logged.append,
-        ),
+    log = SimpleNamespace(
+        debug=lambda *a, **k: None,
+        traceback_=lambda *a, **k: None,
+        warning=logged.append,
     )
+    monkeypatch.setattr(labels, "log", log)
+    # a cut-short scan is reported by incomplete.mark_incomplete
+    monkeypatch.setattr(labels.incomplete, "log", log)
     return logged
 
 

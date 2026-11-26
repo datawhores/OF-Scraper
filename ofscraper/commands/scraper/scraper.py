@@ -8,6 +8,7 @@ import ofscraper.utils.context.exit as exit
 import ofscraper.utils.live.screens as progress_utils
 from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth
+import ofscraper.main.close.exit_status as exit_status
 from ofscraper.main.close.final.final import final_action
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.commands.scraper.actions.download.download import downloader
@@ -265,18 +266,31 @@ def daemon_process():
         while True:
             # outside the try: a signal while idle here has no job to mark done
             job_func = jobqueue.get()
+            exit_status.reset()
+            pass_done = False
             try:
                 job_func()
+                pass_done = True
             except interactive.NoConsoleError:
                 # a prompt no one can answer won't be answered next pass,
                 # so end the daemon with the error instead (#286)
                 raise
             except Exception as E:
                 # the daemon carries on with the next pass (#379)
+                exit_status.record(exit_status.ERROR)
+                pass_done = True
                 log.warning(f"Daemon pass failed: {type(E).__name__}: {E}")
                 log.traceback_(E)
                 log.traceback_(traceback.format_exc())
             finally:
+                outcome = exit_status.reset()
+                if pass_done:
+                    if outcome != exit_status.OK:
+                        log.warning(
+                            f"Daemon pass finished with status {outcome} ({exit_status.label(outcome)})"
+                        )
+                    else:
+                        log.info("Daemon pass finished with status 0 (ok)")
                 jobqueue.task_done()
     except (KeyboardInterrupt, Exception, SystemExit) as exc:
         wakeup.stopped = True
@@ -296,7 +310,7 @@ def daemon_process():
             if live_interrupted:
                 raise
             pass  # stop with the original error, not the Ctrl+C during cleanup
-        if live_interrupted:
+        if live_interrupted and not isinstance(exc, exit.SigtermInterrupt):
             raise SystemExit(130)
         raise
     finally:

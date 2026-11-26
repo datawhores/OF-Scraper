@@ -19,6 +19,7 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.classes.of.models import Model
 import ofscraper.utils.settings as settings
 import ofscraper.utils.username_match as username_match
+import ofscraper.main.close.exit_status as exit_status
 from ofscraper.utils.args.mutators.user import resetUserFilters
 from ofscraper.managers.utils.state import StateManager, EActivity, string_to_activity
 import ofscraper.utils.of_env.of_env as of_env
@@ -416,6 +417,11 @@ class ModelManager:
                 else "No creator has that name or id."
             )
             log.warning(f"Not selected: {', '.join(map(str, unmatched))}. {reason}")
+            # a name no creator has is a command-line mistake; one a filter
+            # or --excluded-username removed was left out on purpose
+            _, missing = username_match.select_models(self.all_subs, unmatched)
+            if missing:
+                exit_status.record(exit_status.USAGE)
         return selected
 
     def _filter_and_prompt_for_selection(self):
