@@ -1,6 +1,7 @@
 """Long paths are cut to fit: Windows' 259-character MAX_PATH, Linux's file-name limit."""
 
 import pathlib
+import re
 import unicodedata
 
 import pytest
@@ -17,6 +18,13 @@ CAPTION = "Look at this sunset fading behind the bay! 💀🪄 #fyp #beach #ocea
 def windows_sizes(monkeypatch):
     # the defaults, measured as on Windows whatever runs the test
     monkeypatch.delenv("UTF", raising=False)
+    # the settings keep the environment they were last read in, and a test
+    # that sets UTF can leave them read with it: read them again without,
+    # before the test and after it
+    paths.of_env.getkeys(forced=True)
+    yield
+    monkeypatch.undo()
+    paths.of_env.getkeys(forced=True)
 
 
 def cut(path):
@@ -209,3 +217,137 @@ def test_a_mac_name_fits_hfs_plus_decomposed_form_too(monkeypatch, char):
     assert len(out.name.encode("utf-8")) <= 255
     assert len(nfd.encode("utf-16-le")) // 2 <= 255
     assert out.name.endswith(".mp4") and len(out.name) > 4
+
+
+# ---------------------------------------------------------------- the caption is cut, not the end (#741)
+
+
+@pytest.fixture
+def name_env(monkeypatch, tmp_path):
+    import asyncio
+    from types import SimpleNamespace
+
+    import ofscraper.classes.placeholder as placeholder
+
+    async def no_script(*a, **k):
+        return None
+
+    monkeypatch.setattr(placeholder.log, "trace", lambda *a, **k: None, raising=False)
+    monkeypatch.setattr(placeholder.me, "parse_user", lambda: ("1", "me"))
+    monkeypatch.setattr(placeholder.me, "get_id", lambda: 1)
+    monkeypatch.setattr(placeholder.profile_data, "get_active_profile", lambda: "main_profile")
+    monkeypatch.setattr(placeholder.common_paths, "get_config_home", lambda: tmp_path / "cfg")
+    monkeypatch.setattr(
+        placeholder.common_paths, "get_save_location", lambda *a, **k: str(tmp_path / "data")
+    )
+    monkeypatch.setattr(placeholder.config_file, "open_config", lambda: {})
+    monkeypatch.setattr(placeholder.settings, "get_args", lambda: SimpleNamespace())
+    monkeypatch.setattr(
+        placeholder.manager,
+        "Manager",
+        SimpleNamespace(current_model_manager=SimpleNamespace(get_model=lambda _u: None)),
+    )
+    monkeypatch.setattr(placeholder, "naming_script", no_script)
+    monkeypatch.setattr(placeholder.data, "get_dirformat", lambda *a, **k: "{date}")
+    monkeypatch.setattr(placeholder.data, "get_date", lambda *a, **k: "YYYY-MM-DD")
+    monkeypatch.setattr(paths.platform, "system", lambda: "Linux")
+
+    def names(file_format, text):
+        import ofscraper.classes.of.posts as posts_
+
+        monkeypatch.setattr(placeholder.data, "get_fileformat", lambda *a, **k: file_format)
+        raw = {
+            "id": 7, "text": text, "price": 0, "isOpened": True, "responseType": "post",
+            "postedAt": "2024-05-01T20:00:00+00:00",
+            "media": [
+                {"id": 70 + i, "type": "photo", "canView": True,
+                 "files": {"full": {"url": f"https://example.invalid/photo{i}.jpg"}}}
+                for i in range(3)
+            ],
+        }
+        items = posts_.Post(raw, 1, "u", "timeline").all_media
+        return [
+            asyncio.run(placeholder.Placeholders(item, "jpg").init(create=False)).filepath
+            for item in items
+        ]
+
+    return names
+
+
+@pytest.mark.parametrize("file_format, unique", [
+    ("{date} {text} {filename}.{ext}", "photo{}"),
+    ("{date} {text} {media_id}.{ext}", "7{}"),
+])
+def test_a_long_caption_is_cut_and_the_unique_part_kept(name_env, file_format, unique):
+    out = name_env(file_format, "a long caption " * 40)
+    for i, path in enumerate(out):
+        assert path.name.endswith(f" {unique.format(i)}.jpg")
+        assert path.name.startswith("2024-05-01 a long caption")
+        assert paths.get_string_byte_size_unix(path.name) <= 254
+
+
+def test_a_short_caption_is_left_alone(name_env):
+    out = name_env("{date} {text} {filename}.{ext}", "short")
+    assert [p.name for p in out] == [f"2024-05-01 short photo{i}.jpg" for i in range(3)]
+
+
+def test_a_caption_whose_first_character_does_not_fit_is_dropped(name_env, monkeypatch):
+    # room for 3 bytes of UTF-8 beside ".jpg": not one emoji (4), so no part
+    # of the caption fits, but the name without it does
+    monkeypatch.setenv("UTF", "utf-8")
+    monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "7")
+    out = name_env("{text} {media_id}.{ext}", "💀" * 100)
+    assert [p.name for p in out] == [f" {70 + i}.jpg" for i in range(3)]
+
+
+def test_a_caption_cut_to_nothing_keeps_an_underscored_unique_part(name_env, monkeypatch):
+    # "_70.jpg" looks like a "_1"-style number and an extension, but it's a
+    # name: with no room for the caption, the media id is still kept
+    monkeypatch.setenv("UTF", "utf-8")
+    monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "7")
+    out = name_env("{text}_{media_id}.{ext}", "💀" * 100)
+    assert [p.name for p in out] == [f"_{70 + i}.jpg" for i in range(3)]
+
+
+def test_a_caption_is_not_cut_to_a_name_with_nothing_before_the_extension(
+    name_env, monkeypatch
+):
+    # with {text} alone, an empty caption would leave a nameless ".jpg";
+    # the name is left to the cut, which says there's no room instead
+    monkeypatch.setenv("UTF", "utf-8")
+    monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "7")
+    with pytest.raises(ValueError, match="no room"):
+        name_env("{text}.{ext}", "💀" * 100)
+
+
+@pytest.mark.parametrize("file_format", ["{text}.mp3", "{text}.3gp"])
+def test_a_caption_is_not_cut_to_nothing_before_an_extension_with_digits(
+    name_env, monkeypatch, file_format
+):
+    # ".mp3" is an extension too: an empty caption would leave the "_1.mp3"
+    # a count makes of it, which repeats in every post. The name is left to
+    # the cut instead (which, reading such extensions as #799 does, says
+    # there's no room)
+    monkeypatch.setenv("UTF", "utf-8")
+    monkeypatch.setenv("LINUX_MAX_FILE_NAME_BYTES", "7")
+    try:
+        out = name_env(file_format, "💀" * 100)
+    except ValueError as error:
+        assert "no room" in str(error)
+        return
+    assert not [p.name for p in out if re.fullmatch(r"_[0-9]+\.[a-z0-9]+", p.name)]
+
+
+def test_the_caption_is_left_whole_when_truncation_is_off(name_env, monkeypatch):
+    # --original or truncation_default: false: the caption isn't shortened
+    # (#756 then keeps the whole path)
+    import ofscraper.classes.placeholder as placeholder
+
+    # the settings object is a dict read by attribute
+    monkeypatch.setitem(placeholder.settings.get_settings(), "trunicate", False)
+
+    def shortened(*a, **k):
+        raise AssertionError("the caption was shortened")
+
+    monkeypatch.setattr(placeholder.Placeholders, "_name_with_text", shortened)
+    name_env("{date} {text} {filename}.{ext}", "a long caption " * 40)
