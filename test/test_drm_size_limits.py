@@ -237,7 +237,7 @@ def _run(
     ):
         if fn:
             monkeypatch.setattr(M, name, fn)
-    monkeypatch.setattr(M, "_downloadspace", lambda self: None)
+    monkeypatch.setattr(M, "_downloadspace", lambda self, *a: None)
 
     if script:
 
@@ -277,7 +277,7 @@ def _run(
             ("_total_change_helper", _noop),
         ):
             monkeypatch.setattr(N, name, fn)
-        monkeypatch.setattr(N, "_downloadspace", lambda self: None)
+        monkeypatch.setattr(N, "_downloadspace", lambda self, *a: None)
         monkeypatch.setattr(
             md,
             "download_retry",

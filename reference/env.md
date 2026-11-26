@@ -576,7 +576,7 @@ Whether a feature that needs an optional extra installs it the first time it's u
 
 **Environment variable:** `OFSC_DISK_SPACE_CHECK_PATH` · **Default:** `''`
 
-The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). Empty (the default) measures the disk that holds `save_location` and the disk of each `live_options` or `type_options` save location (the fullest one counts), each at its nearest existing folder if it doesn't exist yet. Set it to check one other disk instead.
+The path whose disk free space is compared with `download_options.system_free_min` (`ofscraper/utils/system/free.py`). Empty (the default) measures the disk that holds `save_location` (for each download, the disk of the folder it's saved under, which a `type_options` entry can set), at its nearest existing folder if it doesn't exist yet. Set it to check a different disk.
 
 ### Menu choices
 

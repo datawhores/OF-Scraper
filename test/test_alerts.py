@@ -121,7 +121,7 @@ def test_login_failed_pass_gives_only_the_login_alert(sent):
 
 def test_free_space_limit_alerts_once(sent, monkeypatch):
     sent.settings.system_free_min = 10
-    monkeypatch.setattr(free, "get_free", lambda: 5)
+    monkeypatch.setattr(free, "get_free", lambda *a: 5)
     download = free.space_checker(lambda: "downloaded")
     for _ in range(2):
         with pytest.raises(Exception, match="Space min"):
@@ -138,7 +138,7 @@ def test_free_space_limit_during_a_download_alerts(sent, monkeypatch):
     )
 
     sent.settings.system_free_min = 10
-    monkeypatch.setattr(free, "get_free", lambda: 5)
+    monkeypatch.setattr(free, "get_free", lambda *a: 5)
     with pytest.raises(Exception):
         DownloadManager(ctx=object())._downloadspace()
     assert [a["kind"] for a in sent.script] == ["disk_full"]
@@ -147,7 +147,7 @@ def test_free_space_limit_during_a_download_alerts(sent, monkeypatch):
 def test_disk_still_full_after_a_partial_pass_isnt_recovered(sent, monkeypatch):
     sent.settings.system_free_min = 10
     free_bytes = [5]
-    monkeypatch.setattr(free, "get_free", lambda: free_bytes[0])
+    monkeypatch.setattr(free, "get_free", lambda *a: free_bytes[0])
     download = free.space_checker(lambda: "downloaded")
     for _ in range(3):  # three daemon passes, the disk full throughout
         with pytest.raises(Exception, match="Space min"):
@@ -351,7 +351,7 @@ def test_one_off_runs_announce_the_disk_alert_recovered(sent, monkeypatch, tmp_p
     monkeypatch.setattr(stats_mod.StatsManager, "print_global_summary", lambda self: None)
     sent.settings.system_free_min = 10
     free_bytes = [5]
-    monkeypatch.setattr(free, "get_free", lambda: free_bytes[0])
+    monkeypatch.setattr(free, "get_free", lambda *a: free_bytes[0])
     download = free.space_checker(lambda: "downloaded")
 
     def one_off_run(downloads):

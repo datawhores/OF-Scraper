@@ -162,7 +162,22 @@ def row_target(row, root=None, dir_format=None) -> Target:
         file = stored_file(row)
         if file is not None and _is_file(file):
             return Target(absolute(file), select=True)
+    if root is None and dir_format is None and row:
+        root, dir_format = type_templates(row)
     return creator_target((row or {}).get("username"), root, dir_format)
+
+
+def type_templates(row):
+    """(root, dir_format) a type_options entry sets for the row's area or
+    media type, or (None, None) when none is set"""
+    import ofscraper.utils.config.data as data
+
+    if not data.get_type_options():
+        return None, None
+    from ofscraper.classes.placeholder import media_templates
+
+    root, dir_format, _ = media_templates((row.get("responsetype"), row.get("mediatype")))
+    return root, dir_format
 
 
 def open_command(target: Target, system=None):

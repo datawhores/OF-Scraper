@@ -389,7 +389,7 @@ def scrape_areas(monkeypatch, failing, free_min=0):
     )
     monkeypatch.setattr(post.settings, "get_settings", lambda: run_settings)
     monkeypatch.setattr(post.free.settings, "get_settings", lambda: run_settings)
-    monkeypatch.setattr(post.free, "get_free", lambda: 10)
+    monkeypatch.setattr(post.free, "get_free", lambda *a: 10)
     ele = SimpleNamespace(name="first", active=True)
     return asyncio.run(post.process_tasks(1, "first", ele))
 

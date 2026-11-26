@@ -332,8 +332,13 @@ def _quality(recorded, base, replacer):
 async def _new_paths(media, username, model_id, posts, labelled, counts, site, replacer):
     """Each media row with the path a download would now give it, or why
     it can't be made: {rowid: (path or None, why)}."""
+    import ofscraper.utils.config.data as config_data
+    from ofscraper.utils.config.naming_check import MEDIA_TYPES, type_name
+
     placeholder, RecordedPost, RecordedMedia, RenamePlaceholders = _classes()
     out = {}
+    # "text" is the caption files', which have no row here
+    by_media_type = any(type_name(name) in MEDIA_TYPES - {"text"} for name in config_data.get_type_options())
     with _offline(placeholder):
         for row in media:
             post_id = str(row["post_id"])
@@ -376,6 +381,10 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
                 out[row["rowid"]] = (None, f"the new name can't be made ({type(error).__name__}: {error})")
                 continue
             missing = sorted(set(MARKED.findall(built)))
+            # with no media type, a media-type entry can't be matched, so
+            # which folder the file belongs in isn't known
+            if not row["media_type"] and by_media_type:
+                missing = sorted(set(missing) | {"mediatype"})
             if missing or "\ue000" in str(path) or "\ue001" in str(path):
                 values = ", ".join(f"{{{name}}}" for name in missing) or "a value"
                 out[row["rowid"]] = (None, NEEDS.format(values))
@@ -436,6 +445,8 @@ def plan(conn, settings, username=None, path_root=None):
     result = {
         "database": None, "creator": {"site": site, "model_id": model_id}, "username": name, "why": why,
         "file_format": config_data.get_fileformat(), "dir_format": config_data.get_dirformat(),
+        # the per-type formats and folders, which win over the two above
+        "type_options": config_data.get_type_options(),
         "save_location": roots[0], "files": 0, "unchanged": 0, "to_rename": 0, "already_there": 0,
         "left": [], "renames": [], "renamed": 0, "rows_changed": 0, "folders_removed": [],
         "undo_file": None,

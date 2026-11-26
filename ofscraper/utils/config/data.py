@@ -833,11 +833,13 @@ def get_type_options(config=None):
     for name, section in raw.items():
         if not isinstance(section, dict):
             continue
-        entry = {field: section[field] for field in TYPE_OPTION_FIELDS if section.get(field) is not None}
-        if isinstance(entry.get("save_location"), str):
+        entry = {field: section[field] for field in TYPE_OPTION_FIELDS if isinstance(section.get(field), str)}
+        if "save_location" in entry:
             entry["save_location"] = strip_path_quotes(entry["save_location"])
         if _reads is not None:
+            # a field it takes is read even when it holds something else,
+            # which the rewrite then names as such
             _reads.add(f"type_options.{name}")
-            _reads.update(f"type_options.{name}.{field}" for field in entry)
+            _reads.update(f"type_options.{name}.{field}" for field in TYPE_OPTION_FIELDS if field in section)
         cleaned[str(name)] = entry
     return cleaned

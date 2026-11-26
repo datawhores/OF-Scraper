@@ -422,8 +422,15 @@ class DownloadManager:
                 f"the file changed on the server ({saved_validator} -> {validator})",
             )
 
-    def _downloadspace(self):
-        if not system.check_free_size():
+    def _downloadspace(self, ele=None):
+        """Stop when the disk ele is saved on (save_location's, or the one a
+        type_options entry sets for it) is below the free-space limit"""
+        folder = None
+        if ele is not None:
+            import ofscraper.classes.placeholder as placeholder
+
+            folder = placeholder.media_templates(placeholder.media_type_keys(ele))[0]
+        if not system.check_free_size(folder):
             system.alert_full()
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 

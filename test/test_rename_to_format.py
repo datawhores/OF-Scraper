@@ -1226,3 +1226,19 @@ def test_emptied_folders_are_removed_under_a_type_options_root(tmp_path):
     removed = tool._remove_emptied([str(old)], str(tmp_path / "downloads"), str(tmp_path / "videos"))
     assert removed == [str(old.parent), str(old.parent.parent)]
     assert (tmp_path / "videos").is_dir()
+
+
+def test_a_row_without_a_media_type_is_left_when_a_media_type_entry_is_set(tmp_path):
+    # which root the file belongs under depends on its media type
+    library = Library(tmp_path)
+    library.post(501)
+    path = library.add("abcdef.jpg", post_id=501, kind=None)
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["type_options"] = {"videos": {"save_location": str(tmp_path / "videos")}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+
+    result = library.run()
+
+    assert result["to_rename"] == 0
+    assert result["left"] == [{"file": str(path), "why": tool.NEEDS.format("{mediatype}")}]
+    assert result["type_options"] == config["type_options"]

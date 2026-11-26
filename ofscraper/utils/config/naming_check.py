@@ -40,6 +40,20 @@ FILE_PLACEHOLDERS = DIR_PLACEHOLDERS | {"ext"}
 
 # the type_options names livestream recordings use
 LIVE_TYPE_KEYS = ("livestreams", "live")
+# names that mean another one, as modified_responsetype reads the
+# responsetype section: "post" and "posts" are the timeline, and "message"
+# (the responsetype key) is the messages area
+TYPE_ALIASES = {"post": "timeline", "posts": "timeline", "message": "messages"}
+# the live placeholders that hold the start time, which keep one creator's
+# recordings apart
+LIVE_TIME_FIELDS = {"date", "timestamp"}
+
+
+def type_name(name):
+    """a type_options name or a type as compared: lowercased, an alias as
+    the name it means"""
+    name = str(name or "").strip().lower()
+    return TYPE_ALIASES.get(name, name)
 # what livestream templates can use: the names placeholder._live_path fills
 LIVE_PLACEHOLDERS = _with_aliases(
     {
@@ -126,7 +140,7 @@ def templates():
         ("live_options.file_format", data.get_live_fileformat(), LIVE_PLACEHOLDERS, LIVE_EFFECT),
     ]
     for name, section in data.get_type_options().items():
-        live = name.strip().lower() in LIVE_TYPE_KEYS
+        live = type_name(name) in LIVE_TYPE_KEYS
         for key, known in (("dir_format", DIR_PLACEHOLDERS), ("file_format", FILE_PLACEHOLDERS)):
             if section.get(key):
                 out.append((
@@ -199,19 +213,28 @@ def problems():
         )
     names = _type_names()
     for name in data.get_type_options():
-        if name.strip().lower() not in names:
+        if type_name(name) not in names:
             out.append(
                 f"type_options.{name} isn't a post area, media type or livestreams,"
                 " so it's never used"
             )
+    import ofscraper.classes.placeholder as placeholder
+
+    _root, dir_fmt, file_fmt = placeholder.live_templates()
+    if not placeholder.live_names_apart(dir_fmt, file_fmt):
+        out.append(
+            f"The livestream names ({json.dumps(dir_fmt)}, {json.dumps(file_fmt)}) have no"
+            " {date} or {timestamp}, so the start time is added to each file name to"
+            " keep a creator's recordings apart"
+        )
     return out
 
 
 # what a type_options entry can be named: a post's area as Post.responsetype
-# gives it (and its older spellings), a media type, or livestreams
+# gives it, a media type, or livestreams (and TYPE_ALIASES)
 POST_AREAS = {
-    "timeline", "post", "posts", "pinned", "archived", "message", "messages",
-    "paid", "purchased", "stories", "highlights", "profile", "streams", "labels",
+    "timeline", "pinned", "archived", "messages", "paid", "purchased",
+    "stories", "highlights", "profile", "streams", "labels",
 }
 MEDIA_TYPES = {"images", "videos", "audios", "text"}
 
@@ -225,7 +248,7 @@ def _type_names():
     folders = schema.get_current_config_schema(config_file.open_config())["responsetype"]
     return (
         POST_AREAS | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
-        | {str(folder).strip().lower() for folder in folders.values() if folder}
+        | {type_name(folder) for folder in folders.values() if folder}
     )
 
 

@@ -19,7 +19,7 @@ import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
 import ofscraper.utils.dry_run as dry_run
 from ofscraper.utils.string import parse_safe
-from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, name_safe
+from ofscraper.utils.config.naming_check import LIVE_TIME_FIELDS, LIVE_TYPE_KEYS, name_safe, type_name
 import ofscraper.managers.manager as manager
 from ofscraper.scripts.naming_script import naming_script
 
@@ -112,12 +112,13 @@ def default_media_root(save_location=None, dir_format=None, file_format=None, *,
 
 
 def _type_settings(type_keys):
-    """The type_options values for these types (names matched without regard
-    to case); when two types set a value, the first type's wins."""
-    by_name = {name.strip().lower(): section for name, section in data.get_type_options().items()}
+    """The type_options values for these types (names matched as
+    naming_check.type_name compares them); when two types set a value, the
+    first type's wins."""
+    by_name = {type_name(name): section for name, section in data.get_type_options().items()}
     found = {}
     for key in type_keys:
-        for field, value in by_name.get(str(key or "").strip().lower(), {}).items():
+        for field, value in by_name.get(type_name(key), {}).items():
             if isinstance(value, str) and value.strip():
                 found.setdefault(field, value)
     return found
@@ -133,6 +134,12 @@ def media_templates(type_keys, *, save_location=None, dir_format=None, file_form
         found.get("save_location") or save_location, dir_fmt, file_fmt, site_name=site_name
     )
     return root, dir_fmt, file_fmt
+
+
+def media_type_keys(ele):
+    """The types a media file's type_options entry is looked up by: its
+    area, its area as responsetype names it, then its media type"""
+    return (ele.responsetype, ele.modified_responsetype, ele.mediatype)
 
 
 def media_roots():
@@ -181,30 +188,41 @@ def live_recording_path(
     """A livestream's file: type_options.livestreams, then live_options, then
     ``{sitename}/{model_username}/Livestreams/{model_username}_{date}_live``
     under the save location. A template that can't be filled in (an unknown
-    placeholder) falls back to that default, with a warning, so the stream
-    is still recorded."""
+    placeholder) falls back to the default names, in the same save
+    location, with a warning, so the stream is still recorded."""
     context = dict(username=username, started_at=started_at, site_name=site_name,
                    model_id=model_id, ext=ext)
-    templates = media_templates(
+    save = _type_settings(LIVE_TYPE_KEYS).get("save_location") or data.get_live_save_location() or save_location
+    try:
+        path = _live_path(*live_templates(save, site_name), **context)
+    except (KeyError, AttributeError, IndexError, TypeError, ValueError) as E:
+        log.warning(
+            f"The livestream folder or file name template can't be filled in ({E!r}),"
+            f" so {username}'s recording uses the default name"
+        )
+        default = media_templates(
+            (), save_location=save, dir_format=DEFAULT_LIVE_DIR_FORMAT,
+            file_format=DEFAULT_LIVE_FILE_FORMAT, site_name=site_name,
+        )
+        path = _live_path(*default, **context)
+    return final_path(path)
+
+
+def live_templates(save_location=None, site_name=None):
+    """(root, dir_format, file_format) livestreams are saved with"""
+    return media_templates(
         LIVE_TYPE_KEYS,
         save_location=data.get_live_save_location() or save_location,
         dir_format=data.get_live_dirformat() or DEFAULT_LIVE_DIR_FORMAT,
         file_format=data.get_live_fileformat() or DEFAULT_LIVE_FILE_FORMAT,
         site_name=site_name,
     )
-    try:
-        path = _live_path(*templates, **context)
-    except (KeyError, AttributeError, IndexError, ValueError) as E:
-        log.warning(
-            f"The livestream folder or file name template can't be filled in ({E!r}),"
-            f" so {username}'s recording uses the default name"
-        )
-        default = media_templates(
-            (), save_location=save_location, dir_format=DEFAULT_LIVE_DIR_FORMAT,
-            file_format=DEFAULT_LIVE_FILE_FORMAT, site_name=site_name,
-        )
-        path = _live_path(*default, **context)
-    return final_path(path)
+
+
+def live_names_apart(dir_fmt, file_fmt):
+    """True when the names hold the start time, so two of one creator's
+    recordings don't get the same file"""
+    return bool(_template_fields(dir_fmt, file_fmt) & LIVE_TIME_FIELDS)
 
 
 def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, model_id, ext):
@@ -236,6 +254,8 @@ def _live_path(root, dir_fmt, file_fmt, *, username, started_at, site_name, mode
     stem = _safe_format(file_fmt, variables)
     if stem.lower().endswith(f".{ext.lower()}"):
         stem = stem[: -(len(ext) + 1)]
+    if not live_names_apart(dir_fmt, file_fmt):
+        stem = f"{stem}_{stamp}"
     return pathlib.Path(os.path.normpath(str(root / folder)), f"{stem}.{ext}")
 
 
@@ -294,7 +314,7 @@ class tempFilePlaceholder(basePlaceholder):
         # remove for now
         # if env.getattr("ALLOW_DUPE_MEDIA"):
         #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
-        script_name = await naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele, self._placeholder.templates()[1:])
         self._tempfilepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 
@@ -456,13 +476,12 @@ class Placeholders(basePlaceholder):
         self._ext = ext
 
     def type_keys(self):
-        ele = self._ele
-        return (ele.responsetype, ele.modified_responsetype, ele.mediatype)
+        return media_type_keys(self._ele)
 
     async def init(self, create=True):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name = await naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele, self.templates()[1:])
         if not script_name:
             file = self._fit_text(dir, file)
         self._filepath = final_path(script_name or pathlib.Path(dir, file))
@@ -797,7 +816,7 @@ class Textholders(basePlaceholder):
     async def init(self, create=True):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
-        script_name = await naming_script(dir, file, self._ele)
+        script_name = await naming_script(dir, file, self._ele, self.templates()[1:])
         self._filepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 

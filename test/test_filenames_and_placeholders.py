@@ -708,7 +708,7 @@ def test_live_templates_take_the_date_parts(path_options, tmp_path):
     result = placeholder.live_recording_path(
         tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
     )
-    assert result == tmp_path / "OnlyFans" / "test_creator" / "2024" / "05" / "01_test_creator.webm"
+    assert result == tmp_path / "OnlyFans" / "test_creator" / "2024" / "05" / "01_test_creator_20240501_000000.webm"
 
 
 @pytest.mark.parametrize("template", ["{post_id}", "{modelObj.name}", "{date"])
@@ -817,3 +817,56 @@ def test_startup_check_covers_full_paths_dates_and_type_names(path_options):
     config["live_options"] = {"dir_format": "{date}"}
     save()
     assert not any(line.startswith("file_options.date") for line in naming_check.problems())
+
+
+def test_live_names_without_the_start_time_get_it(path_options, tmp_path):
+    """Two streams of one creator would get one file: OnlyFans opens it
+    with "xb" and fails, Fansly reads the first stream's sidecar"""
+    import datetime
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{model_username}", "file_format": "{model_username}_live"}
+    save()
+    first, second = (
+        placeholder.live_recording_path(tmp_path, "test_creator", datetime.datetime(2024, 5, 1, hour),
+                                        site_name="OnlyFans", ext="webm")
+        for hour in (1, 2)
+    )
+    assert first.name == "test_creator_live_20240501_010000.webm"
+    assert first != second
+    assert any("have no {date} or {timestamp}" in line for line in naming_check.problems())
+
+    # a {date} in the folder keeps them apart too
+    config["live_options"]["dir_format"] = "{model_username}/{date}"
+    save()
+    assert placeholder.live_recording_path(
+        tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm"
+    ).name == "test_creator_live.webm"
+    assert not any("have no {date}" in line for line in naming_check.problems())
+
+
+@pytest.mark.parametrize("file_format", ["{nope}", "{username[a]}", "{config[file_options][date][x]}"])
+def test_a_live_name_that_cant_be_filled_keeps_the_live_folder(path_options, tmp_path, file_format):
+    import datetime
+
+    config, save = path_options
+    live = tmp_path / "live"
+    config["live_options"] = {"save_location": str(live), "file_format": file_format}
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path / "main", "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
+    assert result == live / "OnlyFans" / "test_creator" / "Livestreams" / "test_creator_20240501_000000_live.webm"
+
+
+@pytest.mark.parametrize("name", ["message", "Messages", "post", "posts", "Timeline"])
+def test_type_options_names_match_their_aliases(path_options, name):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["type_options"] = {name: {"dir_format": "here"}}
+    save()
+    area = "Messages" if name.lower().startswith("message") else "Timeline"
+    folder = "Messages" if area == "Messages" else "Posts"
+    assert placeholder.media_templates((area, folder, "Images"))[1] == "here"
+    assert not any(line.startswith("type_options.") for line in naming_check.problems())

@@ -459,6 +459,7 @@ def opened(monkeypatch, tmp_path):
     monkeypatch.setattr(table_app.settings, "update_args", lambda *a, **k: None)
     monkeypatch.setattr(table_app, "row_queue", queue.Queue())
     monkeypatch.setattr(open_folder, "default_root", lambda: tmp_path / "save")
+    monkeypatch.setattr(open_folder, "type_templates", lambda row: (None, None))
     monkeypatch.setattr(open_folder, "get_dir_format", lambda: DIR_FORMAT)
 
     calls = []
@@ -642,3 +643,22 @@ def test_config_error_is_a_notice(opened, monkeypatch):
 
 
 _real_open_target = open_folder.open_target
+
+
+def test_a_row_not_on_disk_opens_the_folder_its_type_options_entry_sets(tmp_path, monkeypatch):
+    import ofscraper.classes.placeholder as placeholder
+
+    seen = []
+
+    def media_templates(type_keys):
+        seen.append(type_keys)
+        return tmp_path / "videos", "{model_username}/clips", "x.{ext}"
+
+    monkeypatch.setattr(placeholder, "media_templates", media_templates)
+    monkeypatch.setattr("ofscraper.utils.config.data.get_type_options", lambda *a, **k: {"videos": {"save_location": "x"}})
+    row = {**_row(), "responsetype": "Timeline", "mediatype": "Videos"}
+
+    target = open_folder.row_target(row)
+
+    assert seen == [("Timeline", "Videos")]
+    assert target == Target(tmp_path / "videos" / "a_creator")
