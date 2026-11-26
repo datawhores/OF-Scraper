@@ -76,9 +76,10 @@ def truncate(path):
 
 def _split_ext(name):
     """The name without its extension, and the extension (with a "_1"-style
-    number before it, which a cut must keep). Taken off the end only."""
-    match = re.search(r"_[0-9]+\.[a-z4]*$", name, re.IGNORECASE) or re.search(
-        r"\.[a-z4]*$", name, re.IGNORECASE
+    number before it, which a cut must keep). Taken off the end only, and
+    at most 10 characters long, so a caption's ".word..." tail isn't one."""
+    match = re.search(r"_[0-9]+\.[a-z0-9]{1,10}$", name, re.IGNORECASE) or re.search(
+        r"\.[a-z0-9]{1,10}$", name, re.IGNORECASE
     )
     ext = match.group(0) if match else ""
     return (name[: -len(ext)] if ext else name), ext
