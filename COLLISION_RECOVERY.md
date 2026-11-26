@@ -12,8 +12,10 @@ This offline command finds suspected losses (paths shared by distinct media in a
 ### 1. Preview a creator's database
 
 ```sh
-python -m ofscraper.commands.recover_collisions "<profile>/.data/<model_id>/user_data.db"
+ofscraper recover_collisions "<profile>/.data/<model_id>/user_data.db"
 ```
+
+`python -m ofscraper.commands.recover_collisions` also works.
 
 The JSON report lists paths shared by distinct media and `media_to_mark`:
 
@@ -25,7 +27,7 @@ The JSON report lists paths shared by distinct media and `media_to_mark`:
 ### 2. Apply the flag reset
 
 ```sh
-python -m ofscraper.commands.recover_collisions "<profile>/.data/<model_id>/user_data.db" --apply
+ofscraper recover_collisions "<profile>/.data/<model_id>/user_data.db" --apply
 ```
 
 - Rechecks the database, writes a small JSON undo file beside it, and sets only `downloaded = 0` for affected media (including their other post records).
@@ -39,10 +41,10 @@ To reverse the flag reset **before starting downloads (step 3)**, preview and ap
 
 ```sh
 # Preview undo
-python -m ofscraper.commands.recover_collisions "<database>" --undo "<undo-file.json>"
+ofscraper recover_collisions "<database>" --undo "<undo-file.json>"
 
 # Apply undo
-python -m ofscraper.commands.recover_collisions "<database>" --undo "<undo-file.json>" --apply
+ofscraper recover_collisions "<database>" --undo "<undo-file.json>" --apply
 ```
 
 - Undo only restores matching recorded rows whose flags are still zero.
@@ -72,13 +74,13 @@ If the scraper stores its data in PostgreSQL (`OFSC_DATABASE_URL`), the `user_da
 
 ```sh
 # Preview
-python -m ofscraper.commands.recover_collisions --postgres --creator "<username or id>"
+ofscraper recover_collisions --postgres --creator "<username or id>"
 
 # Apply
-python -m ofscraper.commands.recover_collisions --postgres --creator "<username or id>" --apply --undo-dir "<folder>"
+ofscraper recover_collisions --postgres --creator "<username or id>" --apply --undo-dir "<folder>"
 
 # Undo
-python -m ofscraper.commands.recover_collisions --postgres --creator "<username or id>" --undo "<undo-file.json>" --apply
+ofscraper recover_collisions --postgres --creator "<username or id>" --undo "<undo-file.json>" --apply
 ```
 
 - **Same report and changes:** The report also says which creator the name turned out to be.

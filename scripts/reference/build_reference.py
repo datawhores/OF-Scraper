@@ -508,6 +508,10 @@ def render_cli(notes):
 
 # argparse tools under ofscraper/commands that aren't part of the CLI: module -> (usage, summary)
 SEPARATE_COMMANDS = {
+    "creator_names": (
+        "[--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]",
+        "List and record the usernames each creator account has had.",
+    ),
     "move_creator_files": (
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Move a creator's downloaded files to match new path settings and update recorded paths.",
@@ -550,7 +554,10 @@ def render_argparse(module, usage):
     finally:
         argparse.ArgumentParser.parse_args = original
     parser = captured["parser"]
-    out = [f"Run `python -m ofscraper.commands.{module} {usage}`.\n\n"]
+    out = [
+        f"Run `ofscraper {module} {usage}`"
+        f" (or `python -m ofscraper.commands.{module} {usage}`).\n\n"
+    ]
     for action in parser._actions:
         if isinstance(action, argparse._HelpAction):
             continue

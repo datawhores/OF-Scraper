@@ -25,12 +25,14 @@
 1. Make sure Stash is running and has already scanned your download folders (or add `--scan` when running with `--apply` below to have Stash scan them first).
 2. Preview what would change:
    ```sh
-   python -m ofscraper.commands.stash_sync "<profile>/.data"
+   ofscraper stash_sync "<profile>/.data"
    ```
 3. Apply the changes:
    ```sh
-   python -m ofscraper.commands.stash_sync "<profile>/.data" --apply
+   ofscraper stash_sync "<profile>/.data" --apply
    ```
+
+`python -m ofscraper.commands.stash_sync` also works.
 
 `<profile>/.data` holds one folder per creator, each with a `user_data.db`. To sync a single creator, pass that creator's `user_data.db` instead.
 
@@ -52,7 +54,7 @@ If the scraper keeps its data in PostgreSQL (see [POSTGRESQL.md](POSTGRESQL.md))
 
 ```sh
 OFSC_DATABASE_URL=postgresql://user:password@host:5432/database \
-  python -m ofscraper.commands.stash_sync --postgres --apply
+  ofscraper stash_sync --postgres --apply
 ```
 
 - **Database address:** Uses `OFSC_DATABASE_URL` from the environment where the command is run. An address listed only in one of the scraper's `.env` files is not seen, because this command doesn't read the scraper's settings (`config.json`).
@@ -93,7 +95,7 @@ The same rows produce the same results as from files, with these differences:
 If OF-Scraper saved files under `D:\OnlyFans` and Stash's container mounts that folder as `/data`:
 
 ```sh
-python -m ofscraper.commands.stash_sync "<profile>/.data" --apply --path-map "D:\OnlyFans=/data"
+ofscraper stash_sync "<profile>/.data" --apply --path-map "D:\OnlyFans=/data"
 ```
 
 A Windows `LOCAL` path ignores case and accepts `/` or `\` (`d:/onlyfans` works too); other paths must match exactly. The mapping also applies to `--scan`. Without it, Stash can't find any of the files: the report then says so in a `hint`, and nothing is created in Stash.

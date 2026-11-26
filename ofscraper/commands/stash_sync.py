@@ -702,7 +702,7 @@ def sync(
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="*", help="user_data.db files, or folders to search for them (e.g. <profile>/.data)")
     parser.add_argument("--postgres", action="store_true", help=f"read the PostgreSQL database ${postgres.URL_KEY} names instead of user_data.db files; give no paths with it")
     parser.add_argument("--site", choices=list(SITES), help="with --postgres, only this site's creators (default: both sites)")

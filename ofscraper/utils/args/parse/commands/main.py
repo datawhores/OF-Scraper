@@ -1,6 +1,7 @@
 import cloup as click
 from click import UsageError
 
+import ofscraper.commands.tools as tools
 from ofscraper.utils.args.parse.group_bundles.advanced_common import main_advanced_args
 from ofscraper.utils.args.parse.group_bundles.main import main_program_args
 import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
@@ -8,6 +9,7 @@ import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
 
 @click.group(
     help="OF-Scraper Options",
+    epilog=tools.help_section(),
     context_settings=dict(help_option_names=["-h", "--help"]),
     invoke_without_command=True,
     show_constraints=True,

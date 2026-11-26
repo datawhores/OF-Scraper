@@ -132,7 +132,7 @@ def test_the_screen_says_it_works_on_sqlite_files_while_postgresql_is_on(monkeyp
         "To bring the merged file into PostgreSQL, close the scraper and run:\n"
         f'ofscraper --migrate-sqlite-to-postgres "{Path("merged", "user_data.db")}"\n'
         "To see what it would do first, without writing anything:\n"
-        f'python -m ofscraper.commands.postgres_import "{Path("merged", "user_data.db")}"\n'
+        f'ofscraper postgres_import "{Path("merged", "user_data.db")}"\n'
     )
     # the merge still runs
     assert merges == [("source", "merged")]
@@ -144,21 +144,21 @@ def test_the_import_command_is_one_line_with_the_file_the_merge_wrote(monkeypatc
     monkeypatch.setattr(merge_utils, "console", Console(file=printed, width=60))
     monkeypatch.setattr(postgres, "enabled", lambda: True)
     # a file name: the merge writes user_data.db in the folder it is in
-    target = str(Path("a [b]", "long merge folder name", "merged.db"))
+    target = str(Path("a [b]", "a very long merge folder name", "merged.db"))
     run_screen(
         monkeypatch, backup=[True], confirm=[True], another=[False], target=target
     )
     # the merged file, not its folder: the preview covers what the migrate
     # command brings in, and no other user_data.db the folder holds
     command = (
-        "python -m ofscraper.commands.postgres_import"
-        f' "{Path("a [b]", "long merge folder name", "user_data.db")}"'
+        "ofscraper postgres_import"
+        f' "{Path("a [b]", "a very long merge folder name", "user_data.db")}"'
     )
     assert len(command) > 60
     assert command in printed.getvalue().splitlines()
     migrate = (
         "ofscraper --migrate-sqlite-to-postgres"
-        f' "{Path("a [b]", "long merge folder name", "user_data.db")}"'
+        f' "{Path("a [b]", "a very long merge folder name", "user_data.db")}"'
     )
     assert migrate in printed.getvalue().splitlines()
 
@@ -173,7 +173,7 @@ def test_a_file_at_a_drive_root_is_named_in_full(monkeypatch, screen):
     monkeypatch.setattr(merge_utils.merge, "MergeDatabase", AtDriveRoot)
     run_screen(monkeypatch, backup=[True], confirm=[True], another=[False])
     lines = screen.getvalue().splitlines()
-    assert r'python -m ofscraper.commands.postgres_import "D:\user_data.db"' in lines
+    assert r'ofscraper postgres_import "D:\user_data.db"' in lines
     assert r'ofscraper --migrate-sqlite-to-postgres "D:\user_data.db"' in lines
 
 
