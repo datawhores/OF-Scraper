@@ -7,6 +7,7 @@ own create, migration and write code, then runs the merge.
 
 import asyncio
 import contextlib
+import shutil
 import sqlite3
 
 import pytest
@@ -55,13 +56,32 @@ DOWNLOADED_C = media(directory="/dl/c", filename="c.jpg", size=300, downloaded=1
 EXPECTED_B = [(MEDIA_ID, "/dl/b", "b.jpg", 200, 1, "hash-b")]
 
 
-async def make_db(db, medias):
+@pytest.fixture(scope="module")
+def template_db(tmp_path_factory):
+    """One real, migrated SQLite database reused as the base for every test DB."""
+    db = tmp_path_factory.mktemp("merge_template") / "user_data.db"
+
+    async def build():
+        await operations.create_tables(db_path=db)
+        await write_profile_table(model_id=MODEL_ID, username=USERNAME, db_path=db)
+        await write_models_table(model_id=MODEL_ID, db_path=db)
+        await modify_tables(db_path=db)
+
+    asyncio.run(build())
+    return db
+
+
+async def make_db(db, medias, template_db=None):
     db.parent.mkdir(parents=True, exist_ok=True)
-    await operations.create_tables(db_path=db)
-    await write_profile_table(model_id=MODEL_ID, username=USERNAME, db_path=db)
-    await write_models_table(model_id=MODEL_ID, db_path=db)
-    await modify_tables(db_path=db)
-    await write_media_table_transition(medias, db_path=db)
+    if template_db is not None:
+        shutil.copy2(template_db, db)
+    else:
+        await operations.create_tables(db_path=db)
+        await write_profile_table(model_id=MODEL_ID, username=USERNAME, db_path=db)
+        await write_models_table(model_id=MODEL_ID, db_path=db)
+        await modify_tables(db_path=db)
+    if medias:
+        await write_media_table_transition(medias, db_path=db)
 
 
 def download_rows(db):
@@ -72,7 +92,7 @@ def download_rows(db):
 
 
 @pytest.fixture
-def merge_dbs(tmp_path, monkeypatch):
+def merge_dbs(tmp_path, monkeypatch, template_db):
     """Merge sources, in the given order, into a target that may hold rows."""
 
     def fail(e):
@@ -89,9 +109,9 @@ def merge_dbs(tmp_path, monkeypatch):
 
         async def go():
             for path, medias in zip(paths, sources):
-                await make_db(path, medias)
+                await make_db(path, medias, template_db=template_db)
             if target is not None:
-                await make_db(new_db, target)
+                await make_db(new_db, target, template_db=template_db)
             return await merge.MergeDatabase()(root / "old", new_db)
 
         failures, _, _ = asyncio.run(go())
@@ -202,7 +222,9 @@ def test_downloaded_extra_post_row_updates_target_rows(merge_dbs):
     assert result == EXPECTED_B_BOTH_POSTS
 
 
-def test_failed_source_download_is_not_used_for_later_rows(tmp_path, monkeypatch):
+def test_failed_source_download_is_not_used_for_later_rows(
+    tmp_path, monkeypatch, template_db
+):
     # a source whose media writes fail must not leave its download behind for
     # rows that later sources add
     new_db = tmp_path / "new" / "user_data.db"
@@ -218,9 +240,9 @@ def test_failed_source_download_is_not_used_for_later_rows(tmp_path, monkeypatch
         return await real_write(rows, **kwargs)
 
     async def go():
-        await make_db(first, [DOWNLOADED_B])
-        await make_db(second, [on_post(DOWNLOADED_C)])
-        await make_db(new_db, [])
+        await make_db(first, [DOWNLOADED_B], template_db=template_db)
+        await make_db(second, [on_post(DOWNLOADED_C)], template_db=template_db)
+        await make_db(new_db, [], template_db=template_db)
         merger = merge.MergeDatabase()
         merger._new_db = new_db
         await merger._data_initializer()

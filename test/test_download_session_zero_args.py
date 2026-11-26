@@ -115,6 +115,7 @@ def test_zero_read_timeout_means_no_limit():
     assert download_session(log=QUIET, read_timeout=0)._read_timeout is None
 
 
+@pytest.mark.slow
 def test_zero_read_timeout_means_no_limit_on_the_sync_path():
     sock, url = slow_server()
     try:
@@ -125,6 +126,7 @@ def test_zero_read_timeout_means_no_limit_on_the_sync_path():
         sock.close()
 
 
+@pytest.mark.slow
 def test_zero_read_timeout_means_no_limit_on_the_async_path():
     sock, url = slow_server()
 

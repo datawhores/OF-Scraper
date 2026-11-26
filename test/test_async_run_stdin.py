@@ -18,6 +18,8 @@ import ofscraper.utils.system.process_tree as process_tree
 import ofscraper.utils.system.subprocess as subprocess_module
 from ofscraper.utils.system.subprocess import async_run
 
+pytestmark = pytest.mark.slow
+
 
 def _pending_tasks():
     current = asyncio.current_task()

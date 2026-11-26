@@ -104,6 +104,7 @@ def test_platform_without_sigusr1_is_unchanged(monkeypatch):
     wakeup.restore()
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(not hasattr(daemon_schedule.signal, "SIGUSR1"), reason="Unix signals required")
 @pytest.mark.parametrize("stop_signal", ["SIGTERM", "SIGINT"])
 def test_real_daemon_signal_lifecycle(tmp_path, stop_signal):
