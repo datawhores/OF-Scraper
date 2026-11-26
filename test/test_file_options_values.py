@@ -444,13 +444,13 @@ def test_known_placeholders_match_what_names_are_built_from():
         assert known == built, kind
 
 
-@pytest.mark.parametrize("config", [
-    {},
-    {"responsetype": {"post": "Wall", "message": "DMs", "archived": "Old"}},
-])
-def test_the_area_folder_names_are_the_responsetype_section_config_json_gets(config):
-    """naming_check reads the area folders without building every setting;
-    they're the same names the config.json rewrite writes"""
-    import ofscraper.utils.config.schema as schema
+def test_type_options_match_the_area_folders_downloads_use():
+    """An entry named after an area's folder matches, with the folder names
+    a download gives (Post.modified_responsetype), set or not"""
+    config = {"responsetype": {"timeline": "Wall", "message": "DMs", "archived": "Old"}}
 
-    assert naming_check.responsetype_folders(config=config) == schema.get_current_config_schema(config)["responsetype"]
+    names = naming_check.area_type_names(config)
+
+    assert {"wall", "dms", "old"} <= names
+    for area in naming_check.POST_AREAS:
+        assert naming_check.type_name(posts_.responsetype_folder(area, config=config)) in names

@@ -215,16 +215,16 @@ def problems():
             " in dir_format now fills one folder, so dates no longer nest. Use"
             " {year}/{month}/{day} in dir_format for nested date folders"
         )
-    names = area_type_names() | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
-    same = {}
-    for name in data.get_type_options():
-        same.setdefault(type_name(name), []).append(name)
-        if type_name(name) not in names:
-            out.append(
+    known = known_type_names()
+    spelt = type_spellings()
+    for key, spellings in spelt.items():
+        if key not in known:
+            out.extend(
                 f"type_options.{name} isn't a post area, media type or livestreams,"
                 " so it's never used"
+                for name in spellings
             )
-    for spellings in same.values():
+    for spellings in spelt.values():
         if len(spellings) > 1:
             # _type_settings keeps the last one
             out.append(
@@ -259,48 +259,50 @@ POST_AREAS = {
 MEDIA_TYPES = {"images", "videos", "audios", "text"}
 
 
-def responsetype_folders(config=None):
-    """The responsetype section as config.json gets it (schema.py lists the
-    same getters): each area's folder name, its default when it isn't set.
-    Only these getters, not every setting the schema reads."""
-    import ofscraper.utils.config.data as data
-    import ofscraper.utils.config.file as config_file
+def area_type_names(config=None):
+    """Names a type_options entry can match by post area or by the folder a
+    download saves the area's posts under (the names Post.modified_responsetype
+    gives, so media_type_keys can match them)."""
+    from ofscraper.classes.of.posts import archived_folder, responsetype_folder
 
     if config is None:
+        import ofscraper.utils.config.file as config_file
+
         config = config_file.open_config()
-    return {
-        "timeline": data.get_timeline_responsetype(config=config),
-        "message": data.get_messages_progress_responsetype(config=config),
-        "archived": data.get_archived_responsetype(config=config),
-        "paid": data.get_paid_responsetype(config=config),
-        "stories": data.get_stories_responsetype(config=config),
-        "highlights": data.get_highlights_responsetype(config=config),
-        "profile": data.get_profile_responsetype(config=config),
-        "pinned": data.get_pinned_responsetype(config=config),
-        "streams": data.get_streams_responsetype(config=config),
-    }
+    folders = {responsetype_folder(area, config=config) for area in POST_AREAS}
+    folders.add(archived_folder(config=config))
+    return POST_AREAS | {type_name(folder) for folder in folders}
 
 
-def area_type_names(config=None):
-    """Names a type_options entry can match by post area or response folder."""
-    folders = responsetype_folders(config=config)
-    return POST_AREAS | {type_name(folder) for folder in folders.values() if folder}
+def known_type_names(config=None):
+    """Every name a type_options entry can be used under: a post area, its
+    folder, a media type or livestreams"""
+    return area_type_names(config) | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
+
+
+def type_spellings(config=None):
+    """{type: [type_options names that mean it, in file order]}. Of two
+    spellings, placeholder._type_settings uses the last."""
+    import ofscraper.utils.config.data as data
+
+    out = {}
+    for name in data.get_type_options(config=config):
+        out.setdefault(type_name(name), []).append(name)
+    return out
 
 
 def used_type_options(config=None):
     """{name as written: section} for the type_options entries downloads
-    use: a post area, media type or livestreams, and of two spellings of one
-    type only the last, as placeholder._type_settings reads them"""
+    use: of a known type, and of two spellings of one type only the last"""
     import ofscraper.utils.config.data as data
 
-    names = area_type_names(config) | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
-    used = {}
-    for name, section in data.get_type_options(config=config).items():
-        key = type_name(name)
-        if key in names:
-            used.pop(key, None)
-            used[key] = (name, section)
-    return dict(used.values())
+    options = data.get_type_options(config=config)
+    known = known_type_names(config)
+    return {
+        spellings[-1]: options[spellings[-1]]
+        for key, spellings in type_spellings(config).items()
+        if key in known
+    }
 
 
 def report():
