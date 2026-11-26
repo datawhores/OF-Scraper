@@ -61,6 +61,12 @@ def _doctor():
     return mod.main
 
 
+def _health():
+    import ofscraper.commands.health as mod
+
+    return mod.main
+
+
 TOOLS = {
     "stash_sync": (
         _stash_sync,
@@ -97,6 +103,10 @@ TOOLS = {
     "doctor": (
         _doctor,
         "Check the setup (config, auth files, ffmpeg, keys, folders), offline",
+    ),
+    "health": (
+        _health,
+        "Check whether an unattended daemon is healthy from its status file",
     ),
 }
 

@@ -46,6 +46,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 # Save into the mounted data folder. Set here as well as in the entrypoint
 # because `docker compose exec` doesn't run the entrypoint.
 ENV OFSC_SAVE_PATH_DEFAULT="/home/ofscraper/data"
+ENV OFSC_STATUS_FILE="/home/ofscraper/.config/ofscraper/status.json"
 
 # >>> CORRECTED STEP 1: Install build dependencies, then pyffmpeg, then clean up <<<
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -93,5 +94,6 @@ RUN \
 # (pyffmpeg and other caches live under $HOME).
 RUN mkdir -p /home/ofscraper && chmod 1777 /home/ofscraper
 USER root 
+HEALTHCHECK CMD ofscraper health
 ENTRYPOINT ["/usr/local/bin/entry/entrypoint.sh"]
 CMD ["ofscraper"]
