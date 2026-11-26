@@ -26,4 +26,9 @@ def program(ctx, *args, **kwargs):
             "Run it on its own: ofscraper --migrate-sqlite-to-postgres PATH"
         )
     ctx = retry_helper.retry_modifiy(ctx)
+    from ofscraper.commands.scraper.multi_profile import validate_multi_profile_args
+
+    error = validate_multi_profile_args(ctx.params)
+    if error:
+        raise UsageError(error, ctx=ctx)
     return ctx.params, ctx.info_name

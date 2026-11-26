@@ -52,8 +52,19 @@ def _main_profile(config_home, paths):
     return f"{re.sub('_profile', '', name)}_profile"
 
 
+def _running_daemon(path):
+    """Whether path is a daemon's file that doesn't say it has stopped."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    return isinstance(data, dict) and data.get("mode") == "daemon" and data.get("state") != "stopped"
+
+
 def default_status_path():
-    """OFSC_STATUS_FILE; else the main profile's status.json."""
+    """OFSC_STATUS_FILE; else, of the multi-profile daemon's status.json in
+    the config folder and the main profile's, a running daemon's, then the
+    newer one: the main profile's one-off child doesn't hide its parent."""
     override = (os.getenv("OFSC_STATUS_FILE") or "").strip()
     if override:
         return pathlib.Path(override)
@@ -62,7 +73,14 @@ def default_status_path():
 
     paths = load_file_paths_config()
     config_home = pathlib.Path.home() / paths["configPath"]
-    return config_home / _main_profile(config_home, paths) / "status.json"
+    candidates = [
+        config_home / "status.json",
+        config_home / _main_profile(config_home, paths) / "status.json",
+    ]
+    found = [p for p in candidates if p.is_file()]
+    if not found:
+        return candidates[1]
+    return max(found, key=lambda p: (_running_daemon(p), p.stat().st_mtime))
 
 
 def _since_start(data, when):
@@ -95,7 +113,23 @@ def _login_failed(data):
         and last_pass.get("status") == AUTH_EXIT_CODE
     ):
         return True
+    for entry in _current_profile_runs(data).values():
+        if entry.get("auth") == "failed" or entry.get("status") == AUTH_EXIT_CODE:
+            return True
     return False
+
+
+def _current_profile_runs(data):
+    """The --profiles daemon's profile entries whose run ended since it
+    started."""
+    profiles = data.get("profiles")
+    if not isinstance(profiles, dict):
+        return {}
+    return {
+        name: entry
+        for name, entry in profiles.items()
+        if isinstance(entry, dict) and _since_start(data, entry.get("finished"))
+    }
 
 
 def _failed_last_pass(data):
@@ -117,6 +151,16 @@ def _failed_last_pass(data):
     return None
 
 
+def _failed_profile(data):
+    """(name, label) of a multi-profile daemon's profile whose last run
+    ended neither ok nor partial since the daemon started, or None."""
+    for name, entry in _current_profile_runs(data).items():
+        status = entry.get("status")
+        if isinstance(status, int) and not isinstance(status, bool) and status not in OK_EXIT_CODES:
+            return name, entry.get("status_label") or f"exit {status}"
+    return None
+
+
 def evaluate(data, max_quiet_minutes=DEFAULT_MAX_QUIET_MINUTES, now=None):
     """Return ``(healthy: bool, reason: str)`` for a parsed status dict."""
     if not isinstance(data, dict):
@@ -132,6 +176,10 @@ def evaluate(data, max_quiet_minutes=DEFAULT_MAX_QUIET_MINUTES, now=None):
     failed = _failed_last_pass(data)
     if failed:
         return False, f"unhealthy: the daemon's last pass failed ({failed})"
+
+    failed = _failed_profile(data)
+    if failed:
+        return False, f"unhealthy: the last run of profile {failed[0]} failed ({failed[1]})"
 
     now_utc = (
         datetime.now(timezone.utc)
@@ -203,7 +251,7 @@ def build_parser():
         "status_file",
         nargs="?",
         default=None,
-        help="Path to the status JSON file (default: OFSC_STATUS_FILE, or status.json in the main profile's folder).",
+        help="Path to the status JSON file (default: OFSC_STATUS_FILE, or of status.json in the config folder and in the main profile's folder, a running daemon's, then the newer one).",
     )
     parser.add_argument(
         "--max-quiet",

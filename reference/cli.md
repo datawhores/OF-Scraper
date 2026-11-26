@@ -36,7 +36,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 | Command | Summary |
 |---|---|
-| [Main program (no command)](#main-program-no-command) (105 options) | OF-Scraper Options |
+| [Main program (no command)](#main-program-no-command) (107 options) | OF-Scraper Options |
 | [`manual`](#manual) (53 options) | Manually download media by providing a list of URLs or IDs |
 | [`msg_check`](#msg_check) (53 options) | Produces a media table from messages with filterable entries and quick downloads |
 | [`story_check`](#story_check) (51 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
@@ -61,7 +61,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-**Options:** 105 · **`--help` summary:** OF-Scraper Options
+**Options:** 107 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -157,11 +157,11 @@ Run `ofscraper doctor [--config PATH] [--profile NAME] [--site SITE] [--json] [-
 
 ### `health` (separate entry point)
 
-`ofscraper health [STATUS_FILE] [--max-quiet MINUTES]` (or `python -m ofscraper.commands.health`). Offline tool using argparse. Reads `status.json` (from `STATUS_FILE`, `OFSC_STATUS_FILE`, or else the main profile's) without starting the scraper, prints one line saying why, and exits 0 when healthy or 1 when unhealthy. Reports unhealthy when a running daemon's heartbeat is older than `--max-quiet` (default 60 minutes, above 0), as is an idle daemon's with no next pass scheduled, when an idle daemon's `next_pass_at` passed more than `--max-quiet` ago, when the last pass recorded a failed login that no later login check cleared, or when the last pass ended any other way than ok (0), partial (4) or stopped by Ctrl+C or `docker stop` (130). Only a pass or login recorded since the current daemon started counts: one left from before a restart is ignored, so until the daemon's first pass ends the heartbeat and schedule decide. Reports healthy when there is no status file or the last run was a one-off.
+`ofscraper health [STATUS_FILE] [--max-quiet MINUTES]` (or `python -m ofscraper.commands.health`). Offline tool using argparse. Reads `status.json` (from `STATUS_FILE`, `OFSC_STATUS_FILE`, or else, of the config folder's, which the `--profiles` daemon writes, and the main profile's, a running daemon's, then the newer one) without starting the scraper, prints one line saying why, and exits 0 when healthy or 1 when unhealthy. Reports unhealthy when a running daemon's heartbeat is older than `--max-quiet` (default 60 minutes, above 0), as is an idle daemon's with no next pass scheduled, when an idle daemon's `next_pass_at` passed more than `--max-quiet` ago, when the last pass recorded a failed login that no later login check cleared, when the single daemon's last pass ended any other way than ok (0), partial (4) or stopped by Ctrl+C or `docker stop` (130), or when the last run of any of the `--profiles` daemon's profiles ended other than ok or partial. Only a pass, profile run or login recorded since the current daemon started counts: one left from before a restart is ignored, so until the daemon's first pass ends the heartbeat and schedule decide. Each profile's child gets no terminal input, so one that would ask a question (a rejected login's Auth Menu) fails instead of holding up the others, and each profile has its own `daemon_pass` alert, kept as `failing_alerts` in its entry under `profiles`. The `--profiles` daemon's heartbeat moves on while a profile's child process runs only when the heartbeat in the child's own `status.json` (in the profile folder, refreshed as it scans creators and finishes items) does, so a child that makes no progress for longer than `--max-quiet` makes the daemon unhealthy; the daemon doesn't stop it. Reports healthy when there is no status file or the last run was a one-off.
 
 Run `ofscraper health [STATUS_FILE] [--max-quiet MINUTES]` (or `python -m ofscraper.commands.health [STATUS_FILE] [--max-quiet MINUTES]`).
 
-- `STATUS_FILE`: Path to the status JSON file (default: OFSC_STATUS_FILE, or status.json in the main profile's folder).
+- `STATUS_FILE`: Path to the status JSON file (default: OFSC_STATUS_FILE, or of status.json in the config folder and in the main profile's folder, a running daemon's, then the newer one).
 - `--max-quiet`: Minutes, above 0, before a quiet running daemon or overdue idle daemon counts as unhealthy (default: 60).
 
 ### `move_creator_files` (separate entry point)
@@ -805,6 +805,14 @@ Run script in the background. Set value for how many minutes between script runs
 Add a random delay up to this many minutes to each --daemon interval (default 0)
 
 **Dest:** `daemon_jitter` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
+
+#### `--profiles`
+
+**Type:** text; repeatable · **Default:** `[]` · **Commands:** main program
+
+Comma- or space-separated profiles to run one after another on each --daemon pass (each in its own child process; cannot be combined with --live-watch or --profile)
+
+**Dest:** `profiles` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live`
 
