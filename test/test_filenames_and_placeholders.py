@@ -617,6 +617,17 @@ def test_temp_root_falls_back_only_when_empty(path_options, tmp_path, temp_root)
     assert result == root / "test_creator"
 
 
+@pytest.mark.parametrize("kind", ["media", "caption"])
+def test_absolute_media_and_caption_folders_normalize_under_the_save_root(path_options, tmp_path, kind):
+    config, save = path_options
+    config["file_options"]["dir_format"] = "/../streams"
+    save()
+    post = _two_media_post()
+    holder = (placeholder.Placeholders(post.all_media[0], "jpg") if kind == "media"
+              else placeholder.Textholders(post, "txt"))
+    assert asyncio.run(holder.getmediadir(create=False)) == tmp_path / "downloads" / "Fansly" / "streams"
+
+
 @pytest.mark.parametrize("global_format,type_format,expected", [
     ("{filename}.{ext}", "{post_id}.{ext}", ["7_1.jpg", "7_2.jpg"]),
     ("{post_id}.{ext}", "{media_id}.{ext}", ["101.jpg", "102.jpg"]),
@@ -724,6 +735,29 @@ def test_a_live_template_that_cannot_be_filled_in_falls_back(path_options, monke
     )
     assert result == tmp_path.joinpath(*_DEFAULT_LIVE)
     assert len(warnings) == 1 and "test_creator's recording uses the default name" in warnings[0]
+
+
+@pytest.mark.parametrize("template", ["/tmp/sibling/{date}", "../{date}"])
+def test_a_live_file_template_with_a_path_keeps_the_recording_folder(path_options, tmp_path, template):
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{sitename}/recordings", "file_format": template}
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path / "OnlyFans" / "recordings" / _DEFAULT_LIVE[-1]
+
+
+def test_an_overlong_live_directory_component_uses_the_default_folder(path_options, monkeypatch, tmp_path):
+    config, save = path_options
+    config["live_options"] = {"dir_format": "recordings/" + "é" * 128 + "/{username}"}
+    save()
+    monkeypatch.setattr(placeholder.paths.platform, "system", lambda: "Linux")
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path.joinpath(*_DEFAULT_LIVE)
+    result.parent.mkdir(parents=True)
 
 
 def test_live_path_values_cannot_climb_folders(path_options, tmp_path):

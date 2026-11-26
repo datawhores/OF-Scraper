@@ -9,6 +9,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+import unicodedata
 from contextlib import closing
 from pathlib import Path
 
@@ -853,22 +854,22 @@ class CaseFoldingOS:
     path is looked up on the real disk with each part matched without
     regard to case, and a file keeps the spelling it was given."""
 
-    def __init__(self, normcase=None, fail_unlink=None):
+    def __init__(self, normcase=None, fail_unlink=None, fold=str.lower):
         self.path = _FoldingPath(self, normcase)
         self.fail_unlink = fail_unlink
+        self.fold = fold
 
     def __getattr__(self, name):
         return getattr(os, name)
 
-    @staticmethod
-    def real(path):
+    def real(self, path):
         path = os.path.abspath(path)
-        found = os.sep
+        found = Path(path).anchor
         for part in Path(path).parts[1:]:
             here = os.path.join(found, part)
             if not os.path.lexists(here) and os.path.isdir(found):
                 here = next((os.path.join(found, name) for name in os.listdir(found)
-                             if name.lower() == part.lower()), here)
+                             if self.fold(name) == self.fold(part)), here)
             found = here
         return found
 
@@ -973,6 +974,30 @@ def test_a_case_only_rename_already_made_on_a_disk_that_ignores_case_is_already_
 
     assert (result["already_there"], result["renamed"], result["rows_changed"]) == (1, 0, 1)
     assert _entries(path.parent) == ["abcdef.jpg"]
+
+
+@pytest.mark.parametrize("owner_uses_nfd", [False, True], ids=["owner-nfc", "owner-nfd"])
+def test_a_unicode_alias_of_another_rows_file_is_left(tmp_path, monkeypatch, owner_uses_nfd):
+    library = Library(tmp_path)
+    composed = "caf\N{LATIN SMALL LETTER E WITH ACUTE}.jpg"
+    decomposed = unicodedata.normalize("NFD", composed)
+    recorded_name, target_name = (decomposed, composed) if owner_uses_nfd else (composed, decomposed)
+    gone = library.add("missing.jpg", on_disk=False, content=b"same size")
+    owner = library.add(recorded_name, area="Messages", content=b"same size")
+    library.formats(OLD_DIRS, target_name)
+    config = json.loads(library.config.read_text(encoding="utf-8"))
+    config["type_options"] = {"messages": {"dir_format": "alice/Posts/Images", "file_format": recorded_name}}
+    library.config.write_text(json.dumps(config), encoding="utf-8")
+    rows = library.rows()
+    monkeypatch.setattr(tool, "os", CaseFoldingOS(fold=lambda part: unicodedata.normalize("NFC", part)))
+
+    result = library.run(apply=True)
+
+    assert result["already_there"] == result["rows_changed"] == 0
+    assert result["left"] == [{"file": str(gone), "why": tool.RECORDED,
+                               "new_place": str(owner.with_name(target_name))}]
+    assert owner.read_bytes() == b"same size"
+    assert library.rows() == rows
 
 
 @pytest.mark.skipif(not hasattr(os, "link") or os.name == "nt", reason="hard links where a rename is made with one")

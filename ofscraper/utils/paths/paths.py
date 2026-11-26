@@ -66,22 +66,24 @@ def temp_cleanup():
             file.unlink(missing_ok=True)
 
 
-def truncate(path):
+def truncate(path, *, keep_suffix=""):
     path = pathlib.Path(os.path.normpath(path))
     if platform.system() == "Windows":
-        return _windows_truncateHelper(path)
+        return _windows_truncateHelper(path, keep_suffix)
     elif platform.system() == "Linux":
-        return _linux_truncateHelper(path)
+        return _linux_truncateHelper(path, keep_suffix)
     elif platform.system() == "Darwin":
-        return _mac_truncateHelper(path)
+        return _mac_truncateHelper(path, keep_suffix)
     else:
         return pathlib.Path(path)
 
 
-def _split_ext(name):
+def _split_ext(name, keep_suffix=""):
     """The name without its extension, and the extension (with a "_1"-style
     number before it, which a cut must keep). Taken off the end only, and
     at most 10 characters long, so a caption's ".word..." tail isn't one."""
+    if keep_suffix:
+        return name.removesuffix(keep_suffix), keep_suffix
     match = re.search(r"_[0-9]+\.[a-z0-9]{1,10}$", name, re.IGNORECASE) or re.search(
         r"\.[a-z0-9]{1,10}$", name, re.IGNORECASE
     )
@@ -101,7 +103,7 @@ def _longest_fitting(text, size, max_size):
     return text[:low]
 
 
-def _windows_truncateHelper(path):
+def _windows_truncateHelper(path, keep_suffix=""):
     # read by Windows' rules whatever system this runs on (the same thing on
     # Windows), so the tests check it on Linux too
     path = pathlib.PureWindowsPath(ntpath.normpath(path))
@@ -109,7 +111,7 @@ def _windows_truncateHelper(path):
     if get_string_byte_size_windows(path) <= limit:
         return pathlib.Path(str(path))
     dir = path.parent
-    file, ext = _split_ext(path.name)
+    file, ext = _split_ext(path.name, keep_suffix)
     # the whole path counts: the folder, the separator after it (a drive or
     # share root such as C:\ already ends with one), the extension
     sep = "" if str(dir).endswith(ntpath.sep) else ntpath.sep
@@ -133,11 +135,11 @@ def _windows_truncateHelper(path):
     return pathlib.Path(str(final_path))
 
 
-def _mac_truncateHelper(path):
+def _mac_truncateHelper(path, keep_suffix=""):
     # macOS limits each name, not the path, to 255 bytes of UTF-8
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
-    file, ext = _split_ext(path.name)
+    file, ext = _split_ext(path.name, keep_suffix)
     max_bytes = of_env.getattr("MAC_MAX_PATH") - _mac_name_size(ext)
     name = _longest_fitting(file, _mac_name_size, max_bytes)
     if (file and not name) or max_bytes < 0:
@@ -157,10 +159,10 @@ def _mac_name_size(text):
     return max(len(text.encode("utf-8")), len(decomposed.encode("utf-16-le")) // 2)
 
 
-def _linux_truncateHelper(path):
+def _linux_truncateHelper(path, keep_suffix=""):
     path = pathlib.Path(os.path.normpath(path))
     dir = path.parent
-    file, ext = _split_ext(path.name)
+    file, ext = _split_ext(path.name, keep_suffix)
     max_bytes = of_env.getattr("LINUX_MAX_FILE_NAME_BYTES") - get_string_byte_size_unix(
         ext
     )
@@ -170,6 +172,19 @@ def _linux_truncateHelper(path):
     newFile = f"{name}{ext}"
     log.debug(f"path: {path} filename bytesize: {get_string_byte_size_unix(newFile)}")
     return pathlib.Path(dir, newFile)
+
+
+def validate_directory_parts(parts):
+    """Reject a generated directory name that exceeds its platform's component limit."""
+    system = platform.system()
+    if system == "Windows":
+        size, limit = get_string_byte_size_windows, 510
+    elif system == "Darwin":
+        size, limit = _mac_name_size, 255
+    else:
+        size, limit = lambda part: len(os.fsencode(part)), 255
+    if any(size(part) > limit for part in parts):
+        raise ValueError("a livestream directory component exceeds the filesystem name limit")
 
 
 def get_string_byte_size_unix(text):

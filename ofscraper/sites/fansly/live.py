@@ -176,10 +176,9 @@ def recording_base(save_location, username, started_at, *, model_id=None) -> pat
 
     path = placeholder.live_recording_path(
         save_location, folder_name(username), utc_start(started_at),
-        site_name="Fansly", ext="mp4", model_id=model_id,
+        site_name="Fansly", ext="mp4", model_id=model_id, reserve_suffix=_CHAT_SUFFIX,
     )
-    # Keep room for chat and the shorter part suffixes in the shared base.
-    return _base_with_suffix_room(path.with_suffix(""), _CHAT_SUFFIX)
+    return path.with_suffix("")
 
 
 _CHAT_SUFFIX = "_chat.jsonl"
@@ -188,10 +187,10 @@ _CHAT_SUFFIX = "_chat.jsonl"
 def _base_with_suffix_room(base: pathlib.Path, suffix: str) -> pathlib.Path:
     import ofscraper.classes.placeholder as placeholder
 
-    # The truncator preserves a numeric suffix before the extension.
-    reserved = f"_{'0' * (len(suffix) - len('_.mp4'))}.mp4"
-    fitted = placeholder.final_path(base.with_name(f"{base.name}{reserved}"))
-    return fitted.with_name(fitted.name[: -len(reserved)])
+    stamp = re.search(r"_\d{8}_\d{6}$", base.name)
+    keep = (stamp.group() if stamp else "") + suffix
+    fitted = placeholder.final_path(base.with_name(base.name + suffix), keep_suffix=keep)
+    return fitted.with_name(fitted.name.removesuffix(suffix))
 
 
 def part_path(base: pathlib.Path, n: int) -> pathlib.Path:

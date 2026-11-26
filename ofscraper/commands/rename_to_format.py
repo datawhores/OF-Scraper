@@ -45,6 +45,7 @@ import re
 import sqlite3
 import stat
 import sys
+import unicodedata
 import uuid
 from collections import Counter, defaultdict
 from contextlib import closing
@@ -610,9 +611,7 @@ def _where(old, new):
 
 
 def _path_key():
-    """A path as the disk tells paths apart: os.path.normcase, and lower
-    case on a disk that doesn't tell case apart (macOS's, whose normcase
-    keeps case). That is tried on the nearest folder that is there."""
+    """Compare spellings using the case and Unicode equivalence seen on disk."""
     folds = {}
 
     def folds_case(folder):
@@ -628,6 +627,10 @@ def _path_key():
 
     def key(path):
         path = os.path.normcase(path)
+        normalized = unicodedata.normalize("NFC", path)
+        # Check the actual volume. Distinct directory entries can be hard links.
+        if normalized != path and _same_file(path, normalized) and not _two_names(path, normalized):
+            path = normalized
         return path.lower() if folds_case(os.path.dirname(path)) else path
 
     return key
