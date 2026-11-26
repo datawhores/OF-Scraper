@@ -444,8 +444,8 @@ class Media(base.base):
             filename = re.sub("_[a-z0-9]+$", "", filename)
 
         try:
+            # file_cleanup puts in space_replacer
             filename = self.file_cleanup(filename)
-            filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
             log.debug(f"Error cleaning filename: {e}")
         return filename
@@ -767,8 +767,8 @@ class Media(base.base):
             filename = f"{filename}_{quality_placeholder}"
 
         try:
+            # file_cleanup puts in space_replacer
             filename = self.file_cleanup(filename)
-            filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
             log.debug(f"Error creating final filename: {e}")
 

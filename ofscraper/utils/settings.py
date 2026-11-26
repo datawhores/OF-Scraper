@@ -20,6 +20,7 @@ import arrow
 import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.data as config_data  # <-- IMPORTING THE REAL DATA.PY
+import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.ads as ads
 import ofscraper.utils.args.accessors.read as read_args
 import ofscraper.utils.args.mutators.write as write_args
@@ -191,6 +192,9 @@ def merged_settings():
     # --- File & Download Settings ---
     merged.text_type = args.text_type or config_data.get_textType()
     merged.space_replacer = args.space_replacer or config_data.get_spacereplacer()
+    if not naming_check.space_replacer_ok(merged.space_replacer):
+        # "/" would make folders, and a backslash or ":" can't be in a name
+        merged.space_replacer = " "
     merged.text_length = (
         args.textlength
         if args.textlength is not None

@@ -115,7 +115,7 @@ The root folder for downloads. `dir_format` is resolved under it. It is also the
 
 **Default:** `"{model_username}/{responsetype}/{mediatype}/"` · **Env default:** [`DIR_FORMAT_DEFAULT`](env.md#dir_format_default) · **Read by:** `get_dirformat()` in `ofscraper/utils/config/data.py`
 
-The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path.
+The folder pattern for each downloaded file, relative to `save_location`. It is built from placeholders such as `{model_username}`, `{responsetype}` and `{mediatype}`. It is ignored for a file when `naming_script` returns a path. An unknown placeholder or a broken template here or in `file_format` is logged once at startup, naming the setting.
 
 ### `file_options.file_format`
 
@@ -133,19 +133,19 @@ The maximum length of post text used in names (the `{text}` placeholder and text
 
 **Default:** `" "` · **CLI override:** `--space-replacer` · **Env default:** [`SPACE_REPLACER_DEFAULT`](env.md#space_replacer_default) · **Also reads:** `space-replacer` · **Read by:** `get_spacereplacer()` in `ofscraper/utils/config/data.py`
 
-The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. An empty value falls back to a space. The `-sr`/`--space-replacer` option overrides it.
+The character that replaces spaces in post text used for file and folder names. In word mode it also serves as the word separator. It is used as literal text. An empty value falls back to a space, and so does a value that isn't a string (such as `123` or `true`) or has a character a file name can't hold (such as `/`, `\`, `:` or `?`), with a warning at startup. The `-sr`/`--space-replacer` option overrides it.
 
 ### `file_options.date`
 
 **Default:** `"MM-DD-YYYY"` · **Env default:** [`DATE_DEFAULT`](env.md#date_default) · **Read by:** `get_date()` in `ofscraper/utils/config/data.py`
 
-An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads.
+An arrow date-format string (for example `MM-DD-YYYY`). It formats the `{date}` placeholder in `dir_format`, `file_format` and naming-script payloads. A `/` is removed from the date, and on Windows so are the other characters a name can't hold there (such as `\`, `:` or `?`). This is the same in `dir_format`, so a date always fills one folder: a `/` in the date format no longer makes folders, and a config that used one (such as `YYYY/MM/DD`) gets one date folder (`20240501`) in place of the old nested ones, with a warning at startup; use `{year}/{month}/{day}` in `dir_format` for nested date folders. A `/` typed in `dir_format` itself still separates folders.
 
 ### `file_options.text_type_default`
 
 **Default:** `"letter"` · **CLI override:** `--text-type` · **Env default:** [`TEXT_TYPE_DEFAULT`](env.md#text_type_default) · **Read by:** `get_textType()` in `ofscraper/utils/config/data.py`
 
-Whether `textlength` counts `letter`s or `word`s. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
+Whether `textlength` counts `letter`s or `word`s, matched without regard to case. Any other value falls back to the default. The `-tt`/`--text-type` option overrides it.
 
 ### `file_options.truncation_default`
 
