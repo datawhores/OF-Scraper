@@ -518,7 +518,7 @@ Character to replace spaces with
 
 **Also:** `-tl` · **Type:** integer · **Default:** none · **Commands:** main program, `manual`, `msg_check`, `story_check`, `paid_check`, `post_check`, `metadata` · **Config fallback:** `file_options.textlength`
 
-Max length of text
+Max length of text, in letters or words (see --text-type)
 
 **Dest:** `textlength` · **Defined in:** `ofscraper/utils/args/parse/arguments/file.py`
 

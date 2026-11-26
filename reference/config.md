@@ -127,7 +127,7 @@ The file name pattern for each download. It is built from placeholders such as `
 
 **Default:** `0` · **CLI override:** `--textlength` · **Env default:** [`TEXTLENGTH_DEFAULT`](env.md#textlength_default) · **Read by:** `get_textlength()` in `ofscraper/utils/config/data.py`
 
-The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, according to `text_type_default`. 0 means no limit. The `-tl`/`--textlength` option overrides it.
+The maximum length of post text used in names (the `{text}` placeholder and text-based file names). It is counted in letters or words, see `text_type_default`. The default unit is `letter`, so `30` means 30 characters, not 30 words. 0 means no limit. A debug line in the log says when `{text}` is cut, and in which unit. The `-tl`/`--textlength` option overrides it.
 
 ### `file_options.space_replacer`
 

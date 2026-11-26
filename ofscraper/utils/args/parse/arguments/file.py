@@ -21,5 +21,8 @@ space_replacer_option = click.option(
 )
 
 text_length_option = click.option(
-    "-tl", "--textlength", help="Max length of text", type=click.INT
+    "-tl",
+    "--textlength",
+    help="Max length of text, in letters or words (see --text-type)",
+    type=click.INT,
 )

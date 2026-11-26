@@ -57,7 +57,7 @@ def load_main_config():
     # Default: 0
     config["MAX_LENGTH_DEFAULT"] = int(os.getenv("OFSC_MAX_LENGTH_DEFAULT", "0"))
 
-    # TEXTLENGTH_DEFAULT: Default for `file_options.textlength` (maximum post text length in filenames; 0 means no limit).
+    # TEXTLENGTH_DEFAULT: Default for `file_options.textlength` (maximum post text length in filenames, in letters or words per `TEXT_TYPE_DEFAULT`; 0 means no limit).
     # Default: 0
     config["TEXTLENGTH_DEFAULT"] = int(os.getenv("OFSC_TEXTLENGTH_DEFAULT", "0"))
 
