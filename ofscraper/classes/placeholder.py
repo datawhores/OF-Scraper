@@ -586,6 +586,67 @@ class Placeholders(basePlaceholder):
             return self.trunicated_filepath.stat().st_size
 
 
+# the placeholders that are the caption for a text file, in every spelling
+_CAPTION_NAMES = (
+    "file_name", "filename",
+    "only_file_name", "only_filename", "onlyfilename",
+    "original_filename", "originalfilename",
+)
+# stands where a left-out placeholder was until the name is put together
+_LEFT_OUT = "\0"
+# mark where each placeholder's value starts and ends, so that only the
+# separators written in file_format are taken, never a value's own dots
+_START, _END = "\x01", "\x02"
+
+
+_SEP = r"[ _.-]*"
+
+
+class _MarkedFormatter(string.Formatter):
+    def format_field(self, value, format_spec):
+        out = super().format_field(value, format_spec)
+        return out if out in ("", _LEFT_OUT) else f"{_START}{out}{_END}"
+
+
+def _without_left_out(file_format, variables, fill):
+    """file_format filled in without a left-out placeholder and the separators
+    beside it. Brackets around it go too. Between two parts, one separator is
+    kept: the one after it ("{date} {filename} {text}" gives "date text"), or
+    the one before it when nothing follows it. A folder named by it alone is
+    left out with its slash ("{filename}/{text}" gives "text"). When the file
+    name would be left with nothing before its extension, fill is used there
+    ("{text}/{filename}.{ext}" gives "text/<fill>.ext")."""
+    name = _MarkedFormatter().vformat(file_format, (), variables)
+    name = re.sub(rf"[(\[]\s*{_LEFT_OUT}\s*[)\]]", _LEFT_OUT, name)
+    parts = re.split(r"([/\\])", name)
+    kept = []
+    for i, part in enumerate(parts):
+        if i % 2:  # a slash
+            kept.append(part)
+            continue
+        ext = ""
+        if i == len(parts) - 1:
+            match = re.search(rf"\.{_START}?[A-Za-z0-9]+{_END}?$", part)
+            if match:
+                part, ext = part[: match.start()], match.group()
+        left_out = _LEFT_OUT in part
+        while _LEFT_OUT in part:
+            part = re.sub(
+                rf"^{_SEP}{_LEFT_OUT}{_SEP}|{_SEP}{_LEFT_OUT}{_SEP}$", "", part
+            )
+            part = re.sub(
+                rf"({_SEP}){_LEFT_OUT}({_SEP})", lambda m: m[2] or m[1], part, count=1
+            )
+        if left_out and not part and ext:
+            part = fill  # not ".txt", a hidden file with no name
+        if not part and not ext and kept:
+            kept.pop()  # an empty folder name: drop it with its slash
+            continue
+        kept.append(part + ext)
+    name = re.sub(r"^[/\\]", "", "".join(kept))
+    return name.replace(_START, "").replace(_END, "")
+
+
 class Textholders(basePlaceholder):
     def __init__(self, ele, ext) -> None:
         super().__init__()
@@ -730,7 +791,21 @@ class Textholders(basePlaceholder):
             text = ele.file_sanitized_text
             out = f"{text}.{ext}"
         else:
-            out = data.get_fileformat().format(**self._variables)
+            file_format = data.get_fileformat()
+            fields = parse_safe(file_format)
+            if "text" in fields and any(k in fields for k in _CAPTION_NAMES):
+                # a text file's {filename} is its caption, as {text} is: with
+                # both in the name the caption would be there twice, so
+                # {filename} is left out
+                variables = {
+                    **self._variables,
+                    **dict.fromkeys(_CAPTION_NAMES, _LEFT_OUT),
+                }
+                out = _without_left_out(
+                    file_format, variables, str(self._variables["file_name"])
+                )
+            else:
+                out = file_format.format(**self._variables)
         log.debug(f"final filename path {out}")
         self._filename = _safe_name(out, data.get_fileformat(), self._variables)
         return self._filename
