@@ -112,6 +112,8 @@ def applies() -> bool:
         reason = "--users-first"
     elif getattr(s, "text_only", False):
         reason = "--text-only"
+    elif getattr(s, "dry_run", False):
+        reason = "--dry-run"
     else:
         reason = None
     if reason:

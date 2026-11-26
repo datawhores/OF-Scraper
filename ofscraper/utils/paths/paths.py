@@ -14,6 +14,7 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 
 console = console_.get_shared_console()
 homeDir = pathlib.Path.home()
@@ -45,6 +46,8 @@ def temp_cleanup():
 
     if stop.requested.is_set():
         return
+    if dry_run.active():
+        return  # a dry run deletes nothing
     if not of_env.getattr("BATCH_TEMPFILE_CLEANUP"):
         return
     if not settings.get_settings().auto_resume:
@@ -218,6 +221,8 @@ def get_string_byte_size_windows(text):
 
 
 def cleanDB():
+    if dry_run.active():
+        return  # a dry run deletes nothing
     try:
         pathlib.Path(common_paths.get_profile_path() / "db.lock").unlink(
             missing_ok=True

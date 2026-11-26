@@ -50,6 +50,10 @@ def cleanup_logs():
         return
     if not settings.get_settings().rotate_logs:
         return
+    import ofscraper.utils.dry_run as dry_run
+
+    if dry_run.active():
+        return  # a dry run deletes nothing
     with stdout.lowstdout():
         delete_old_logs()
         delete_empty_folders()

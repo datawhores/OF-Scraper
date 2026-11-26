@@ -5,6 +5,7 @@ import os
 import traceback
 
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.managers.manager as manager
 from ofscraper.utils.system.subprocess import run
 import ofscraper.utils.of_env.of_env as env
@@ -17,6 +18,9 @@ def final_script(summary=None):
     script_path=settings.get_settings().post_script
     if not script_path:
         log.debug("Final script is disabled; skipping excution")
+        return
+    if dry_run.active():
+        log.info("Dry run: not running the post script")
         return
     elif not os.path.exists(script_path):
         log.info(

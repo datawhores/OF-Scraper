@@ -6,6 +6,7 @@ import arrow
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.sites as sites
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.utils.of_env.of_env as of_env
 from InquirerPy.base import Choice
 import ofscraper.utils.settings as settings
@@ -27,11 +28,19 @@ _LINE_ABOVE = (
 def action_menu_choices(args=None):
     args = settings.get_args() if args is None else args
     choices = []
+    # a dry run's loop offers only more dry runs: the main menu and the check
+    # table change things for real
+    dry = dry_run.active()
+    line = False
     for name, action in of_env.getattr("actionPromptChoices").items():
-        if action == CHECK_TABLE and not check_table_available(args):
+        line = line or name in _LINE_ABOVE
+        if action == CHECK_TABLE and (dry or not check_table_available(args)):
             continue
-        if name in _LINE_ABOVE:
+        if action == "main" and dry:
+            continue
+        if line:
             choices.append(Separator())
+            line = False
         choices.append(name)
     choices.append(Separator())
     return choices
