@@ -119,6 +119,9 @@ class CommandManager:
         progress_updater.activity.update_overall(advance=1, visible=True)
 
     def _data_helper(self, user):
+        import ofscraper.main.close.status_file as status_file
+
+        status_file.touch_heartbeat()
         avatar = user.avatar
         username = user.name
         active = user.active

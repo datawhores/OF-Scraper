@@ -10,6 +10,7 @@ from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.utils.checkers import check_auth, LoginRejected
 import ofscraper.main.close.alerts as alerts
 import ofscraper.main.close.exit_status as exit_status
+import ofscraper.main.close.status_file as status_file
 from ofscraper.main.close.final.final import final_action
 from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.commands.scraper.actions.download.download import downloader
@@ -237,6 +238,7 @@ def main():
 
 def daemon_process():
     exit.sigterm_as_keyboard_interrupt()
+    status_file.set_mode("daemon")
     checkers.check_auth()
     worker_thread = None
     scrapingManager = scraperManager()
@@ -320,6 +322,7 @@ def daemon_process():
         if live_thread:
             live_thread.stop()
         wakeup.restore()
+        status_file.stop_daemon()
 
 
 def process_prompts():

@@ -190,6 +190,7 @@ ENV_DIRECT = {
     "WAYLAND_DISPLAY": "Check table, Linux only: see `DISPLAY`.",
     "OFSC_FANSLY_API_BASE": "Base URL of the Fansly API that Fansly requests go to.",
     "OFSC_FANSLY_AUTH_FILE_NAME": "Name of the Fansly credentials file in the profile folder.",
+    "OFSC_STATUS_FILE": "Path to the status JSON file written for unattended runs. Unset, it is `status.json` in the active profile folder. A one-off run leaves alone a file a running daemon in another process writes, so `docker compose exec` beside the daemon doesn't replace it.",
     "STASH_API_KEY": "`stash_sync`: the Stash API key, for a Stash with a password. `--api-key` overrides it. `ofscraper doctor --online` sends it too.",
     "STASH_URL": "`stash_sync`: Stash's GraphQL URL. `--url` overrides it. `ofscraper doctor --online` checks Stash only when this is set.",
 }
