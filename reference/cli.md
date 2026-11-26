@@ -46,6 +46,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 | [`db`](#db) (61 options) | Print information from the database |
 | [`creator_names`](#creator_names-separate-entry-point) (argparse) | List and record the usernames each creator account has had. |
 | [`doctor`](#doctor-separate-entry-point) (argparse) | Check the setup without running a scrape. |
+| [`health`](#health-separate-entry-point) (argparse) | Check whether an unattended daemon is healthy from its status file. |
 | [`move_creator_files`](#move_creator_files-separate-entry-point) (argparse) | Move a creator's downloaded files to match new path settings and update recorded paths. |
 | [`postgres_export`](#postgres_export-separate-entry-point) (argparse) | Export creators from PostgreSQL back to per-creator `user_data.db` files. |
 | [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
@@ -153,6 +154,15 @@ Run `ofscraper doctor [--config PATH] [--profile NAME] [--site SITE] [--json] [-
 - `--site`: Check this site's auth file, not the profile's site
 - `--json`: Print the results as JSON
 - `--online`: Also connect: PostgreSQL, the login, the subscription count, the signing rules and Stash. Not read-only: it starts the scraper as a run does
+
+### `health` (separate entry point)
+
+`ofscraper health [STATUS_FILE] [--max-quiet MINUTES]` (or `python -m ofscraper.commands.health`). Offline tool using argparse. Reads `status.json` (from `STATUS_FILE`, `OFSC_STATUS_FILE`, or else the main profile's) without starting the scraper, prints one line saying why, and exits 0 when healthy or 1 when unhealthy. Reports unhealthy when a running daemon's heartbeat is older than `--max-quiet` (default 60 minutes, above 0), as is an idle daemon's with no next pass scheduled, when an idle daemon's `next_pass_at` passed more than `--max-quiet` ago, when the last pass recorded a failed login that no later login check cleared, or when the last pass ended any other way than ok (0), partial (4) or stopped by Ctrl+C or `docker stop` (130). Only a pass or login recorded since the current daemon started counts: one left from before a restart is ignored, so until the daemon's first pass ends the heartbeat and schedule decide. Reports healthy when there is no status file or the last run was a one-off.
+
+Run `ofscraper health [STATUS_FILE] [--max-quiet MINUTES]` (or `python -m ofscraper.commands.health [STATUS_FILE] [--max-quiet MINUTES]`).
+
+- `STATUS_FILE`: Path to the status JSON file (default: OFSC_STATUS_FILE, or status.json in the main profile's folder).
+- `--max-quiet`: Minutes, above 0, before a quiet running daemon or overdue idle daemon counts as unhealthy (default: 60).
 
 ### `move_creator_files` (separate entry point)
 

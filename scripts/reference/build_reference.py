@@ -516,6 +516,10 @@ SEPARATE_COMMANDS = {
         "[--config PATH] [--profile NAME] [--site SITE] [--json] [--online]",
         "Check the setup without running a scrape.",
     ),
+    "health": (
+        "[STATUS_FILE] [--max-quiet MINUTES]",
+        "Check whether an unattended daemon is healthy from its status file.",
+    ),
     "move_creator_files": (
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Move a creator's downloaded files to match new path settings and update recorded paths.",
