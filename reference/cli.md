@@ -50,6 +50,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 | [`postgres_import`](#postgres_import-separate-entry-point) (argparse) | Import per-creator `user_data.db` files into PostgreSQL. |
 | [`recover_collisions`](#recover_collisions-separate-entry-point) (argparse) | Find recorded paths shared by different media and reset downloaded flags to re-download. |
 | [`stash_sync`](#stash_sync-separate-entry-point) (argparse) | Sync downloaded media metadata from OF-Scraper databases into Stash. |
+| [`verify`](#verify-separate-entry-point) (argparse) | Check downloaded files against the database, offline. |
 
 ## Commands
 
@@ -211,6 +212,41 @@ Run `ofscraper stash_sync (PATH... | --postgres) [OPTIONS]` (or `python -m ofscr
 - `--organized`: also mark items as organized
 - `--path-map`: rewrite a path prefix when Stash sees the files elsewhere (e.g. in Docker); repeatable
 - `--scan`: with --apply, have Stash scan the download folders first and wait for it
+
+### `verify` (separate entry point)
+
+`ofscraper verify (PATH... | --postgres --creator NAME [--site SITE] [--undo-dir DIR]) [--apply] [--reset-size-differs] [--allow-missing] [--hash] [--reset-hash-differs] [--untracked] [--undo FILE] [--path-map RECORDED=HERE] [--path-root DIR] [--sample N]` (or `python -m ofscraper.commands.verify`). Offline tool using argparse (see `VERIFY.md`). Checks every media marked downloaded against the file its rows record, without logging in or reading the scraper's settings, and prints a JSON report. A path is a `user_data.db` or a folder (such as a profile's `.data`) searched for them. Without `--apply`, changes nothing.
+
+- **Findings, per media:** `missing` (no file at the recorded path), `empty` (0 bytes), `size_differs` (not the recorded `size`), `no_file_recorded` (marked downloaded with no path, which the scraper does when it gives up on an item for good; rows with `skip_permanent` are also counted as `skip_permanent`), and `ok`. A media whose rows record several paths takes the worst finding among them.
+- **Not recoverable:** a finding is marked `not_recoverable`, with the reason, when downloading it again can't work: stories and highlights expire, the post was deleted (`posts.is_deleted`), the item is locked (`unlocked = 0`), or it is a profile picture or header (a cache entry also blocks those). A media in several posts is recoverable if any of its rows is. A recorded path that is a link to a missing file, or a folder, is also `not_recoverable`. `--apply` leaves these alone.
+- **Report:** per creator, the counts, up to `--sample` findings (default 20) with paths and sizes, `folders_missing` (recorded folders that aren't there), and what `--apply` would do (`media_to_reset`, `files_to_move_aside`). `totals` adds up every creator.
+- **`--apply`:** sets `downloaded = 0` on every row of each `missing` or `empty` media (and `size_differs` with `--reset-size-differs`), so the next normal run downloads them again. An `empty` file, or a reset `size_differs` one, is renamed with `.bad` added (`.2.bad` and so on when that name is taken) so the new download gets the original name. For a `user_data.db`, the changes are one transaction and the undo file goes beside the database (`user_data.db.verify-undo-<hex>.json`). It is written and flushed before any file is renamed or row changed, and names every rename; a run stopped before the commit renames the files back and removes it. Creators finished before a failure stay changed: their report is printed and the error lists their undo files. `no_file_recorded` and `skip_permanent` rows are never changed.
+- **Drive-not-there guard:** with `--apply`, a creator is left alone when its folder (the folder all its recorded folders on a drive are in) isn't there or can't be read, when a missing file's nearest folder that is there is a place drives are mounted (`/`, `/mnt`, `/media`, `/Volumes`, `/net`, `/run/media/<user>`) or is empty (an unmounted drive often leaves its empty mount folder), or when more than half of its files are missing (`left_alone` says why, naming the folder), since the drive or share may not be connected; nothing of that creator is then reset. A missing folder inside the creator's folder (a post's, say) is just gone, and its files are reset. Findings that are `not_recoverable` aren't counted. Each creator is judged on its own rows, also in a database several creators share. `--allow-missing` resets it all the same.
+- **Names spelt otherwise:** a file whose name on disk is the recorded one in another Unicode form (NFC or NFD), or in another case on a disk that doesn't tell case apart, is found rather than reported missing, and is moved aside under its name on disk.
+- **`--undo FILE`:** previews putting back what an `--apply` changed: rows still not downloaded are marked downloaded again, and files moved aside get their names back. With `--apply`, does it; if a file can't be renamed back, the files renamed so far are moved aside again and no row changes. The database comes from the undo file, so no path is given with it.
+- **Paths:** `--path-map RECORDED=HERE` reads a recorded path prefix as another (for a library recorded in Docker and checked from the host); relative recorded paths need `--path-root`. A full path from another system (`C:\...` read on Linux) stops the run with an error asking for `--path-map`.
+- **With `--postgres`:** checks the rows of the creator `--creator` names (a username or ID) in the PostgreSQL database named by `OFSC_DATABASE_URL` in the current environment, read-only without `--apply`. `--apply` needs `--undo-dir` (a folder that is kept; in Docker a mounted one) and must match one creator; each row is changed only if it still holds what was read, and nothing is changed if the scraper changed one meanwhile. `--undo` with `--postgres --creator` restores every row still as the reset left them, or none if one is not (the error names the database the undo file was made on when it differs). Given `user_data.db` files while `OFSC_DATABASE_URL` is set, it prints a warning that they don't hold PostgreSQL's rows.
+- **`--hash`:** also compares each file the right size with the recorded `hash` (xxh128, recorded only when `remove_hash_match` was on as the file was saved), giving `hash_differs`, and counts the media with no recorded hash (`hash_not_recorded`). Reads every file, so it is slow. `--reset-hash-differs` resets those with `--apply` and moves the files aside like `size_differs`; it implies `--hash`.
+- **`--untracked`:** also lists files in the folders the creator's rows name (not their subfolders) that no row points to (`untracked`, `untracked_files`). Files that never get a row are counted as `not_in_database` instead: `.txt`, `.part`, `.duplicate`, `.bad`, `.json`, `.jsonl`, live recordings (`_live.<ext>`, `_live_part<N>.<ext>`) and system files (`Thumbs.db`, `desktop.ini`, `.DS_Store`). Nothing is moved or deleted.
+- **Exit status:** 0 with the report, 1 on failure, 2 on bad arguments, 130 when interrupted.
+
+Run `ofscraper verify (PATH... | --postgres --creator NAME) [OPTIONS]` (or `python -m ofscraper.commands.verify (PATH... | --postgres --creator NAME) [OPTIONS]`).
+
+- `DATABASES`: user_data.db files, or folders (e.g. a profile's .data) to search for them
+- `--apply`: Mark missing and empty files as not downloaded, so the next run downloads them again; writes an undo file first
+- `--reset-size-differs`: With --apply, also reset files whose size isn't the recorded one (moved aside with .bad added)
+- `--allow-missing`: With --apply, reset a creator even when most of its files are missing, or its folder isn't there or can't be read (otherwise left alone: the drive may not be connected)
+- `--hash`: Also compare each file's hash with the recorded one, where one was recorded (only with remove_hash_match on); reads every file, so slow
+- `--reset-hash-differs`: With --apply, also reset files whose hash isn't the recorded one (moved aside with .bad added); implies --hash
+- `--untracked`: Also list files in the creator's folders that no database row points to; nothing is moved or deleted
+- `--undo`: Preview putting back what an --apply changed, from its undo file; with --apply, put it back
+- `--path-map`: read a recorded path prefix as another, e.g. a library recorded in Docker and checked from the host; repeatable
+- `--path-root`: Original working directory for relative recorded paths
+- `--sample`: list up to N findings per creator (default 20)
+- `--postgres`: Check the PostgreSQL database $OFSC_DATABASE_URL names instead of user_data.db files; give --creator and no database with it
+- `--site`: With --postgres, the creator's site (default: the site that has the creator)
+- `--creator`: With --postgres, the creator to check, by username or id
+- `--undo-dir`: With --postgres --apply, the folder for the undo file: a folder that is kept (in Docker, a mounted one)
 
 ### Scripts in `scripts/`
 

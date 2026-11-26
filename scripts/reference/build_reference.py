@@ -532,6 +532,10 @@ SEPARATE_COMMANDS = {
         "(PATH... | --postgres) [OPTIONS]",
         "Sync downloaded media metadata from OF-Scraper databases into Stash.",
     ),
+    "verify": (
+        "(PATH... | --postgres --creator NAME) [OPTIONS]",
+        "Check downloaded files against the database, offline.",
+    ),
 }
 
 
