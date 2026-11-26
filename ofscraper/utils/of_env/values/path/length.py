@@ -19,7 +19,7 @@ def load_max_lengths_config():
     # Default: 30
     config["MAX_TEXT_WORKER"] = int(os.getenv("OFSC_MAX_TEXT_WORKER", "30"))
 
-    # WINDOWS_MAX_PATH_BYTES: Maximum full path length, in bytes, before truncation on Windows (2 bytes a character; 518 is MAX_PATH's 259 characters).
+    # WINDOWS_MAX_PATH_BYTES: Maximum full path length, in bytes, before truncation on Windows (2 bytes a UTF-16 unit, 4 for an emoji; 518 is MAX_PATH's 259 units).
     # Default: 518
     config["WINDOWS_MAX_PATH_BYTES"] = int(
         os.getenv("OFSC_WINDOWS_MAX_PATH_BYTES", "518")
