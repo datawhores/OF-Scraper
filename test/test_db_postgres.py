@@ -165,11 +165,14 @@ def test_an_address_written_in_config_json_is_said_to_be_unused(
     monkeypatch, caplog, config, said
 ):
     monkeypatch.setattr(config_file, "write_config", lambda config: None)
+    monkeypatch.setattr(config_file, "_notes", [])
 
     with caplog.at_level(logging.WARNING, logger="shared"):
         config_file.auto_update_config(config)
+        # kept until the log is set up, then written
+        config_file.log_notes()
 
-    assert ("advanced_options.database_url in config.json is not read" in caplog.text) is said
+    assert ("database_url in config.json is not read" in caplog.text) is said
     assert "OFSC_DATABASE_URL" in caplog.text or not said
     # the address isn't repeated: it holds a password
     assert "s3cr" not in caplog.text
