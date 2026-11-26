@@ -32,14 +32,14 @@ CHECK_TIMEOUT = 15
 STREAM_ACTIVE_URL = "https://onlyfans.com/api2/v2/users/{}/streams/active?view=full_with_check"
 
 
-def recording_path(save_location, username, now=None) -> pathlib.Path:
+def recording_path(save_location, username, now=None, *, model_id=None) -> pathlib.Path:
     """``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``"""
     import ofscraper.classes.placeholder as placeholder
 
     now = now or datetime.datetime.now(tz=datetime.timezone.utc)
     username = shared.folder_name(username)
     return placeholder.live_recording_path(
-        save_location, username, now, site_name="OnlyFans", ext="webm"
+        save_location, username, now, site_name="OnlyFans", ext="webm", model_id=model_id
     )
 
 
@@ -150,7 +150,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 await record_in_thread(
                     live_capture.capture, stop_event,
                     username=username,
-                    out=recording_path(save_location, username),
+                    out=recording_path(save_location, username, model_id=stream["accountId"]),
                     # read each time: auth.json may be renewed during --live-watch
                     auth=read_auth(),
                     still_live=check_live,

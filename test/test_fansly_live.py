@@ -1176,3 +1176,30 @@ def test_fansly_live_options_enforces_sitename_when_omitted(monkeypatch, tmp_pat
     assert live.recording_base(tmp_path, "creator_a", STARTED_MS) == (
         tmp_path / "nvme_live" / "Fansly" / "custom" / "creator_a" / f"creator_a_{STAMP}"
     )
+
+
+@pytest.mark.parametrize("field", ["model_id", "modelid"])
+def test_live_path_uses_stream_account_id_without_cached_models(monkeypatch, tmp_path, fansly_settings, field):
+    import ofscraper.utils.config.file as config_file
+
+    fansly_settings(live=True, anon=True)
+    monkeypatch.setattr(manager, "Manager", manager.mainManager())
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps({"live_options": {
+        "dir_format": "{" + field + "}", "file_format": "{date}"}}), encoding="utf-8")
+    monkeypatch.setattr(config_file, "open_config", lambda: json.loads(cfg_path.read_text(encoding="utf-8")))
+
+    async def channel():
+        return {"live": True}
+
+    async def text(url):
+        raise AssertionError("No playlist request expected")
+
+    async def record(channel, stop):
+        return True, False
+
+    stream = {"username": "test_creator", "accountId": "123", "startedAt": STARTED_MS}
+    recorder = live.LiveRecorder(stream, tmp_path, channel, text)
+    monkeypatch.setattr(recorder, "_record_part", record)
+    asyncio.run(recorder.run())
+    assert recorder.base.parent == tmp_path / "Fansly" / "123"

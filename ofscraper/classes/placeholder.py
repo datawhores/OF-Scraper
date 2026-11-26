@@ -71,25 +71,26 @@ _SITE_SPECIFIC_FIELDS = {
 }
 
 
-def _is_site_specific(fmt):
-    """True when ``fmt`` resolves to a different path for each site."""
-    fields = {
+def _template_fields(*formats):
+    return {
         name.split(".")[0].split("[")[0]
-        for _, name, _, _ in string.Formatter().parse(fmt)
+        for fmt in formats
+        for _, name, _, _ in string.Formatter().parse(fmt or "")
         if name
     }
-    return bool(fields & _SITE_SPECIFIC_FIELDS)
+
+
+def _is_site_specific(fmt):
+    """True when ``fmt`` resolves to a different path for each site."""
+    return bool(_template_fields(fmt) & _SITE_SPECIFIC_FIELDS)
 
 
 def _names_site(fmt):
     """True when ``fmt`` uses {site_name} (or {sitename})."""
-    return any(
-        name and name.split(".")[0].split("[")[0] in {"site_name", "sitename"}
-        for _, name, _, _ in string.Formatter().parse(fmt or "")
-    )
+    return bool(_template_fields(fmt) & {"site_name", "sitename"})
 
 
-def default_media_root(save_location=None, dir_format=None, file_format=None):
+def default_media_root(save_location=None, dir_format=None, file_format=None, *, site_name=None):
     """Save location; Fansly profiles save under ``<save location>/Fansly``,
     unless ``dir_format`` or ``file_format`` already names the site with
     {site_name}: then each site's folder comes from the template, and Fansly
@@ -99,14 +100,15 @@ def default_media_root(save_location=None, dir_format=None, file_format=None):
     base_loc = save_location or common_paths.get_save_location()
     dir_fmt = dir_format if dir_format is not None else data.get_dirformat()
     file_fmt = file_format if file_format is not None else data.get_fileformat()
-    if sites.is_fansly():
+    resolved_site = site_name or sites.site_name()
+    if resolved_site.lower() == sites.FANSLY:
         if _names_site(dir_fmt) or _names_site(file_fmt):
             return pathlib.Path(base_loc)
         if not save_location:
             return pathlib.Path(site_save_location())
         base_path = pathlib.Path(base_loc)
-        if base_path.name.lower() != sites.site_name().lower():
-            return base_path / sites.site_name()
+        if base_path.name.lower() != resolved_site.lower():
+            return base_path / resolved_site
         return base_path
     return pathlib.Path(base_loc)
 
@@ -116,7 +118,7 @@ def _resolve_media_templates(type_keys, root=None):
     type_save = data.get_type_option(type_keys, "save_location")
     dir_fmt = data.get_type_option(type_keys, "dir_format") or data.get_dirformat()
     file_fmt = data.get_type_option(type_keys, "file_format") or data.get_fileformat()
-    if root is not None:
+    if root:
         resolved_root = pathlib.Path(root)
     else:
         resolved_root = default_media_root(
@@ -125,6 +127,28 @@ def _resolve_media_templates(type_keys, root=None):
             file_format=file_fmt,
         )
     return resolved_root, dir_fmt, file_fmt
+
+
+def _base_path_variables(save_location, site_name, *, include_account=True):
+    """Common path context; live templates fetch account identity only when used."""
+    my_username, my_id = "", ""
+    if include_account:
+        _, my_username = me.parse_user()
+        my_id = "anon" if settings.get_settings().anon else me.get_id()
+    return {
+        "config_path": common_paths.get_config_home(),
+        "profile": profile_data.get_active_profile(),
+        "site_name": site_name,
+        "save_location": save_location,
+        "root": pathlib.Path(save_location),
+        "my_id": my_id,
+        "my_username": my_username,
+    }
+
+
+def _add_aliases(variables):
+    variables.update({key.replace("_", ""): value
+                      for key, value in list(variables.items()) if "_" in key})
 
 
 DEFAULT_LIVE_DIR_FORMAT = "{sitename}/{model_username}/Livestreams"
@@ -137,6 +161,8 @@ def live_recording_base(
     started_at: datetime.datetime,
     site_name: str | None = None,
     ext: str = "mp4",
+    *,
+    model_id=None,
 ) -> pathlib.Path:
     """Resolve the livestream output path without file extension.
 
@@ -160,42 +186,22 @@ def live_recording_base(
         or data.get_live_fileformat()
         or DEFAULT_LIVE_FILE_FORMAT
     )
-    is_fansly_site = sites.is_fansly() or resolved_site.lower() == "fansly"
-    if is_fansly_site and not (_names_site(dir_fmt) or _names_site(file_fmt)):
-        if root.name.lower() != sites.site_name(sites.FANSLY).lower():
-            root = root / sites.site_name(sites.FANSLY)
+    root = default_media_root(root, dir_fmt, file_fmt, site_name=resolved_site)
+    fields = _template_fields(dir_fmt, file_fmt)
+    variables = _base_path_variables(
+        str(root), resolved_site,
+        include_account=bool(fields & {"my_id", "myid", "my_username", "myusername"}),
+    )
     stamp = started_at.strftime("%Y%m%d_%H%M%S")
-    model_obj = None
-    try:
-        mm = getattr(manager.Manager, "current_model_manager", None)
-        model_obj = mm.get_model(username) if mm else None
-    except Exception:
-        model_obj = None
-    model_id = getattr(model_obj, "id", "") if model_obj else ""
-    try:
-        _, my_username = me.parse_user()
-        s = settings.get_settings()
-        my_id = "anon" if getattr(s, "anon", False) else me.get_id()
-    except Exception:
-        my_username, my_id = "", ""
-    try:
-        active_profile = profile_data.get_active_profile()
-        cfg = config_file.open_config()
-    except Exception:
-        active_profile, cfg = "", {}
-
-    variables = {
-        "config_path": common_paths.get_config_home(),
-        "profile": active_profile,
-        "site_name": resolved_site,
-        "save_location": str(root),
-        "root": root,
-        "my_id": my_id,
-        "my_username": my_username,
+    model_obj = (
+        manager.Manager.current_model_manager.get_model(username)
+        if "modelObj" in fields else None
+    )
+    variables.update({
         "user_name": username,
         "username": username,
         "model_username": username,
-        "model_id": model_id,
+        "model_id": model_id if model_id is not None else "",
         "modelObj": model_obj,
         "first_letter": username[0].capitalize() if username else "U",
         "response_type": "Livestreams",
@@ -203,12 +209,10 @@ def live_recording_base(
         "date": stamp,
         "timestamp": stamp,
         "ext": ext,
-        "config": cfg,
+        "config": config_file.open_config(),
         "args": settings.get_args(),
-    }
-    for key, val in list(variables.items()):
-        if "_" in key:
-            variables[key.replace("_", "")] = val
+    })
+    _add_aliases(variables)
 
     folder = pathlib.Path(os.path.normpath(str(root / pathlib.Path(dir_fmt.format(**variables)))))
     stem = file_fmt.format(**variables)
@@ -223,10 +227,12 @@ def live_recording_path(
     started_at: datetime.datetime,
     site_name: str | None = None,
     ext: str = "webm",
+    *,
+    model_id=None,
 ) -> pathlib.Path:
     """Resolve the livestream output file path with extension."""
     base = live_recording_base(
-        save_location, username, started_at, site_name=site_name, ext=ext
+        save_location, username, started_at, site_name=site_name, ext=ext, model_id=model_id
     )
     return base.with_name(f"{base.name}.{ext}")
 
@@ -236,22 +242,8 @@ class basePlaceholder:
         self._ele = None
 
     def create_variables_base(self):
-        _, my_username = me.parse_user()
-        my_id = "anon" if settings.get_settings().anon else me.get_id()
-        # {save_location} and {root} keep the site root (<save location>/Fansly
-        # on Fansly runs) even when {site_name} drops it from the media
-        # folder, so a metadata path built from them can't reach an OnlyFans
-        # user_data.db
-        save_location = site_save_location()
-        self._variables = {
-            "config_path": common_paths.get_config_home(),
-            "profile": profile_data.get_active_profile(),
-            "site_name": sites.site_name(),
-            "save_location": save_location,
-            "my_id": my_id,
-            "my_username": my_username,
-            "root": pathlib.Path((save_location)),
-        }
+        # Metadata keeps the site root even when the media template names the site.
+        self._variables = _base_path_variables(site_save_location(), sites.site_name())
 
     def async_wrapper(f):
         async def inner(*args, **kwargs):
@@ -270,11 +262,7 @@ class basePlaceholder:
         return inner
 
     def add_no_underline(self):
-        items = list(self._variables.items())
-        for key, val in items:
-            if "_" in key:
-                new_key = key.replace("_", "")
-                self._variables.update({new_key: val})
+        _add_aliases(self._variables)
 
 
 class tempFilePlaceholder(basePlaceholder):
@@ -514,15 +502,15 @@ class Placeholders(basePlaceholder):
             out = f"{await ele.final_filename}.{ext}"
         else:
             out = file_fmt.format(**self._variables)
-        out = self._addcount(ele, out)
+        out = self._addcount(ele, out, file_fmt)
         log.debug(f"final filename path {out}")
         self._filename = out
         return out
 
-    def _addcount(self, ele, out):
+    def _addcount(self, ele, out, file_format):
         if not of_env.getattr("FILE_COUNT_PLACEHOLDER"):
             return out
-        elif not self._needs_count(ele):
+        elif not self._needs_count(ele, file_format):
             return out
         out = re.sub(" $", "", out)
         # insert count
@@ -532,7 +520,7 @@ class Placeholders(basePlaceholder):
             out = f"{out}_{ele.count}"
         return out
 
-    def _needs_count(self, ele):
+    def _needs_count(self, ele, file_format):
         unique = set(
             [
                 "filename",
@@ -544,7 +532,7 @@ class Placeholders(basePlaceholder):
                 "mediaid",
             ]
         )
-        file_format = parse_safe(data.get_fileformat())
+        file_format = parse_safe(file_format)
         # return early if pass
         if len((unique & file_format)) > 0:
             return False

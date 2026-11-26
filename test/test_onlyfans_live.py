@@ -301,7 +301,8 @@ def install_session(monkeypatch, client):
                         SimpleNamespace(session=SimpleNamespace(aget_ofsession=aget_ofsession)))
 
 
-def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path):
+@pytest.mark.parametrize("use_model_id", [False, True])
+def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path, use_model_id):
     onlyfans_settings(live=True, usernames=["creator_a", "creator_d"])
     install_session(monkeypatch, Client(Response(200, {"isActive": False})))
 
@@ -311,6 +312,11 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
             {"id": 2, "username": "creator_b", "hasStream": True},
             {"id": 4, "username": "creator_d", "hasStream": True},
         ]])
+
+    if use_model_id:
+        import ofscraper.utils.config.file as config_file
+        monkeypatch.setattr(config_file, "open_config", lambda: {
+            "live_options": {"dir_format": "{sitename}/{model_id}/Livestreams"}})
 
     recorded = []
     reads = []
@@ -328,8 +334,8 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
     asyncio.run(live.run(False, asyncio.Event()))
     folder = tmp_path / "OnlyFans"
     assert sorted(recorded) == [
-        ("creator_a", folder / "creator_a" / "Livestreams", "s" * 30, "ffmpeg", False),
-        ("creator_d", folder / "creator_d" / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_a", folder / ("1" if use_model_id else "creator_a") / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_d", folder / ("4" if use_model_id else "creator_d") / "Livestreams", "s" * 30, "ffmpeg", False),
     ]
     assert len(reads) == 2  # auth.json is read for each recording
 

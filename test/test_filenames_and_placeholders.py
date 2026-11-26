@@ -188,3 +188,102 @@ def test_wrapped_caption_keeps_line_breaks(monkeypatch, tmp_path):
     written = path.read_text(encoding="utf-8")
     assert written.replace("\n", " ") == caption
     assert "wordword" not in written
+import asyncio
+import json
+
+from ofscraper.classes.of.posts import Post
+
+
+@pytest.fixture
+def path_options(monkeypatch, tmp_path):
+    path = tmp_path / "config.json"
+    config = {"file_options": {"save_location": str(tmp_path / "downloads"),
+                               "dir_format": "{model_username}", "file_format": "{filename}.{ext}"},
+              "advanced_options": {"temp_dir": ""}}
+    def save():
+        path.write_text(json.dumps(config), encoding="utf-8")
+    save()
+    monkeypatch.setattr(placeholder.config_file, "open_config", lambda: json.loads(path.read_text(encoding="utf-8")))
+    real = placeholder.settings.get_settings()
+    monkeypatch.setattr(placeholder.settings, "get_settings", lambda: SimpleNamespace(**{**dict(real), "site": "fansly", "anon": True}))
+    monkeypatch.setattr(placeholder.manager, "Manager", SimpleNamespace(
+        current_model_manager=SimpleNamespace(get_model=lambda username: None)))
+    monkeypatch.setattr(placeholder.log, "trace", lambda *a, **k: None, raising=False)
+    original = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr", lambda key, *a, **k: True if key == "FILE_COUNT_PLACEHOLDER" else original(key, *a, **k))
+    return config, save
+
+
+def _two_media_post():
+    return Post({"id": 7, "postedAt": "2024-05-01T20:00:00Z", "text": "test", "media": [
+        {"id": i, "type": "photo", "canView": True,
+         "files": {"full": {"url": f"https://cdn.example.invalid/{i}.jpg"}}}
+        for i in (101, 102)
+    ]}, 123, "test_creator", "Timeline")
+
+
+@pytest.mark.parametrize("temp_root", [None, "", "explicit"])
+def test_temp_root_falls_back_only_when_empty(path_options, tmp_path, temp_root):
+    config, save = path_options
+    configured = str(tmp_path / "temp") if temp_root == "explicit" else temp_root
+    config["advanced_options"]["temp_dir"] = configured
+    save()
+    holder = placeholder.Placeholders(_two_media_post().all_media[0], "jpg")
+    result = asyncio.run(holder.getmediadir(root=placeholder.data.get_TempDir(), create=False))
+    root = tmp_path / "temp" if temp_root == "explicit" else tmp_path / "downloads" / "Fansly"
+    assert result == root / "test_creator"
+
+
+@pytest.mark.parametrize("global_format,type_format,expected", [
+    ("{filename}.{ext}", "{post_id}.{ext}", ["7_1.jpg", "7_2.jpg"]),
+    ("{post_id}.{ext}", "{media_id}.{ext}", ["101.jpg", "102.jpg"]),
+    ("{post_id}.{ext}", None, ["7_1.jpg", "7_2.jpg"]),
+])
+def test_type_filename_controls_automatic_numbering(path_options, global_format, type_format, expected):
+    config, save = path_options
+    config["file_options"]["file_format"] = global_format
+    config["type_options"] = {"images": {"file_format": type_format}} if type_format else {}
+    save()
+    names = [asyncio.run(placeholder.Placeholders(ele, "jpg").createfilename())
+             for ele in _two_media_post().all_media]
+    assert names == expected
+
+
+def test_live_defaults_do_not_fetch_unused_account_identity(path_options, monkeypatch, tmp_path):
+    import datetime
+
+    def unexpected():
+        raise AssertionError("Default livestream templates do not need account identity")
+
+    monkeypatch.setattr(placeholder.me, "parse_user", unexpected)
+    when = datetime.datetime(2024, 5, 1, tzinfo=datetime.timezone.utc)
+    result = placeholder.live_recording_path(tmp_path, "test_creator", when, site_name="OnlyFans", model_id=123)
+    assert result == tmp_path / "OnlyFans" / "test_creator" / "Livestreams" / "test_creator_20240501_000000_live.webm"
+
+
+@pytest.mark.parametrize("alias", [False, True])
+def test_live_account_placeholders_share_base_context(path_options, monkeypatch, tmp_path, alias):
+    import datetime
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{myid}/{myusername}" if alias else "{my_id}/{my_username}"}
+    save()
+    monkeypatch.setattr(placeholder.me, "parse_user", lambda: ("Test account", "test_account"))
+    when = datetime.datetime(2024, 5, 1, tzinfo=datetime.timezone.utc)
+    result = placeholder.live_recording_path(tmp_path, "test_creator", when, site_name="Fansly", model_id=123)
+    assert result.parent == tmp_path / "Fansly" / "anon" / "test_account"
+
+
+def test_live_requested_identity_errors_are_not_silently_formatted(path_options, monkeypatch, tmp_path):
+    import datetime
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{my_id}"}
+    save()
+
+    def unavailable():
+        raise RuntimeError("test account lookup failed")
+
+    monkeypatch.setattr(placeholder.me, "parse_user", unavailable)
+    with pytest.raises(RuntimeError, match="test account lookup failed"):
+        placeholder.live_recording_path(tmp_path, "test_creator", datetime.datetime(2024, 5, 1))

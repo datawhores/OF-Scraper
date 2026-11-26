@@ -1021,31 +1021,33 @@ def render_env_pages(notes):
 
 
 def placeholder_keys():
-    """(class, method) -> dict keys the method adds to self._variables"""
+    """(class, method) -> placeholder keys; an empty class names a shared helper."""
     tree = ast.parse((ROOT / "ofscraper/classes/placeholder.py").read_text(encoding="utf-8"))
     result = {}
-    for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
-        for fn in [n for n in cls.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+    groups = [(n.name, n.body) for n in tree.body if isinstance(n, ast.ClassDef)]
+    groups.append(("", tree.body))
+    for class_name, body in groups:
+        for fn in [n for n in body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
             keys = []
             for node in ast.walk(fn):
                 if isinstance(node, ast.Dict) and node.keys:
                     parent_ok = True
                     keys.extend(k.value for k in node.keys if isinstance(k, ast.Constant) and parent_ok)
             if keys:
-                result[(cls.name, fn.name)] = list(dict.fromkeys(keys))
+                result[(class_name, fn.name)] = list(dict.fromkeys(keys))
     return result
 
 
 PLACEHOLDER_KINDS = {
-    "metadata": ("Database path (`metadata`)", [("basePlaceholder", "create_variables_base"), ("databasePlaceholder", "databasePathHelper")]),
+    "metadata": ("Database path (`metadata`)", [("", "_base_path_variables"), ("databasePlaceholder", "databasePathHelper")]),
     "dir": (
         "Media folders (`dir_format`)",
-        [("basePlaceholder", "create_variables_base"), ("Placeholders", "add_main_variables"), ("Placeholders", "add_price_variables")],
+        [("", "_base_path_variables"), ("Placeholders", "add_main_variables"), ("Placeholders", "add_price_variables")],
     ),
     "file": (
         "Media file names (`file_format`)",
         [
-            ("basePlaceholder", "create_variables_base"),
+            ("", "_base_path_variables"),
             ("Placeholders", "add_main_variables"),
             ("Placeholders", "add_price_variables"),
             ("Placeholders", "createfilename"),
@@ -1054,7 +1056,7 @@ PLACEHOLDER_KINDS = {
     "text": (
         "Text files (`--text`)",
         [
-            ("basePlaceholder", "create_variables_base"),
+            ("", "_base_path_variables"),
             ("Textholders", "add_main_variables"),
             ("Textholders", "add_price_variables"),
             ("Textholders", "createfilename"),

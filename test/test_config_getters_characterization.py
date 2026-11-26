@@ -35,6 +35,10 @@ import ofscraper.utils.paths.common as common_paths
 # getter -> the config paths it reads ("section.key" for a nested key)
 GETTER_PATHS = {
     "get_main_profile": ["main_profile"],
+    "get_live_save_location": ["live_save_location", "live_options.save_location"],
+    "get_live_dirformat": ["live_dir_format", "live_options.dir_format"],
+    "get_live_fileformat": ["live_file_format", "live_options.file_format"],
+    "get_type_options": ["type_options"],
     "get_filesize_max": [
         "file_size_max",
         "download_options.file_size_max",
@@ -319,6 +323,11 @@ EXPECTED_GETTERS = {
     "get_main_profile": (25, "13e26f74f27d2d82"),
     # a note, not a setting: the same text whatever the file holds
     "get_database_url_note": (166, "547aefc30f48fa7d"),
+    # added with live_options and type_options (#850)
+    "get_live_save_location": (166, "71ad2d44d23efd1c"),
+    "get_live_dirformat": (166, "5cb832c35dab01fa"),
+    "get_live_fileformat": (166, "1eb5b55fd981e92a"),
+    "get_type_options": (25, "fd67cb0746bdf8e6"),
     "get_filesize_max": (712, "b813936078f849ae"),
     "get_filesize_min": (403, "fba4568c65171252"),
     "get_min_length": (403, "b6017c91205f6c89"),
@@ -391,6 +400,8 @@ def test_every_getter_is_pinned():
         if isinstance(node, ast.FunctionDef)
         and not node.name.startswith("_")
         and node.name != "strip_path_quotes"
+        # a lookup by media type over get_type_options, which is pinned
+        and node.name != "get_type_option"
     }
     assert public == set(GETTER_PATHS)
 
@@ -548,17 +559,18 @@ def _schema_results(path):
     return results
 
 
-# flat_legacy sets its key mode; the others take the default, now manual
+# flat_legacy sets its key mode; the others take the default, now manual.
+# Every file gains empty live_options and type_options sections (#850).
 EXPECTED_SCHEMA = {
-    "false": "25df51e4abe3c47b",
-    "empty": "25df51e4abe3c47b",
-    "empty:written": "25df51e4abe3c47b",
-    "flat_legacy": "384d63ec957bf2ed",
-    "flat_legacy:written": "384d63ec957bf2ed",
-    "nested_legacy": "757f497b89ca2989",
-    "nested_legacy:written": "757f497b89ca2989",
-    "explicit_falsy": "13578dd7de7e4174",
-    "explicit_falsy:written": "13578dd7de7e4174",
+    "false": "693c3e55beec2f78",
+    "empty": "693c3e55beec2f78",
+    "empty:written": "693c3e55beec2f78",
+    "flat_legacy": "30706a9126cb1406",
+    "flat_legacy:written": "30706a9126cb1406",
+    "nested_legacy": "7b9faaccfac4c0f5",
+    "nested_legacy:written": "7b9faaccfac4c0f5",
+    "explicit_falsy": "6bc96d17db18465b",
+    "explicit_falsy:written": "6bc96d17db18465b",
 }
 
 
