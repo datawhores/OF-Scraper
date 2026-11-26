@@ -19,6 +19,7 @@ import pytest
 
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.rename_to_format as tool
+import ofscraper.utils.paths.spelling as spelling
 import ofscraper.db.postgres as postgres
 from ofscraper.classes.of.media import Media
 from ofscraper.classes.of.posts import Post
@@ -937,12 +938,19 @@ class _FoldingPath:
         return os.path.samefile(self._fs.real(first), self._fs.real(second))
 
 
+def _use_os(monkeypatch, fake):
+    """The tool sees the disk through `fake`, also where it asks how the
+    disk spells a path (the module rename_to_format shares with verify)"""
+    monkeypatch.setattr(tool, "os", fake)
+    monkeypatch.setattr(spelling, "os", fake)
+
+
 def _entries(folder):
     return sorted(os.listdir(folder))
 
 
 def _simulate_apfs(monkeypatch, mountpoint):
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(fold=lambda part: unicodedata.normalize("NFC", part)))
+    _use_os(monkeypatch, CaseFoldingOS(fold=lambda part: unicodedata.normalize("NFC", part)))
     monkeypatch.setattr(psutil, "disk_partitions", lambda **_: [
         SimpleNamespace(mountpoint=str(mountpoint), fstype="apfs"),
     ])
@@ -953,7 +961,7 @@ def test_a_case_only_rename_on_a_disk_that_ignores_case_is_made_and_undone(tmp_p
     library = Library(tmp_path)
     path = library.add("ABCDEF.jpg", link="https://cdn.example/files/x/y/abcdef.jpg?Tag=1")
     rows = library.rows()
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -977,7 +985,7 @@ def test_a_case_only_rename_already_made_on_a_disk_that_ignores_case_is_already_
     library = Library(tmp_path)
     path = library.add("ABCDEF.jpg", link="https://cdn.example/files/x/y/abcdef.jpg?Tag=1")
     path.rename(path.with_name("abcdef.jpg"))
-    monkeypatch.setattr(tool, "os", CaseFoldingOS())
+    _use_os(monkeypatch, CaseFoldingOS())
 
     result = library.run(apply=True)
 
@@ -1019,7 +1027,7 @@ def test_rows_that_spell_one_file_differently_on_a_disk_that_ignores_case_are_on
     path = library.add("shared.jpg", post_id=501, media_id=5)
     library.add("SHARED.jpg", folder="alice/posts/images", post_id=502, media_id=5, on_disk=False)
     library.formats(OLD_DIRS, "{media_id}.{ext}")
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -1051,7 +1059,7 @@ def test_a_collided_row_spelt_as_the_new_name_on_a_disk_that_ignores_case_doesnt
     library = Library(tmp_path)
     path = library.add("abcdef.jpg", link="https://cdn.example/files/x/y/ABCDEF.jpg?Tag=1")
     library.add("ABCDEF.jpg", media_id=99, downloaded=0, on_disk=False)
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -1068,7 +1076,7 @@ def test_a_file_spelt_otherwise_than_its_row_on_a_disk_that_ignores_case_is_rena
     library = Library(tmp_path)
     path = library.add("abcdef.jpg")
     path.rename(path.with_name("ABCDEF.jpg"))
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -1088,7 +1096,7 @@ def test_a_folder_spelt_as_the_new_name_on_a_disk_that_ignores_case_is_not_the_f
     path = library.add("ABCDEF.jpg", link="https://cdn.example/files/x/y/abcdef.jpg?Tag=1", on_disk=False)
     (path.parent / "abcdef.jpg").mkdir(parents=True)
     rows = library.rows()
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -1120,7 +1128,7 @@ def test_rows_spelt_otherwise_than_a_file_that_has_its_new_name_are_changed_and_
     path = library.add("ABCDEF.jpg", link="https://cdn.example/files/x/y/abcdef.jpg?Tag=1")
     path.rename(path.with_name("abcdef.jpg"))
     rows = library.rows()
-    monkeypatch.setattr(tool, "os", CaseFoldingOS(normcase))
+    _use_os(monkeypatch, CaseFoldingOS(normcase))
 
     result = library.run(apply=True)
 
@@ -1174,7 +1182,7 @@ def test_a_rename_whose_old_name_cant_be_removed_leaves_no_copy(tmp_path, monkey
     library.formats(OLD_DIRS, "{media_id}.{ext}")
     fs = CaseFoldingOS(fail_unlink=lambda p: p == str(path))
     fs.real = staticmethod(os.path.abspath)  # a disk that tells case apart
-    monkeypatch.setattr(tool, "os", fs)
+    _use_os(monkeypatch, fs)
 
     result = library.run(apply=True)
 
@@ -1214,7 +1222,7 @@ class _WindowsFolders:
 
 def test_old_folders_on_another_drive_than_the_save_location_stay(monkeypatch):
     fs = _WindowsFolders()
-    monkeypatch.setattr(tool, "os", fs)
+    _use_os(monkeypatch, fs)
 
     assert tool._remove_emptied([r"D:\media\alice\Posts\a.jpg"], r"C:\media") == []
     assert fs.removed == []
@@ -1222,7 +1230,7 @@ def test_old_folders_on_another_drive_than_the_save_location_stay(monkeypatch):
 
 def test_old_folders_spelt_in_another_case_than_the_save_location_are_removed(monkeypatch):
     fs = _WindowsFolders()
-    monkeypatch.setattr(tool, "os", fs)
+    _use_os(monkeypatch, fs)
 
     removed = tool._remove_emptied([r"C:\Media\alice\Posts\a.jpg"], r"c:\media")
 
@@ -1309,7 +1317,7 @@ def test_the_path_key_reads_a_folder_once_for_many_decomposed_names(tmp_path, mo
     # each NFD name finds the same file as its NFC spelling, as on APFS
     monkeypatch.setattr(tool, "_same_file", lambda a, b: True)
 
-    key = tool._path_key()
+    key = tool._Spellings().key
     for name in names:
         key(str(folder / name))
 
