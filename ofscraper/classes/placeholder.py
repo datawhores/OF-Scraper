@@ -102,6 +102,14 @@ def default_media_root():
     return pathlib.Path(site_save_location())
 
 
+def final_path(path):
+    """The path a file is saved at: shortened to what the system allows,
+    unless --original or truncation_default: false turns that off."""
+    if getattr(settings.get_settings(), "trunicate", True):
+        return paths.truncate(pathlib.Path(path))
+    return pathlib.Path(os.path.normpath(path))
+
+
 class basePlaceholder:
     def __init__(self) -> None:
         self._ele = None
@@ -162,11 +170,7 @@ class tempFilePlaceholder(basePlaceholder):
         # if env.getattr("ALLOW_DUPE_MEDIA"):
         #     file=f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(6))}{file}"
         script_name = await naming_script(dir, file, self._ele)
-        if not script_name:
-            self._tempfilepath = paths.truncate(pathlib.Path(dir, file))
-        else:
-            self._tempfilepath = paths.truncate(pathlib.Path(script_name))
-
+        self._tempfilepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 
     @basePlaceholder.async_wrapper
@@ -259,9 +263,7 @@ class Placeholders(basePlaceholder):
         script_name = await naming_script(dir, file, self._ele)
         if not script_name:
             file = self._fit_text(dir, file)
-            self._filepath = paths.truncate(pathlib.Path(dir, file))
-        else:
-            self._filepath = paths.truncate(pathlib.Path(script_name))
+        self._filepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 
     def _fit_text(self, dir, file):
@@ -487,13 +489,13 @@ class Placeholders(basePlaceholder):
 
     @property
     def trunicated_filepath(self):
-        if settings.get_settings().trunicate:
+        if getattr(settings.get_settings(), "trunicate", True):
             return pathlib.Path(paths.truncate(self._filepath))
         return self._filepath
 
     @property
     def trunicated_filedir(self):
-        return pathlib.Path(paths.truncate(self._filepath)).parent
+        return pathlib.Path(self.trunicated_filepath).parent
 
     @property
     def size(self):
@@ -519,10 +521,7 @@ class Textholders(basePlaceholder):
         dir = await self.getmediadir(create=create)
         file = await self.createfilename()
         script_name = await naming_script(dir, file, self._ele)
-        if not script_name:
-            self._filepath = paths.truncate(pathlib.Path(dir, file))
-        else:
-            self._filepath = paths.truncate(pathlib.Path(script_name))
+        self._filepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 
     def add_price_variables(self, username):
@@ -655,10 +654,10 @@ class Textholders(basePlaceholder):
 
     @property
     def trunicated_filepath(self):
-        if settings.get_settings().trunicate:
+        if getattr(settings.get_settings(), "trunicate", True):
             return pathlib.Path(paths.truncate(self._filepath))
         return self._filepath
 
     @property
     def filedir(self):
-        return pathlib.Path(paths.truncate(self._filepath)).parent
+        return pathlib.Path(self.trunicated_filepath).parent
