@@ -29,6 +29,22 @@ MEDIA_FILTERS = (
 )
 
 
+def responsetype_folder(responsetype):
+    """The folder an area's posts are saved under, from the responsetype
+    section, for a post that isn't archived: the area capitalized when it
+    sets none ("messages" -> "Messages")"""
+    # the config keys are "timeline" (for post or posts) and "message"
+    response_key = str(responsetype).lower()
+    if response_key in {"post", "posts"}:
+        response_key = "timeline"
+    elif response_key == "messages":
+        response_key = "message"
+    response = data.responsetype().get(response_key)
+    if response in (None, ""):
+        return str(responsetype).capitalize()
+    return response.capitalize()
+
+
 class Post(base.base):
     """
     Represents a single post from OnlyFans.
@@ -390,24 +406,7 @@ class Post(base.base):
             # capitalized like the other response types
             return (data.get_archived_responsetype() or "Archived").capitalize()
         else:
-            # 1. Normalize the key to lowercase for dictionary lookup
-            response_key = self.responsetype.lower()
-
-            # 2. Handle the "Post/Posts" alias normalization
-            if response_key in {"post", "posts"}:
-                response_key = "timeline"
-            # the config key for messages is "message"
-            elif response_key == "messages":
-                response_key = "message"
-
-            # 3. Lookup in the lowercase config dictionary
-            response = data.responsetype().get(response_key)
-            # 4. Fallback: if no custom mapping exists, use the original type capitalized
-            if response in (None, ""):
-                return self.responsetype.capitalize()
-
-            # 5. Return the mapped value capitalized (e.g., "messages" -> "Messages")
-            return response.capitalize()
+            return responsetype_folder(self.responsetype)
 
     def _apply_media_filters(self, media: list) -> list:
         """

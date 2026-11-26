@@ -660,5 +660,6 @@ def test_a_row_not_on_disk_opens_the_folder_its_type_options_entry_sets(tmp_path
 
     target = open_folder.row_target(row)
 
-    assert seen == [("Timeline", "Videos")]
+    # as a download looks it up: the area, its folder name, the media type
+    assert seen == [("Timeline", "Posts", "Videos")]
     assert target == Target(tmp_path / "videos" / "a_creator")

@@ -59,10 +59,16 @@ def space_checker(func):
     return inner
 
 
-def alert_full():
+def alert_full(folder=None):
+    """folder: a type_options save folder whose disk is full, when only the
+    files saved there stop"""
     import ofscraper.main.close.alerts as alerts
 
-    alerts.failing(alerts.DISK_FULL, "The free-space limit was reached; downloads stopped")
+    if folder is None:
+        message = "The free-space limit was reached; downloads stopped"
+    else:
+        message = "The free-space limit was reached on a type_options save disk; downloads saved there stopped"
+    alerts.failing(alerts.DISK_FULL, message)
 
 
 def check_free_size(folder=None):
@@ -70,3 +76,13 @@ def check_free_size(folder=None):
     if space_limit > 0 and space_limit > get_free(folder):
         return False
     return True
+
+
+def check_every_disk():
+    """True when every disk downloads are saved on is above the limit:
+    save_location's and each type_options one's (the livestream ones aren't
+    checked: recordings don't stop at the limit). What a disk-full alert
+    waits for before it's announced as over."""
+    import ofscraper.classes.placeholder as placeholder
+
+    return all(check_free_size(root) for root in placeholder.media_roots())

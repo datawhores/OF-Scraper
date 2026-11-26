@@ -870,3 +870,29 @@ def test_type_options_names_match_their_aliases(path_options, name):
     folder = "Messages" if area == "Messages" else "Posts"
     assert placeholder.media_templates((area, folder, "Images"))[1] == "here"
     assert not any(line.startswith("type_options.") for line in naming_check.problems())
+
+
+def test_timeline_doesnt_catch_pinned_posts_but_posts_does(path_options):
+    """"posts" is the timeline's default folder, which pinned posts are
+    saved under too; "timeline" is only the timeline"""
+    config, save = path_options
+    config["type_options"] = {"timeline": {"dir_format": "wall"}}
+    save()
+    assert placeholder.media_templates(("Timeline", "Posts", "Images"))[1] == "wall"
+    assert placeholder.media_templates(("Pinned", "Posts", "Images"))[1] != "wall"
+    config["type_options"] = {"posts": {"dir_format": "wall"}}
+    save()
+    assert placeholder.media_templates(("Pinned", "Posts", "Images"))[1] == "wall"
+
+
+def test_type_options_names_for_the_same_type_are_named(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["type_options"] = {"message": {"dir_format": "a"}, "Messages": {"dir_format": "b"}}
+    save()
+    assert (
+        "type_options.message and type_options.Messages name the same type, so only"
+        " type_options.Messages is used"
+    ) in naming_check.problems()
+    assert placeholder.media_templates(("Messages", "Messages", "Images"))[1] == "b"

@@ -734,7 +734,13 @@ def check_folders(config, report):
     if not limit:
         report.add(PASS, "free-space limit", "off")
         return
+    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, type_name
+
     for which, save in saves.items():
+        # recordings don't stop at the limit, so their folder has no line
+        section = which.strip(" ()")
+        if section == "live_options" or type_name(section.partition(".")[2]) in LIVE_TYPE_KEYS:
+            continue
         _check_limit(report, f"free-space limit{which}", limit, save)
 
 

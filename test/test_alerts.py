@@ -385,3 +385,29 @@ def test_one_off_runs_announce_the_disk_alert_recovered(sent, monkeypatch, tmp_p
     assert [a["kind"] for a in sent.script] == ["disk_full", "disk_full", "disk_full"]
     alerts.reset()
     status_file.reset()
+
+
+def test_a_full_type_options_disk_isnt_announced_as_recovered(sent, monkeypatch, tmp_path):
+    """The limit hit on a type_options disk, while save_location's has room:
+    the alert stays open until that disk has room too, instead of being
+    announced as over after every pass"""
+    import ofscraper.classes.placeholder as placeholder
+    from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+
+    main, videos = tmp_path / "main", tmp_path / "videos"
+    sent.settings.system_free_min = 10
+    room = {main: 50, videos: 5}
+    monkeypatch.setattr(free, "get_free", lambda folder=None: room[folder or main])
+    monkeypatch.setattr(placeholder, "default_media_root", lambda *a, **k: main)
+    monkeypatch.setattr(placeholder, "media_roots", lambda: [main, videos])
+    monkeypatch.setattr(placeholder, "media_templates", lambda keys, **k: (videos, "", ""))
+    clip = SimpleNamespace(responsetype="Timeline", modified_responsetype="Posts", mediatype="Videos")
+    for _ in range(3):
+        with pytest.raises(Exception):
+            DownloadManager(ctx=object())._downloadspace(clip)
+        alerts.after_pass(exit_status.PARTIAL)
+    assert [a["kind"] for a in sent.script] == ["disk_full"]
+    assert "saved there stopped" in sent.script[0]["message"]
+    room[videos] = 50
+    alerts.after_pass(exit_status.OK)
+    assert "running again" in sent.script[-1]["message"]

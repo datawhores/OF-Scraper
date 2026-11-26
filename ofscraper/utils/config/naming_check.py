@@ -40,10 +40,11 @@ FILE_PLACEHOLDERS = DIR_PLACEHOLDERS | {"ext"}
 
 # the type_options names livestream recordings use
 LIVE_TYPE_KEYS = ("livestreams", "live")
-# names that mean another one, as modified_responsetype reads the
-# responsetype section: "post" and "posts" are the timeline, and "message"
-# (the responsetype key) is the messages area
-TYPE_ALIASES = {"post": "timeline", "posts": "timeline", "message": "messages"}
+# names that mean an area's own name: "post" is the timeline, and "message"
+# (the responsetype key) is the messages area. "posts" isn't one: it's the
+# timeline's default folder name, which pinned posts are saved under too, so
+# a "posts" entry matches both, and a "timeline" one only the timeline
+TYPE_ALIASES = {"post": "timeline", "message": "messages"}
 # the live placeholders that hold the start time, which keep one creator's
 # recordings apart
 LIVE_TIME_FIELDS = {"date", "timestamp"}
@@ -212,11 +213,21 @@ def problems():
             " {year}/{month}/{day} in dir_format for nested date folders"
         )
     names = _type_names()
+    same = {}
     for name in data.get_type_options():
+        same.setdefault(type_name(name), []).append(name)
         if type_name(name) not in names:
             out.append(
                 f"type_options.{name} isn't a post area, media type or livestreams,"
                 " so it's never used"
+            )
+    for spellings in same.values():
+        if len(spellings) > 1:
+            # _type_settings keeps the last one
+            out.append(
+                f"type_options.{', type_options.'.join(spellings[:-1])} and"
+                f" type_options.{spellings[-1]} name the same type, so only"
+                f" type_options.{spellings[-1]} is used"
             )
     import ofscraper.classes.placeholder as placeholder
 

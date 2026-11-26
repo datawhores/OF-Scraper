@@ -425,13 +425,16 @@ class DownloadManager:
     def _downloadspace(self, ele=None):
         """Stop when the disk ele is saved on (save_location's, or the one a
         type_options entry sets for it) is below the free-space limit"""
+        import ofscraper.classes.placeholder as placeholder
+
         folder = None
         if ele is not None:
-            import ofscraper.classes.placeholder as placeholder
-
             folder = placeholder.media_templates(placeholder.media_type_keys(ele))[0]
+            # save_location's own disk: the plain alert
+            if folder == placeholder.default_media_root():
+                folder = None
         if not system.check_free_size(folder):
-            system.alert_full()
+            system.alert_full(folder)
             raise Exception(of_env.getattr("SPACE_DOWNLOAD_MESSAGE"))
 
     async def _after_download_script(self, filepath, ele):

@@ -1149,6 +1149,8 @@ def test_each_override_save_folder_is_checked(home, tmp_path):
     assert result(report, "save folder (live_options)") == (
         "WARN", f"{doctor.redact(str(live))} isn't there yet: a run makes it")
     assert result(report, "save folder (type_options.videos)")[0] == "PASS"
-    assert result(report, "free-space limit (live_options)")[1].startswith("1000 bytes, measured at")
+    assert result(report, "free-space limit (type_options.videos)")[1].startswith("1000 bytes, measured at")
+    # recordings don't stop at the limit, so the livestream folder has no line
+    assert not [r for r in report.results if r["check"] == "free-space limit (live_options)"]
     # an entry that doesn't move the save folder adds no check
     assert not [r for r in report.results if "type_options.text" in r["check"]]

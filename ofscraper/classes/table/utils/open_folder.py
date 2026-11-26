@@ -168,15 +168,19 @@ def row_target(row, root=None, dir_format=None) -> Target:
 
 
 def type_templates(row):
-    """(root, dir_format) a type_options entry sets for the row's area or
-    media type, or (None, None) when none is set"""
+    """(root, dir_format) a type_options entry sets for the row, looked up as
+    a download looks it up (its area, the area's folder name, its media
+    type), or (None, None) when none is set"""
     import ofscraper.utils.config.data as data
 
     if not data.get_type_options():
         return None, None
+    from ofscraper.classes.of.posts import responsetype_folder
     from ofscraper.classes.placeholder import media_templates
 
-    root, dir_format, _ = media_templates((row.get("responsetype"), row.get("mediatype")))
+    area = row.get("responsetype")
+    folder = responsetype_folder(area) if area else None
+    root, dir_format, _ = media_templates((area, folder, row.get("mediatype")))
     return root, dir_format
 
 

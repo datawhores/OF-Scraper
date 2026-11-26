@@ -204,7 +204,7 @@ def test_a_full_override_disk_stops_only_its_files(measured, tmp_path, monkeypat
     _write_overrides(tmp_path, save, live, videos)
     monkeypatch.setattr(free.shutil, "disk_usage", lambda path: SimpleNamespace(
         free=0 if pathlib.Path(path) == videos.resolve() else 10**12))
-    monkeypatch.setattr(free, "alert_full", lambda: None)
+    monkeypatch.setattr(free, "alert_full", lambda *a: None)
 
     assert free.check_free_size()
     DownloadManager._downloadspace(None, _media("Images"))

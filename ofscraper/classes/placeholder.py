@@ -143,10 +143,13 @@ def media_type_keys(ele):
 
 
 def media_roots():
-    """Every folder media is saved under: the save location's and each
-    type_options entry's."""
+    """Every folder downloads are saved under: the save location's and each
+    type_options entry's but the livestream one."""
     roots = [default_media_root()]
-    roots.extend(media_templates((name,))[0] for name in data.get_type_options())
+    roots.extend(
+        media_templates((name,))[0] for name in data.get_type_options()
+        if type_name(name) not in LIVE_TYPE_KEYS
+    )
     return list(dict.fromkeys(roots))
 
 
