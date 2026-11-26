@@ -209,7 +209,8 @@ class Post(base.base):
 
     @property
     def file_sanitized_text(self):
-        return self.file_cleanup(self.text or self.id)
+        # a caption of nothing a file name can hold ("???") names nothing
+        return self.file_cleanup(self.text or self.id) or str(self.id)
 
     @property
     def text(self):
