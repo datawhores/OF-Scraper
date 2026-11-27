@@ -60,19 +60,34 @@ def shows_something(renderable):
     leaves) draws only its border and title. Anything not handled here
     counts as showing something.
     """
-    if renderable is None:
-        return False
-    if isinstance(renderable, str):
-        return bool(renderable.strip())
-    if isinstance(renderable, Text):
-        return bool(renderable.plain.strip())
-    if isinstance(renderable, Progress):
-        return any(task.visible for task in renderable.tasks)
-    if isinstance(renderable, Group):
-        return any(shows_something(item) for item in renderable.renderables)
-    if isinstance(renderable, Panel):
-        return shows_something(renderable.renderable)
-    return True
+    # walked with a stack, not recursion, so a deep tree can't raise
+    # RecursionError; seen guards against a renderable that contains itself
+    stack = [renderable]
+    seen = set()
+    while stack:
+        node = stack.pop()
+        if node is None:
+            continue
+        if isinstance(node, str):
+            if node.strip():
+                return True
+        elif isinstance(node, Text):
+            if node.plain.strip():
+                return True
+        elif isinstance(node, Progress):
+            if any(task.visible for task in node.tasks):
+                return True
+        elif isinstance(node, (Group, Panel)):
+            if id(node) in seen:
+                continue
+            seen.add(id(node))
+            if isinstance(node, Group):
+                stack.extend(node.renderables)
+            else:
+                stack.append(node.renderable)
+        else:
+            return True
+    return False
 
 
 def stop_live():

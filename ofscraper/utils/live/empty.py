@@ -7,7 +7,8 @@ from ofscraper.utils.live.clear import clear
 
 @contextlib.contextmanager
 def prompt_live():
-    old_render = get_live().renderable
+    # not .renderable, which wraps the content in a new Group each time
+    old_render = get_live().get_renderable()
     stop_live()
     clear()
     # give time for screen to clear
