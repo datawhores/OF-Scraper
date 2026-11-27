@@ -93,7 +93,7 @@ live_watch_option = click.option(
 
 live_interval_option = click.option(
     "--live-interval",
-    help="Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)",
+    help="Seconds between live checks in --live-watch (default 60, plus random jitter up to --live-jitter)",
     type=click.IntRange(min=10),
     default=None,
 )

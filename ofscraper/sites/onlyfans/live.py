@@ -24,6 +24,7 @@ import asyncio
 import contextvars
 import datetime
 import logging
+import math
 import os
 import pathlib
 import threading
@@ -53,14 +54,15 @@ def _check_concurrency() -> int:
 
 
 def _jitter() -> float:
-    val = getattr(shared.options(), "get", lambda *_: None)("jitter")
-    if val is not None:
-        return max(0.0, float(val))
     try:
-        val = of_env.getattr("LIVE_JITTER", 10)
-        return max(0.0, float(10 if val is None else val))
+        val = getattr(shared.options(), "get", lambda *_: None)("jitter")
+        if val is not None:
+            parsed = float(val)
+            if math.isfinite(parsed):
+                return max(0.0, parsed)
     except (TypeError, ValueError):
-        return 10.0
+        pass
+    return float(shared.DEFAULT_JITTER)
 
 
 def _stream_active_url(username: str) -> str:

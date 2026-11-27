@@ -862,7 +862,7 @@ When `-u`, a user list or other subscription filters choose the creators, the ch
 
 **Type:** integer range · **Default:** none · **Commands:** main program
 
-Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)
+Seconds between live checks in --live-watch (default 60, plus random jitter up to --live-jitter)
 
 **Dest:** `live_interval` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 

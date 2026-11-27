@@ -1,4 +1,17 @@
+import math
 import os
+
+
+def _non_negative_float(raw: str | None, default: float) -> float:
+    if raw is None:
+        return default
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return default
+    if not math.isfinite(val):
+        return default
+    return max(0.0, val)
 
 
 def load_req_live_config():
@@ -30,8 +43,8 @@ def load_req_live_config():
     )
 
     # LIVE_JITTER: Maximum random jitter in seconds added to the `--live-watch` polling interval.
-    # Default: 10
-    config["LIVE_JITTER"] = max(0, int(os.getenv("OFSC_LIVE_JITTER", "10")))
+    # Default: 10.0
+    config["LIVE_JITTER"] = _non_negative_float(os.getenv("OFSC_LIVE_JITTER"), 10.0)
 
     # LIVE_MAX_FAILURES: Consecutive failed stream-recovery attempts before stopping a Fansly recording.
     # Default: 3
