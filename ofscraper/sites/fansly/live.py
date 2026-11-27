@@ -167,10 +167,9 @@ def utc_start(started_at) -> datetime.datetime:
 def folder_name(username) -> str:
     """The API username, safe as one folder or file name component."""
     from ofscraper.classes.of.base import base
+    import ofscraper.utils.paths.names as names
 
-    # the app's own filename cleanup; it leaves backslashes and dots alone
-    name = base().file_cleanup(username).replace("\\", "").strip(" .")
-    return name or "unknown"
+    return names.clean_folder_name(base().file_cleanup(username))
 
 
 def recording_base(save_location, username, started_at, *, model_id=None) -> pathlib.Path:
