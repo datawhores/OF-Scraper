@@ -358,6 +358,173 @@ def test_live_watcher_resume_all_does_not_unsuppress_removed_creators(monkeypatc
     assert resumed_ids == ["111"]
 
 
+@pytest.mark.parametrize("still_live", [True, False])
+def test_live_watcher_readd_by_account_id_forgets_the_removed_name(monkeypatch, still_live):
+    """A creator removed from the watch and added back by account id was still
+    left out by the username the removal recorded, so never recorded again."""
+    monkeypatch.setattr(events, "_subscribers", {})
+
+    async def fetch_online():
+        return []
+
+    async def record(stream, stop_event):
+        pass
+
+    watcher = fansly_live.LiveWatcher(fetch_online, record, site="fansly")
+    watcher._last_online["123"] = {"accountId": "123", "username": "Alice"}
+    watcher.remove_username("Alice", account_id="123")
+    if not still_live:
+        # a poll that no longer finds the creator live forgets the stop
+        watcher.suppressed.clear()
+
+    watcher.add_usernames(["123"])
+
+    assert watcher.excluded_usernames == set()
+    assert watcher._removed_ids == {}
+    assert "123" not in watcher.suppressed
+    stream = {"accountId": "123", "username": "Alice"}
+    assert fansly_live.select_streams([stream], None, watcher.excluded_usernames) == [stream]
+
+
+def test_live_watcher_readd_by_account_id_keeps_other_removed_creators(monkeypatch):
+    monkeypatch.setattr(events, "_subscribers", {})
+
+    async def fetch_online():
+        return []
+
+    async def record(stream, stop_event):
+        pass
+
+    watcher = fansly_live.LiveWatcher(fetch_online, record, site="fansly")
+    watcher.remove_username("Alice", account_id="123")
+    watcher.remove_username("Bob", account_id="456")
+
+    watcher.add_usernames(["123"])
+
+    assert watcher.excluded_usernames == {"bob", "456"}
+    assert watcher._removed_ids == {"bob": {"456"}}
+    assert watcher.suppressed == {"456"}
+
+
+def test_live_watcher_readd_while_the_old_recording_closes_restarts_at_once(monkeypatch):
+    """Removing a creator stops their recording, which takes a moment to
+    close. Added back meanwhile, they are recorded again as soon as it has
+    closed, not on the next interval (a minute or more of the stream)."""
+    monkeypatch.setattr(events, "_subscribers", {})
+
+    async def run():
+        starts = []
+        first_started = asyncio.Event()
+        second_started = asyncio.Event()
+        closed = asyncio.Event()
+
+        async def fetch_online():
+            return [{"accountId": "readd-7", "username": "alice"}]
+
+        async def record(stream, stop_event):
+            starts.append(stream["accountId"])
+            if len(starts) == 1:
+                first_started.set()
+                await stop_event.wait()
+                await closed.wait()
+            else:
+                second_started.set()
+                await stop_event.wait()
+
+        stop = asyncio.Event()
+        watcher = fansly_live.LiveWatcher(
+            fetch_online, record, max_concurrent=1, interval=60, jitter=0, site="fansly"
+        )
+        task = asyncio.create_task(watcher.run(stop))
+        try:
+            await asyncio.wait_for(first_started.wait(), timeout=2.0)
+
+            watcher.remove_username("alice", account_id="readd-7")
+            await asyncio.sleep(0.05)
+            watcher.add_usernames(["alice"])
+            # the check add_usernames asks for runs while the recording closes
+            await asyncio.sleep(0.05)
+            assert starts == ["readd-7"]
+
+            closed.set()
+            await asyncio.wait_for(second_started.wait(), timeout=2.0)
+            assert starts == ["readd-7", "readd-7"]
+        finally:
+            stop.set()
+            await asyncio.wait_for(task, timeout=2.0)
+
+    asyncio.run(run())
+
+
+def test_live_watcher_paused_queue_says_it_is_paused(monkeypatch):
+    """While polls are paused a waiting creator isn't short of a recording
+    slot: the row says the pause is what holds it."""
+    monkeypatch.setattr(events, "_subscribers", {})
+    emitted = []
+    events.subscribe("live_stream", lambda **kw: emitted.append(kw))
+
+    async def run():
+        async def fetch_online():
+            return [{"accountId": "paused-1", "username": "creator_1"}]
+
+        async def record(stream, stop_event):
+            await stop_event.wait()
+
+        stop = asyncio.Event()
+        watcher = fansly_live.LiveWatcher(
+            fetch_online, record, max_concurrent=2, interval=60, jitter=0, site="fansly"
+        )
+        watcher.paused = True
+        task = asyncio.create_task(watcher.run(stop))
+        try:
+            await asyncio.sleep(0.1)
+        finally:
+            stop.set()
+            await asyncio.wait_for(task, timeout=2.0)
+
+    asyncio.run(run())
+
+    reasons = [e["reason"] for e in emitted if e.get("status") == "queued"]
+    assert reasons == ["Polls paused; starts when resumed"]
+
+
+def test_app_readd_by_account_id_forgets_the_removed_username(tui_env):
+    async def run():
+        async def fetch_online():
+            return []
+
+        async def record(stream, stop_event):
+            pass
+
+        watcher = fansly_live.LiveWatcher(fetch_online, record, site="fansly")
+        app = LiveStreamApp(watch=True, runner=_idle_runner)
+        async with app.run_test():
+            app._watcher = watcher
+            app._watcher_loop = asyncio.get_running_loop()
+            app._handle_poll({
+                "state": "ok",
+                "site": "fansly",
+                "online": [{"accountId": "12345", "username": "Creator_A"}],
+            })
+            app._remove_entry(app._streams["fansly:12345"])
+            await asyncio.sleep(0)
+            assert app._removed_user_ids == {("fansly", "creator_a"): "12345"}
+
+            app.query_one("#add_user_input", Input).value = "12345"
+            app._submit_add_user()
+            await asyncio.sleep(0)
+
+            assert app._removed_keys == set()
+            assert app._removed_user_ids == {}
+            assert watcher.excluded_usernames == set()
+            assert "12345" not in watcher.suppressed
+
+            if app._live_thread:
+                app._live_thread.stop(timeout=5)
+
+    asyncio.run(run())
+
+
 # ------------------------------------------------------------------ OnlyFans get_online_streams
 
 

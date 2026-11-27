@@ -771,18 +771,33 @@ class LiveWatcher:
             self.excluded_usernames = set()
         for raw in names or ():
             clean = str(raw).strip().lstrip("@").lower()
-            if clean and clean != "all":
-                self.extra_usernames.add(clean)
-                self.excluded_usernames.discard(clean)
-                for key_str in self._removed_ids.pop(clean, ()):
-                    self.excluded_usernames.discard(key_str.lower())
-                    self.suppressed.discard(key_str)
-                for key_str in list(self.suppressed):
-                    info = self._last_online.get(key_str) or {}
-                    uname = str(info.get("username") or "").strip().lower()
-                    if key_str.lower() == clean or uname == clean:
-                        self.excluded_usernames.discard(key_str.lower())
-                        self.suppressed.discard(key_str)
+            if not clean or clean == "all":
+                continue
+            self.extra_usernames.add(clean)
+            self.excluded_usernames.discard(clean)
+            # the accounts the typed text stands for: the stopped creators it
+            # names (by account id, or by the name they were last live under)
+            # and the removed creators whose account id it is
+            ids = set()
+            for key_str in self.suppressed:
+                info = self._last_online.get(key_str) or {}
+                uname = str(info.get("username") or "").strip().lower()
+                if key_str.lower() == clean or uname == clean:
+                    ids.add(key_str)
+            for removed in self._removed_ids.values():
+                ids |= {key_str for key_str in removed if key_str.lower() == clean}
+            # a creator removed under another name than the one typed (their
+            # account id, say) is still left out by that name: forget it too
+            for name in [n for n, removed in self._removed_ids.items() if n == clean or removed & ids]:
+                self.excluded_usernames.discard(name)
+                ids |= self._removed_ids.pop(name)
+            for key_str in ids:
+                self.excluded_usernames.discard(key_str.lower())
+                self.suppressed.discard(key_str)
+                if key_str in self.active:
+                    # the recording stopped by the removal is still closing:
+                    # check again as soon as it has, not on the next interval
+                    self._pending_resume.add(key_str)
         self.request_poll()
 
     def remove_username(self, username: str, account_id=None):
@@ -930,7 +945,11 @@ class LiveWatcher:
                         status="queued",
                         title=waiting.get("title"),
                         started_at=waiting.get("startedAt"),
-                        reason="Waiting for free recording slot",
+                        reason=(
+                            "Polls paused; starts when resumed"
+                            if self.paused
+                            else "Waiting for free recording slot"
+                        ),
                     )
                 if self.once:
                     if not queue and not self.active:

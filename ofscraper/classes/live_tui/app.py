@@ -889,6 +889,12 @@ class LiveStreamApp(App):
             removed_id = self._removed_user_ids.pop((site, clean), None)
             if removed_id is not None:
                 self._removed_keys.discard(f"{site}:{removed_id}")
+            # added back by account id: forget the name it was removed under
+            for removed_as in [
+                k for k, v in self._removed_user_ids.items()
+                if k[0] == site and str(v).lower() == clean
+            ]:
+                del self._removed_user_ids[removed_as]
         self._call_watcher(self._watcher.add_usernames, names)
         self.notify(f"Added {', '.join(names)} to live watchlist; checking now...", markup=False)
 
