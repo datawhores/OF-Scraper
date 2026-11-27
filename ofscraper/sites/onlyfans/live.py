@@ -52,12 +52,15 @@ def _check_concurrency() -> int:
     return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
 
 
-def _jitter() -> int:
+def _jitter() -> float:
+    val = getattr(shared.options(), "get", lambda *_: None)("jitter")
+    if val is not None:
+        return max(0.0, float(val))
     try:
         val = of_env.getattr("LIVE_JITTER", 10)
-        return max(0, int(10 if val is None else val))
+        return max(0.0, float(10 if val is None else val))
     except (TypeError, ValueError):
-        return 10
+        return 10.0
 
 
 def _stream_active_url(username: str) -> str:

@@ -654,6 +654,16 @@ def count_misses(misses: dict, tried, missing) -> None:
             log.warning(f"Still can't look up {name} for livestreams; trying again every 10th check")
 
 
+def _resolve_live_jitter(s) -> float:
+    val = getattr(s, "live_jitter", None)
+    if val is not None:
+        try:
+            return max(0.0, float(val))
+        except (TypeError, ValueError):
+            pass
+    return float(_int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0))
+
+
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
@@ -664,7 +674,7 @@ def options(s=None) -> dict:
         "watch": bool(getattr(s, "live_watch", False)),
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
-        "jitter": _int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0),
+        "jitter": _resolve_live_jitter(s),
         "max_failures": _int_env("LIVE_MAX_FAILURES", DEFAULT_MAX_FAILURES, minimum=1),
         "check_concurrency": _int_env("LIVE_CHECK_CONCURRENCY", 5, minimum=1),
         "chat": bool(getattr(s, "live_chat", False)),

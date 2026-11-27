@@ -98,6 +98,13 @@ live_interval_option = click.option(
     default=None,
 )
 
+live_jitter_option = click.option(
+    "--live-jitter",
+    help="Max random extra seconds added to each --live-watch check interval (default 10)",
+    type=click.FloatRange(min=0),
+    default=None,
+)
+
 live_max_option = click.option(
     "--live-max",
     help="Most livestreams recorded at the same time (default 2)",
