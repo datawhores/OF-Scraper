@@ -167,10 +167,9 @@ def utc_start(started_at) -> datetime.datetime:
 def folder_name(username) -> str:
     """The API username, safe as one folder or file name component."""
     from ofscraper.classes.of.base import base
+    import ofscraper.utils.paths.names as names
 
-    # the app's own filename cleanup; it leaves backslashes and dots alone
-    name = base().file_cleanup(username).replace("\\", "").strip(" .")
-    return name or "unknown"
+    return names.clean_folder_name(base().file_cleanup(username))
 
 
 def recording_base(save_location, username, started_at, *, model_id=None) -> pathlib.Path:
@@ -653,6 +652,45 @@ def warn_streak(streaks: dict, key: str, message: str = None) -> None:
     streaks[key] = bool(message)
 
 
+class PollStateLogger:
+    """Tracks announced live/idle state across poll cycles and logs transitions."""
+
+    def __init__(self, site_name: str, watch: bool):
+        self._site_name = site_name
+        self._watch = watch
+        self.announced_idle = False
+        self.announced_live_ids = set()
+
+    def __call__(self, selected) -> None:
+        current_ids = {s["accountId"] for s in selected}
+        self.announced_live_ids &= current_ids
+
+        new_live = [
+            s for s in selected if s["accountId"] not in self.announced_live_ids
+        ]
+        if new_live:
+            names = ", ".join(s["username"] for s in new_live)
+            log.info(f"Live now ({len(new_live)}): {names}")
+            self.announced_live_ids.update(s["accountId"] for s in new_live)
+            self.announced_idle = False
+        elif selected:
+            names = ", ".join(s["username"] for s in selected)
+            log.debug(f"Still live ({len(selected)}): {names}")
+            self.announced_idle = False
+        elif not self.announced_idle:
+            if self._watch:
+                log.info(
+                    f"No active {self._site_name} livestreams; waiting for selected creators to go live..."
+                )
+            else:
+                log.info(
+                    f"No active {self._site_name} livestreams found for the selected creators."
+                )
+            self.announced_idle = True
+        else:
+            log.debug(f"No active {self._site_name} livestreams found.")
+
+
 def lookup_due(misses: dict, name: str, poll: int) -> bool:
     """Whether to look up a name the lookups missed again on this poll: on
     every poll for its first 3 misses, then on every 10th poll."""
@@ -851,8 +889,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     # playlists get one attempt each: a 403 means "fetch a fresh URL", not "retry"
     async with manager.Manager.session.aget_ofsession() as c, \
             manager.Manager.session.aget_ofsession(retries=1) as playlists:
-        announced_idle = False
-        announced_live_ids = set()
+        log_poll_state = PollStateLogger("Fansly", watch)
         announced_no_targets = False
         streaks = {}
         lookups = {"poll": 0, "misses": {}}
@@ -968,30 +1005,6 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             ))
             return [r for r in results if isinstance(r, dict)]
 
-        def _log_poll_state(selected):
-            nonlocal announced_idle, announced_live_ids
-            current_ids = {s["accountId"] for s in selected}
-            announced_live_ids &= current_ids
-
-            new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
-            if new_live:
-                names = ", ".join(s["username"] for s in new_live)
-                log.info(f"Live now ({len(new_live)}): {names}")
-                announced_live_ids.update(s["accountId"] for s in new_live)
-                announced_idle = False
-            elif selected:
-                names = ", ".join(s["username"] for s in selected)
-                log.debug(f"Still live ({len(selected)}): {names}")
-                announced_idle = False
-            elif not announced_idle:
-                if watch:
-                    log.info("No active Fansly livestreams; waiting for selected creators to go live...")
-                else:
-                    log.info("No active Fansly livestreams found for the selected creators.")
-                announced_idle = True
-            else:
-                log.debug("No active Fansly livestreams found.")
-
         async def fetch_online():
             nonlocal announced_no_targets
             lookups["poll"] += 1
@@ -1010,7 +1023,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     online = await _streams_for_targets(targets)
                     selected = select_streams(online, usernames, opts["excluded"])
                     warn_streak(streaks, "poll")
-                    _log_poll_state(selected)
+                    log_poll_state(selected)
                     return selected
 
                 # Default / list search (-fl): fetch followed online streams
@@ -1066,7 +1079,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
 
                 selected = select_streams(selected, usernames, opts["excluded"])
                 warn_streak(streaks, "poll")
-                _log_poll_state(selected)
+                log_poll_state(selected)
                 return selected
             except Exception as e:
                 warn_streak(streaks, "poll", f"Fansly livestream check failed: {e}")

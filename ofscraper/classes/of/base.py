@@ -92,7 +92,9 @@ class base:
         # codes again would drop an escaped "\[s:lg\]", shown as "[s:lg]"
         # a backslash is a folder separator on Windows, and control characters
         # (tab, carriage return) can't be in a Windows file name
-        text = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*;]+', "", text)
+        import ofscraper.utils.paths.names as names
+
+        text = names.strip_caption_chars(text)
         text = re.sub("-+", "_", text)
         text = re.sub(" +", " ", text).strip(" ")
         # literal text: a backslash isn't a re.sub escape here

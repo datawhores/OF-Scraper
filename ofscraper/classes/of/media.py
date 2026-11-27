@@ -310,77 +310,40 @@ class Media(base.base):
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("hls")
         )
 
-    @property
-    def policy(self):
+    def _drm_signature(self, kind, field):
         if self.url:
             return None
         return (
             self._media.get("files", {})
             .get("drm", {})
             .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Policy")
+            .get(kind, {})
+            .get(field)
         )
+
+    @property
+    def policy(self):
+        return self._drm_signature("dash", "CloudFront-Policy")
 
     @property
     def hls_policy(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Policy")
-        )
+        return self._drm_signature("hls", "CloudFront-Policy")
 
     @property
     def keypair(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Key-Pair-Id")
-        )
+        return self._drm_signature("dash", "CloudFront-Key-Pair-Id")
 
     @property
     def hls_keypair(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Key-Pair-Id")
-        )
+        return self._drm_signature("hls", "CloudFront-Key-Pair-Id")
 
     @property
     def signature(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Signature")
-        )
+        return self._drm_signature("dash", "CloudFront-Signature")
 
     @property
     def hls_signature(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Signature")
-        )
+        return self._drm_signature("hls", "CloudFront-Signature")
 
     @property
     def hls_header(self):

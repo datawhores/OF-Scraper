@@ -302,7 +302,7 @@ def test_date_keeps_what_a_name_can_hold_outside_windows(
     "system, windows", [("Windows", True), ("Linux", False), ("Darwin", False)]
 )
 def test_on_windows_follows_the_system(monkeypatch, system, windows):
-    monkeypatch.setattr(naming_check.platform, "system", lambda: system)
+    monkeypatch.setattr("platform.system", lambda: system)
     assert naming_check.on_windows() is windows
 
 # ---------------------------------------------------------------- templates

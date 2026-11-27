@@ -568,6 +568,7 @@ def action_script(env, monkeypatch, tmp_path):
     """The real after_download_action_script, with the script's run replaced:
     returns the media the script would get on stdin (#332)."""
     import ofscraper.managers.manager as manager
+    import ofscraper.scripts.after_action_script as action_runner
     import ofscraper.scripts.after_download_action_script as script_mod
 
     script = tmp_path / "script"
@@ -576,7 +577,7 @@ def action_script(env, monkeypatch, tmp_path):
     monkeypatch.setattr(manager, "Manager", SimpleNamespace(current_model_manager=SimpleNamespace(
         get_model=lambda username: {"username": username, "id": MODEL_ID})))
     sent = []
-    monkeypatch.setattr(script_mod, "run", lambda cmd, input=None, **k: sent.append(input))
+    monkeypatch.setattr(action_runner, "run", lambda cmd, input=None, **k: sent.append(input))
 
     def media(items):
         script_mod.after_download_action_script(USERNAME, items)

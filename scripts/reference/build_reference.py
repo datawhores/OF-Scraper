@@ -1067,14 +1067,20 @@ PLACEHOLDER_KINDS = {
     "metadata": ("Database path (`metadata`)", [("", "_base_path_variables"), ("databasePlaceholder", "databasePathHelper")]),
     "dir": (
         "Media folders (`dir_format`)",
-        [("", "_base_path_variables"), ("Placeholders", "add_main_variables"), ("Placeholders", "add_price_variables")],
+        [
+            ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
+            ("Placeholders", "add_main_variables"),
+        ],
     ),
     "file": (
         "Media file names (`file_format`)",
         [
             ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Placeholders", "add_main_variables"),
-            ("Placeholders", "add_price_variables"),
             ("Placeholders", "createfilename"),
         ],
     ),
@@ -1082,8 +1088,9 @@ PLACEHOLDER_KINDS = {
         "Text files (`--text`)",
         [
             ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Textholders", "add_main_variables"),
-            ("Textholders", "add_price_variables"),
             ("Textholders", "createfilename"),
         ],
     ),
