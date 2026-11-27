@@ -41,11 +41,14 @@ def _main_menu_status() -> str:
     mm = getattr(manager.Manager, "current_model_manager", None)
     selected = len(mm.state.get_all_queued_usernames()) if mm is not None else 0
     cli_users = getattr(settings.get_settings(), "usernames", None) or []
-    users_str = (
-        f"{selected} selected"
-        if selected
-        else f"{len(cli_users)} from CLI" if cli_users else "Prompt on run"
-    )
+    if selected:
+        users_str = f"{selected} selected"
+    elif any(str(u).upper() == "ALL" for u in cli_users):
+        users_str = "ALL from CLI"
+    elif cli_users:
+        users_str = f"{len(cli_users)} from CLI"
+    else:
+        users_str = "Prompt on run"
 
     db_str = f"PostgreSQL ({postgres.describe()})" if postgres.enabled() else "user_data.db"
     return (

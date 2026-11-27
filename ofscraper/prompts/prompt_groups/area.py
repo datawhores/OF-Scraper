@@ -164,6 +164,11 @@ def db_areas_prompt() -> list:
 
 def metadata_anon_areas_prompt() -> list:
     name = "areas"
+    choices = (
+        _area_choices(include_extra=False)
+        if sites.is_fansly()
+        else [Choice("Profile"), *_area_choices(include_extra=False)]
+    )
     answers = promptClasses.batchConverter(
         *[
             {
@@ -172,13 +177,7 @@ def metadata_anon_areas_prompt() -> list:
                 "name": name,
                 "message": "Which area(s) would you to perform metadata actions on anonymously",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Streams"),
-                ],
+                "choices": choices,
             }
         ]
     )
