@@ -42,7 +42,7 @@ def load_req_live_config():
         0, int(os.getenv("OFSC_LIVE_INDIVIDUAL_MAX", "10"))
     )
 
-    # LIVE_JITTER: Maximum random jitter in seconds added to the `--live-watch` polling interval.
+    # LIVE_JITTER: Maximum random jitter in seconds added to the `--live-watch` polling interval. The `--live-jitter` option overrides it for one run.
     # Default: 10.0
     config["LIVE_JITTER"] = _non_negative_float(os.getenv("OFSC_LIVE_JITTER"), 10.0)
 

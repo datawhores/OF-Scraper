@@ -24,7 +24,6 @@ import asyncio
 import contextvars
 import datetime
 import logging
-import math
 import os
 import pathlib
 import threading
@@ -51,18 +50,6 @@ def _check_timeout() -> int:
 
 def _check_concurrency() -> int:
     return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
-
-
-def _jitter() -> float:
-    try:
-        val = getattr(shared.options(), "get", lambda *_: None)("jitter")
-        if val is not None:
-            parsed = float(val)
-            if math.isfinite(parsed):
-                return max(0.0, parsed)
-    except (TypeError, ValueError):
-        pass
-    return float(shared.DEFAULT_JITTER)
 
 
 def _stream_active_url(username: str) -> str:
@@ -545,7 +532,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 record,
                 max_concurrent=opts["max_concurrent"],
                 interval=opts["interval"],
-                jitter=opts.get("jitter", _jitter()),
+                jitter=opts["jitter"],
                 once=not watch,
             )
             await watcher.run(stop)

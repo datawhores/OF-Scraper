@@ -7,7 +7,6 @@ import pytest
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
 import ofscraper.sites.fansly.live as fansly_live
-import ofscraper.sites.onlyfans.live as onlyfans_live
 import ofscraper.utils.args.parse.commands.main as main_cmd
 import ofscraper.utils.of_env as of_env_pkg
 import ofscraper.utils.of_env.of_env as of_env
@@ -76,21 +75,3 @@ def test_invalid_ofsc_live_jitter_env_falls_back_to_default(monkeypatch, reset_o
     of_env_pkg.get_all_configs(forced=True)
     assert of_env.getattr("LIVE_JITTER") == 10.0
     assert fansly_live.options(SimpleNamespace(live_jitter=None))["jitter"] == 10.0
-
-
-def test_onlyfans_jitter_handles_normal_zero_and_malformed(monkeypatch):
-    monkeypatch.setattr(onlyfans_live.shared, "options", lambda: {"jitter": 2.5})
-    assert onlyfans_live._jitter() == 2.5
-
-    monkeypatch.setattr(onlyfans_live.shared, "options", lambda: {"jitter": 0.0})
-    assert onlyfans_live._jitter() == 0.0
-
-    monkeypatch.setattr(onlyfans_live.shared, "options", lambda: {"jitter": -4})
-    assert onlyfans_live._jitter() == 0.0
-
-    for bad in ("not-a-number", float("nan"), float("inf"), float("-inf"), None):
-        monkeypatch.setattr(onlyfans_live.shared, "options", lambda b=bad: {"jitter": b})
-        assert onlyfans_live._jitter() == 10.0
-
-    monkeypatch.setattr(onlyfans_live.shared, "options", lambda: {})
-    assert onlyfans_live._jitter() == 10.0

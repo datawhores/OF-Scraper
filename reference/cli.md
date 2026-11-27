@@ -872,6 +872,8 @@ Seconds between live checks in --live-watch (default 60, plus random jitter up t
 
 Max random extra seconds added to each --live-watch check interval (default 10)
 
+Overrides `LIVE_JITTER` (`OFSC_LIVE_JITTER`) for the run, on OnlyFans and Fansly. Without the option, or with a value that isn't a finite number, the wait falls back to `LIVE_JITTER`. Fractions of a second are accepted, and `0` turns the jitter off.
+
 **Dest:** `live_jitter` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-max`
