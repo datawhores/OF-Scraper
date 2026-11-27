@@ -396,3 +396,30 @@ def test_rename_active_profile_preserves_session_site_override(
     sites.set_active_site(sites.ONLYFANS)
     settings.update_settings()
     assert manager.Manager.current_model_manager is of_manager
+
+
+def test_delete_profile_from_the_menu_removes_its_folder_and_creator_managers(
+    monkeypatch, tmp_path, menu_profile
+):
+    """The Profile menu's Delete called ProfileManager.delete_profile() without
+    the profile's name: a TypeError after the folder was already removed, so
+    the creator managers kept for that profile were never dropped."""
+    import ofscraper.utils.profiles.manage as profile_manage
+
+    (tmp_path / "main_profile").mkdir(exist_ok=True)
+    other = tmp_path / "other_profile"
+    other.mkdir()
+    settings.update_settings()
+    kept = manager.Manager.current_model_manager
+    profile_manager = manager.Manager.profile_manager
+    profile_manager.model_managers[("other_profile", sites.ONLYFANS)] = object()
+    profile_manager.model_managers[("other_profile", sites.FANSLY)] = object()
+    monkeypatch.setattr(profile_manage.tools, "print_profiles", lambda: None)
+    monkeypatch.setattr(profile_manage.profile_data, "get_profile_names", lambda: [])
+    monkeypatch.setattr(profile_manage.prompts, "get_profile_prompt", lambda names: "other_profile")
+
+    profile_manage.delete_profile()
+
+    assert not other.exists()
+    assert [k for k in profile_manager.model_managers if k[0] == "other_profile"] == []
+    assert manager.Manager.current_model_manager is kept

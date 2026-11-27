@@ -103,14 +103,14 @@ def test_deleted_profile_name_with_brackets(monkeypatch):
     monkeypatch.setattr(profile_manage.prompts, "get_profile_prompt", lambda names: "x[red]_profile")
     monkeypatch.setattr(profile_manage.profile_data, "get_profile_names", lambda: ["x[red]_profile"])
     monkeypatch.setattr(profile_manage.profile_data, "get_active_profile", lambda: "main")
-    monkeypatch.setattr(profile_manage.common_paths, "get_config_home", lambda: Path("cfg"))
-    monkeypatch.setattr(profile_manage.shutil, "rmtree", lambda p: None)
+    deleted = []
     monkeypatch.setattr(
         profile_manage.manager,
         "Manager",
-        SimpleNamespace(profile_manager=SimpleNamespace(delete_profile=lambda: None)),
+        SimpleNamespace(profile_manager=SimpleNamespace(delete_profile=deleted.append)),
     )
     profile_manage.delete_profile()
+    assert deleted == ["x[red]_profile"]
     assert "Successfully deleted x[red]_profile" in buf.getvalue()
 
 
