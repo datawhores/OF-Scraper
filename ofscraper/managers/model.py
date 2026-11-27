@@ -107,6 +107,9 @@ class ModelManager:
         # creators ticked when Esc left the picker; they stand in for the last
         # selection until a run queues one
         self._ticked_on_cancel: List[str] = []
+        # the creators picked on a daemon's first pass. With --refresh-users
+        # each later pass matches them by name against the list it read again
+        self._daemon_picked: List[str] = []
 
     @property
     def all_subs(self) -> List["Model"]:
@@ -151,7 +154,7 @@ class ModelManager:
         # Load all base data into memory first (or force refresh when --refresh-users is set)
         if self._refresh_users():
             log.info("Refresh users active. Re-fetching subscriptions for this pass.")
-            self._fetch_all_subs(force_refetch=True, reset=True)
+            self._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
         else:
             self._load_all_subs_if_needed()
 
@@ -214,7 +217,7 @@ class ModelManager:
         queueing anyone. The check table opened from the Action Menu (#425)
         uses it."""
         if self._refresh_users():
-            self._fetch_all_subs(force_refetch=True, reset=True)
+            self._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
         else:
             self._load_all_subs_if_needed()
         return self._select_models_scraper()
@@ -352,17 +355,33 @@ class ModelManager:
         usernames = settings.get_settings().usernames or []
         is_daemon = settings.get_settings().daemon
 
-        # Guard Clause 1: Daemon mode with a specific list of users or --refresh-users.
-        # The same filters as an interactive run, but no prompt if they remove everyone (#285)
-        if is_daemon and (usernames or self._refresh_users()):
+        # Guard Clause 1: Daemon mode with a specific list of users. The same
+        # filters as an interactive run, but no prompt if they remove everyone (#285)
+        if is_daemon and usernames:
             filtered_models = self._filtered_models()
-            if not usernames or "ALL" in usernames:
+            if "ALL" in usernames:
                 if not filtered_models:
                     log.warning("The filters removed every creator, so none were selected.")
                 return list(filtered_models.values())
             return self._select_by_usernames(
                 filtered_models.values(), usernames, filtered=True
             )
+
+        # --refresh-users without -u: the first pass opens the picker like any
+        # daemon run, and later passes match the creators picked there by name
+        # against the list this pass read again. A picked creator the list or
+        # the filters leave out is skipped this pass only.
+        if is_daemon and self._refresh_users() and self._daemon_picked:
+            filtered_models = self._filtered_models()
+            picked = [
+                filtered_models[n] for n in self._daemon_picked if n in filtered_models
+            ]
+            if not picked:
+                log.warning(
+                    "None of the creators picked on the first pass are in the "
+                    "refreshed creator list, so none were selected this pass."
+                )
+            return picked
 
         # Guard Clause 2: Daemon mode with an existing selection and no new instructions.
         existing_selection = self.get_scrape_selected_models()
@@ -389,6 +408,8 @@ class ModelManager:
             on_cancel=self._remember_ticked,
         )
         self._ticked_on_cancel = []
+        if is_daemon:
+            self._daemon_picked = [m.name for m in selected or []]
         return selected
 
     def _previous_selection(self) -> List["Model"]:
@@ -578,11 +599,22 @@ class ModelManager:
         force_refetch: bool = False,
         reset: bool = False,
         all_main_models: bool = False,
+        keep_on_empty: bool = False,
     ) -> None:
-        """Helper loop to handle empty API responses and offer retries."""
+        """Helper loop to handle empty API responses and offer retries.
+
+        ``reset`` replaces the creators already held instead of adding to
+        them. They're dropped before the scan, so a scan that finds nobody
+        leaves an empty list: after --user-list or --black-list changed, the
+        old list's creators must not stay. ``keep_on_empty`` (the
+        --refresh-users rescan each pass makes) drops them only once the scan
+        finds someone, so a failed scan whose retry is declined keeps the
+        list the session already had."""
         if self._all_subs_dict and not force_refetch and not reset:
             return
         self._last_fetched = None
+        if reset and not keep_on_empty:
+            self._all_subs_dict = {}
 
         while True:
             self._fetch_all_subs_async(all_main_models=all_main_models)

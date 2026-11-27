@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import time
 import types
 import cloup as click
 import pytest
@@ -75,7 +76,7 @@ def test_daemon_refresh_users_adds_new_subs_and_drops_unsubs(monkeypatch, event_
     args.daemon = 5.0
     args.refresh_users = True
     args.actions = ["download"]
-    args.usernames = []
+    args.usernames = ["ALL"]
     settings.update_args(args)
 
     try:
@@ -158,6 +159,8 @@ def test_onlyfans_live_refresh_users_reloads_cached_targets(monkeypatch):
             "unresolved": [],
             "blacklist_ids": set(),
             "named_ids": set(),
+            # the last refresh was long enough ago for another to be due
+            "refreshed_at": time.monotonic() - fansly_live.REFRESH_USERS_SECONDS - 1,
         }
 
     args = settings.get_args(copy=True)
@@ -224,6 +227,8 @@ def test_fansly_live_refresh_users_clears_filter_cache_between_polls(monkeypatch
     monkeypatch.setattr(ModelManager, "filter_models", fake_filter_models)
     monkeypatch.setattr(fansly_live, "LiveWatcher", TwoPollWatcher)
     monkeypatch.setattr(ffmpeg_finder, "get_ffmpeg", lambda: "ffmpeg")
+    # every check after the first is a refresh
+    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -321,7 +326,7 @@ def test_daemon_refresh_users_empty_scan_skips_pass(monkeypatch, event_loop):
     args.daemon = 5.0
     args.refresh_users = True
     args.actions = ["download"]
-    args.usernames = []
+    args.usernames = ["ALL"]
     settings.update_args(args)
 
     try:
@@ -343,8 +348,9 @@ def test_daemon_refresh_users_empty_scan_skips_pass(monkeypatch, event_loop):
 def test_onlyfans_live_refresh_users_preserves_miss_backoff_individual(
     monkeypatch, caplog
 ):
-    """With --refresh-users in individual mode, found creators refresh on every
-    poll while names that missed 3+ times back off to every 10th poll."""
+    """With --refresh-users in individual mode, found creators are looked up
+    again on every refresh while names that missed 3+ times back off to every
+    10th poll. Every poll after the first is a refresh here."""
     orig_args = settings.get_args(copy=True)
     looked_up = []
 
@@ -359,6 +365,7 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_individual(
 
     monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
     monkeypatch.setattr(of_live, "still_live", fake_still_live)
+    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -386,8 +393,9 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_individual(
 def test_onlyfans_live_refresh_users_preserves_miss_backoff_list_mode(
     monkeypatch, caplog
 ):
-    """With --refresh-users in list mode, subscription lists still refresh on
-    every poll while missing -u names back off to every 10th poll."""
+    """With --refresh-users in list mode, the subscription lists are read
+    again on every refresh while missing -u names back off to every 10th
+    poll. Every poll after the first is a refresh here."""
     import ofscraper.data.api.subscriptions.subscriptions as subs
 
     orig_args = settings.get_args(copy=True)
@@ -411,6 +419,7 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_list_mode(
     monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
     monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
     monkeypatch.setattr(of_live, "still_live", fake_still_live)
+    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -431,4 +440,164 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_list_mode(
     assert list_fetches == 25
     assert individual_lookups == [["no_such_name"]] * 5
     assert caplog.text.count("every 10th check") == 1
+
+
+def test_daemon_refresh_users_without_usernames_opens_the_picker_once(
+    monkeypatch, event_loop
+):
+    """--daemon --refresh-users without -u: the first pass opens the creator
+    picker like any daemon run, instead of selecting every subscription.
+    Later passes match the picked creators by name against the refreshed
+    list, without prompting again."""
+    orig_args = settings.get_args(copy=True)
+    alice = {"id": 1, "username": "alice", "subscribedBy": True}
+    bob = {"id": 2, "username": "bob", "subscribedBy": True}
+    carol = {"id": 3, "username": "carol", "subscribedBy": True}
+    passes = iter(
+        [
+            [Model(alice), Model(bob)],
+            [Model(alice), Model(bob), Model(carol)],
+            [Model(bob), Model(carol)],
+            [Model(alice), Model(bob)],
+        ]
+    )
+
+    async def fake_get_models(all_main_models=False):
+        return next(passes)
+
+    picker_calls = []
+
+    def pick_alice(models, selected, **kw):
+        picker_calls.append([m.name for m in models])
+        return [m for m in models if m.name == "alice"]
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(retriver, "get_selected_model", pick_alice)
+
+    args = settings.get_args(copy=True)
+    args.daemon = 5.0
+    args.refresh_users = True
+    args.actions = ["download"]
+    args.usernames = []
+    settings.update_args(args)
+
+    try:
+        mm = ModelManager()
+
+        mm.prepare_scraper_activity()
+        assert picker_calls == [["alice", "bob"]]
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+
+        # carol is a new subscription nobody picked
+        mm.prepare_scraper_activity()
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+
+        # alice is gone this pass: nobody is selected, and nobody is asked
+        mm.prepare_scraper_activity()
+        assert mm.get_scrape_selected_models() == []
+
+        # she is back, and still the selection
+        mm.prepare_scraper_activity()
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+        assert len(picker_calls) == 1
+    finally:
+        settings.update_args(orig_args)
+
+
+def test_rescan_after_a_list_change_does_not_keep_the_old_list(monkeypatch, event_loop):
+    """The rescan the filter menu makes after --user-list or --black-list
+    changed replaces the creators held: when it finds nobody and the retry is
+    declined, the previous list's creators must not stay selectable. Only the
+    --refresh-users rescan of each pass keeps them."""
+    import ofscraper.utils.interactive as interactive
+
+    orig_args = settings.get_args(copy=True)
+    scans = iter([[Model({"id": 1, "username": "alice", "subscribedBy": True})], [], []])
+
+    async def fake_get_models(all_main_models=False):
+        return next(scans)
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(interactive, "is_interactive", lambda: True)
+    monkeypatch.setattr(prompts, "retry_user_scan", lambda: False)
+
+    args = settings.get_args(copy=True)
+    args.daemon = None
+    settings.update_args(args)
+
+    try:
+        mm = ModelManager()
+        mm._fetch_all_subs(force_refetch=True)
+        assert [m.name for m in mm.all_subs] == ["alice"]
+
+        mm._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
+        assert [m.name for m in mm.all_subs] == ["alice"]
+
+        mm._fetch_all_subs(force_refetch=True, reset=True)
+        assert mm.all_subs == []
+    finally:
+        settings.update_args(orig_args)
+
+
+def test_refresh_due_waits_between_refreshes():
+    every = fansly_live.REFRESH_USERS_SECONDS
+    state = {}
+    # the first check reads everything anyway: it only starts the clock
+    assert fansly_live.refresh_due(state, now=1000.0) is False
+    assert fansly_live.refresh_due(state, now=1060.0) is False
+    assert fansly_live.refresh_due(state, now=1000.0 + every) is True
+    # and the wait starts again from that refresh
+    assert fansly_live.refresh_due(state, now=1060.0 + every) is False
+    assert fansly_live.refresh_due(state, now=1000.0 + 2 * every) is True
+
+
+def test_onlyfans_live_refresh_users_does_not_rescan_on_every_poll(monkeypatch):
+    """With --refresh-users the subscription lists are read again only when a
+    refresh is due, not on each of a watch's checks."""
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+
+    orig_args = settings.get_args(copy=True)
+    list_fetches = 0
+    clock = [5000.0]
+
+    async def fake_fetch_models(c, cache, names=None):
+        nonlocal list_fetches
+        list_fetches += 1
+        return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+
+    async def fake_active(c, strict=False):
+        yield [{"id": 1, "username": "creator_a", "hasStream": False}]
+
+    async def fake_still_live(c, username):
+        return False
+
+    monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    monkeypatch.setattr(of_live, "still_live", fake_still_live)
+    monkeypatch.setattr(fansly_live.time, "monotonic", lambda: clock[0])
+
+    args = settings.get_args(copy=True)
+    args.live_watch = True
+    args.refresh_users = True
+    args.usernames = ["creator_a"]
+    args.username_search = "list"
+    settings.update_args(args)
+
+    token = of_live._TARGET_CACHE.set({})
+    try:
+        # nine checks a minute apart: one read of the lists
+        for _ in range(9):
+            asyncio.run(of_live.get_online_streams(c=None))
+            clock[0] += 60
+        assert list_fetches == 1
+
+        # ten minutes after the first check the lists are read again, once
+        clock[0] = 5000.0 + fansly_live.REFRESH_USERS_SECONDS
+        asyncio.run(of_live.get_online_streams(c=None))
+        clock[0] += 60
+        asyncio.run(of_live.get_online_streams(c=None))
+        assert list_fetches == 2
+    finally:
+        of_live._TARGET_CACHE.reset(token)
+        settings.update_args(orig_args)
 

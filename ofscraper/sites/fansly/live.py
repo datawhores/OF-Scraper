@@ -27,6 +27,7 @@ import pathlib
 import random
 import re
 import threading
+import time
 from urllib.parse import parse_qsl, urljoin, urlparse
 
 from ofscraper.sites.fansly import constants
@@ -642,6 +643,24 @@ def lookup_due(misses: dict, name: str, poll: int) -> bool:
     return misses.get(name, 0) < 3 or poll % 10 == 0
 
 
+# with --refresh-users, the least time between two rereads of the creator
+# lists in a live watch. Rereading on every check would scan every
+# subscription once a minute.
+REFRESH_USERS_SECONDS = 600
+
+
+def refresh_due(state: dict, now: float | None = None) -> bool:
+    """With --refresh-users, whether this check reads the creator lists again:
+    at most once per ``REFRESH_USERS_SECONDS``. The first call only starts the
+    clock in ``state``, as the first check reads everything anyway."""
+    now = time.monotonic() if now is None else now
+    last = state.get("refreshed_at")
+    if last is not None and now - last < REFRESH_USERS_SECONDS:
+        return False
+    state["refreshed_at"] = now
+    return last is not None
+
+
 def count_misses(misses: dict, tried, missing) -> None:
     """Record a lookup of the ``tried`` names: ``missing`` ones get one more
     miss, found ones are forgotten. A name reaching 3 misses is warned about once."""
@@ -979,7 +998,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
         async def fetch_online():
             nonlocal announced_no_targets, following_set
             lookups["poll"] += 1
-            if opts["refresh_users"]:
+            if opts["refresh_users"] and refresh_due(lookups):
                 resolved_cache.clear()
                 unfollowed_cache.clear()
                 filtered_cache.clear()

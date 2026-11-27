@@ -223,8 +223,9 @@ async def _update_targets(
     first poll (the -u names one by one with ``by_name``, else from the
     subscription lists), then on later polls the ones a failed lookup left
     out, so one failure doesn't leave a creator unwatched all session.
-    With ``refresh``, valid creators and subscription lists are re-fetched on
-    every poll while names that missed 3+ times still back off to every 10th.
+    With ``refresh`` (--refresh-users, when ``shared.refresh_due`` says so) the
+    targets are looked up again and replace the ones held, while names that
+    missed 3+ times still back off to every 10th poll.
     Returns the ids the lookup saw live."""
     # the cache is filled only after a lookup succeeds: one that raised leaves
     # it as it was, so the next poll looks up everything again
@@ -413,7 +414,9 @@ async def get_online_streams(c, checks=None) -> list:
     cache = _TARGET_CACHE.get()
     if cache is None:
         cache = {}
-    refresh_users = bool(getattr(s, "refresh_users", False))
+    # --refresh-users: the targets are looked up again now and then, not on
+    # every check, which would scan every subscription once a minute
+    refresh_users = bool(getattr(s, "refresh_users", False)) and shared.refresh_due(cache)
 
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
