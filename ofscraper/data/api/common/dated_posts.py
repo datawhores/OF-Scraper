@@ -202,6 +202,8 @@ async def scrape_posts(
     all_ghosts_found = []
 
     current_timestamp = float(timestamp) - 0.001 if timestamp and offset else timestamp
+    # after the first page the cursor is a post's date, which is used even if 0
+    paged = False
     has_more = True
 
     try:
@@ -210,7 +212,7 @@ async def scrape_posts(
                 of_env.getattr(area.next_endpoint).format(
                     model_id, str(current_timestamp)
                 )
-                if current_timestamp
+                if current_timestamp or paged
                 else of_env.getattr(area.endpoint).format(model_id)
             )
 
@@ -226,8 +228,26 @@ async def scrape_posts(
                 if not batch:
                     break
 
-                batch_timestamps = [float(x.get("postedAtPrecise", 0)) for x in batch]
-                max_ts = max(batch_timestamps)
+                # an undated post is kept; it doesn't move the page cursor
+                batch_timestamps = []
+                for x in batch:
+                    if x.get("postedAtPrecise") in (None, ""):
+                        log.warning(f"{area.api}: post {x.get('id')} has no date")
+                        batch_timestamps.append(None)
+                    else:
+                        batch_timestamps.append(float(x["postedAtPrecise"]))
+                dated = [ts for ts in batch_timestamps if ts is not None]
+                if not dated:
+                    log.warning(
+                        f"{area.api}: no post on this page has a date, stopping the scan here"
+                    )
+                    if has_more:
+                        incomplete.mark_incomplete(
+                            model_id, area.api, "no post on page has a date"
+                        )
+                    yield batch
+                    break
+                max_ts = max(dated)
                 batch_ids = {x["id"] for x in batch}
 
                 expected_missing = [
@@ -254,7 +274,11 @@ async def scrape_posts(
                 # Boundary condition: this page reaches past the "before" date limit.
                 # Keep its in-range posts before stopping.
                 if max_ts > before:
-                    yield [x for x, ts in zip(batch, batch_timestamps) if ts <= before]
+                    yield [
+                        x
+                        for x, ts in zip(batch, batch_timestamps)
+                        if ts is None or ts <= before
+                    ]
                     break
 
                 # This chunk has found all of its cached posts. Keep the page
@@ -263,7 +287,18 @@ async def scrape_posts(
                     yield batch
                     break
 
+                if has_more and paged and max_ts <= current_timestamp:
+                    log.warning(
+                        f"{area.api}: page cursor did not advance, stopping the scan here"
+                    )
+                    incomplete.mark_incomplete(
+                        model_id, area.api, "page cursor did not advance"
+                    )
+                    yield batch
+                    break
+
                 current_timestamp = max_ts
+                paged = True
                 yield batch
 
     except Exception as E:
@@ -318,7 +353,7 @@ async def get_after(m, media, youngest_date, model_id, username):
 
     if len(filtered_items) == 0:
         youngest = await youngest_date(model_id=model_id, username=username)
-        return arrow.get(youngest or "2000").float_timestamp
+        return date_or_2000(youngest)
 
     # 3. Deduplicate (Keeping newest instance for anchor)
     unique_missing = {}
@@ -333,4 +368,10 @@ async def get_after(m, media, youngest_date, model_id, username):
     missing_items = sorted(
         list(unique_missing.values()), key=lambda x: arrow.get(x.get("posted_at") or 0)
     )
-    return arrow.get(missing_items[0]["posted_at"] or "2000").float_timestamp
+    return date_or_2000(missing_items[0]["posted_at"])
+
+
+def date_or_2000(value):
+    # media dates can be Arrow objects, and an undated one (1970) is
+    # still truthy; it falls back to 2000 as a missing float date does
+    return arrow.get(value or 0).float_timestamp or arrow.get("2000").float_timestamp
