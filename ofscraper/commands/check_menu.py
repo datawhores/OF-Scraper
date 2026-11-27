@@ -16,6 +16,7 @@ import ofscraper.commands.check as check
 import ofscraper.managers.manager as manager
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console_
+import ofscraper.utils.const as const
 import ofscraper.utils.settings as settings
 from ofscraper.utils.checkers import check_auth
 
@@ -23,8 +24,6 @@ log = logging.getLogger("shared")
 
 # post_check and msg_check read creators from --url, the others from --username
 URL_COMMANDS = {"post_check", "msg_check"}
-# post_check's default --check-area
-POST_AREAS = ["Timeline", "Pinned", "Archived", "Streams"]
 
 
 def run_check_table():
@@ -53,7 +52,7 @@ def check_args(args, command, usernames):
     # the check commands' defaults: the cached post lists, post_check's
     # default areas, and the table sorted by number
     args.force = False
-    args.check_area = list(POST_AREAS)
+    args.check_area = list(const.TIMELINE_POST_AREAS)
     args.desc = False
     # as the check commands set it (check_mode_changes)
     args.before = arrow.now().shift(days=4)
