@@ -9,7 +9,6 @@
   "ofscraper/data/api/pinned.py:BLE001": 1,
   "ofscraper/data/api/subscriptions/individual.py:BLE001": 1,
   "ofscraper/data/api/tasks.py:BLE001": 1,
-  "ofscraper/data/api/timeline.py:BLE001": 1,
   "ofscraper/db/merge.py:BLE001": 1,
   "ofscraper/db/operations_/wrapper.py:BLE001": 1,
   "ofscraper/db/operations_/wrapper.py:S110": 1

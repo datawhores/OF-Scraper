@@ -11,9 +11,9 @@ r"""
 
 """
 
-# The scan itself is in common/dated_posts.py, shared with archived. The
-# names imported here are this area's: the shared code reaches them through
-# this module, so patching one here changes the streams scan only.
+# The scan itself is in common/dated_posts.py, shared with timeline and archived.
+# The functions and DB helpers imported here are looked up through this module,
+# so patching one here changes the streams scan only.
 import logging
 import sys
 
@@ -22,8 +22,8 @@ import ofscraper.data.api.common.scan_range as scan_range
 from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.utils.context.run_async import run
 
-# Imports marked F401 are used through this module by dated_posts, or patched
-# through it (module.settings, module.progress_utils, module.incomplete)
+# Test handles (module.incomplete, module.progress_utils, module.of_env,
+# module.settings) and per-area helpers looked up on this module by dated_posts.
 import ofscraper.data.api.common.incomplete as incomplete  # noqa: F401
 import ofscraper.utils.live.updater as progress_utils  # noqa: F401
 import ofscraper.utils.of_env.of_env as of_env  # noqa: F401
@@ -32,15 +32,15 @@ from ofscraper.data.api.common.after import get_after_pre_checks  # noqa: F401
 from ofscraper.data.api.common.check import update_check  # noqa: F401
 from ofscraper.data.api.common.page import get_min_posts_batch  # noqa: F401
 from ofscraper.data.api.common.timeline import process_posts_as_individual  # noqa: F401
-from ofscraper.db.operations_.media import (  # noqa: F401
+from ofscraper.db.operations_.media import (
+    get_media_ids_downloaded_model,  # noqa: F401
     get_streams_media,
-    get_media_ids_downloaded_model,
 )
-from ofscraper.db.operations_.posts import (  # noqa: F401
+from ofscraper.db.operations_.posts import (
+    get_deleted_post_ids,  # noqa: F401
     get_streams_post_info,
-    get_deleted_post_ids,
     get_youngest_streams_date,
-    mark_post_as_deleted,
+    mark_post_as_deleted,  # noqa: F401
 )
 
 API = "Streams"

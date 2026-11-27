@@ -1,6 +1,6 @@
-"""The archived and streams scans: endpoints, settings keys, logs and DB hooks.
+"""The timeline, archived and streams scans: endpoints, settings keys, logs and DB hooks.
 
-The two areas share one scraper; these pin down what each still does on its
+The three areas share one scraper; these pin down what each still does on its
 own: which endpoints and env defaults it reads, the lines it logs, what it
 flags as deleted and the database functions (patchable on the area module)
 that pick where a scan starts.
@@ -15,7 +15,9 @@ import arrow
 import pytest
 
 import ofscraper.data.api.archive as archive
+import ofscraper.data.api.common.dated_posts as dated_posts
 import ofscraper.data.api.streams as streams
+import ofscraper.data.api.timeline as timeline
 import ofscraper.utils.of_env.of_env as of_env
 
 MODEL_ID = 7
@@ -35,6 +37,7 @@ AREAS = {
         media="get_archived_media",
         youngest="get_youngest_archived_date",
         cache_line="[bold]Archived Cache[/bold] {} found",
+        cache_trace="oldarchived",
         ghost_line="Worker finished. Flagging 1 ghost archived posts.",
     ),
     "streams": SimpleNamespace(
@@ -49,7 +52,23 @@ AREAS = {
         media="get_streams_media",
         youngest="get_youngest_streams_date",
         cache_line="[bold]Streams Cache[/bold] {} found",
+        cache_trace="oldtimestreams",
         ghost_line="Worker finished. Flagging 1 ghost streams in database.",
+    ),
+    "timeline": SimpleNamespace(
+        module=timeline,
+        entry="get_timeline_posts",
+        api="Timeline",
+        scan_name="timeline",
+        endpoint="timelineEP",
+        next_endpoint="timelineNextEP",
+        max_key="MAX_TIMELINE_INDIVIDUAL_SEARCH",
+        post_info="get_timeline_posts_info",
+        media="get_timeline_media",
+        youngest="get_youngest_timeline_date",
+        cache_line="[bold]Timeline Cache[/bold] {} found",
+        cache_trace="oldtimeline",
+        ghost_line="Worker finished. Flagging 1 deleted posts in database.",
     ),
 }
 
@@ -293,6 +312,32 @@ def test_cache_rows_are_deduplicated_and_logged(area, logged, monkeypatch):
 
     assert [[r["post_id"] for r in chunk] for chunk in split] == [[1], [2]]
     assert area.cache_line.format(2) in logged(logging.DEBUG)
+
+
+def test_cache_rows_are_traced_under_the_area_name(area, monkeypatch):
+    rows = [{"post_id": 1, "created_at": ts(1)}]
+    monkeypatch.setattr(area.module, area.post_info, AsyncMock(return_value=rows))
+    traced = Mock()
+    monkeypatch.setattr(dated_posts, "trace_log_raw", traced)
+
+    asyncio.run(area.module.get_split_array(MODEL_ID, USER, 0))
+
+    traced.assert_called_once_with(area.cache_trace, rows)
+
+
+def test_undated_cache_rows_are_left_out_of_the_chunks(area, monkeypatch):
+    # the DB post-info helpers normalise undated rows to 0.0 and get_after is at least 2000
+    rows = [
+        {"post_id": 2, "created_at": ts(2)},
+        {"post_id": 9, "created_at": 0.0},
+        {"post_id": 1, "created_at": ts(1)},
+    ]
+    monkeypatch.setattr(area.module, area.post_info, AsyncMock(return_value=rows))
+    monkeypatch.setattr(area.module, "get_min_posts_batch", lambda total, api: 5)
+
+    split = asyncio.run(area.module.get_split_array(MODEL_ID, USER, YEAR_2000))
+
+    assert [[r["post_id"] for r in chunk] for chunk in split] == [[1, 2]]
 
 
 def test_cache_disabled_skips_the_database(area, logged, monkeypatch):
