@@ -61,7 +61,7 @@ def live_tui(ctx, *args, **kwargs):
         for key in ("config", "profile", "site", "env_files"):
             if not ctx.params.get(key) and ctx.parent.params.get(key):
                 ctx.params[key] = ctx.parent.params[key]
-    if ctx.params.get("no_rich"):
+    if ctx.params.get("no_rich") or (ctx.parent and ctx.parent.params.get("no_rich")):
         raise UsageError("live_tui cannot be used with --no-live / --no-rich", ctx=ctx)
     ctx.params["live_tui"] = True
     ctx.params["live_watch"] = not bool(ctx.params.get("live"))

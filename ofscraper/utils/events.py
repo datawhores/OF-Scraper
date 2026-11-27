@@ -1,4 +1,4 @@
-"""Download events that other code (a GUI, a plugin) can subscribe to.
+"""Download and livestream events that other code (a TUI, a GUI, a plugin) can subscribe to.
 
 - ``item_downloaded(ele, path)``: a media file is saved at ``path`` (a
   ``pathlib.Path``) and recorded in the database, before the
@@ -12,14 +12,18 @@
   "stopped". ``reason`` says why an item failed or was skipped (see
   ``download.run``); it is None for the other results. An item a stop ended
   before it started gets no event.
+- ``live_watcher``, ``live_poll``, ``live_stream``, ``live_chat``: lifecycle,
+  polling, per-creator recording state, and Fansly chat events emitted by the
+  livestream watcher and recorders via ``emit_sync``.
 
 Subscribers get the event's values as keyword arguments, in the order they
 subscribed. They run in the download's own thread and event loop: a plain
 function is called, and an ``async def`` one is awaited. Either one holds up
 that download while it runs, so a GUI should hand the event to its own
 thread and return. An exception in a subscriber is logged at debug level and
-never fails the download. With no subscribers, sending an event costs one
-dict lookup.
+never fails the download. ``emit_sync`` dispatches synchronously to plain
+function subscribers without awaiting (async subscribers are skipped with a
+debug log). With no subscribers, sending an event costs one dict lookup.
 """
 
 import inspect

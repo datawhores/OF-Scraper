@@ -296,7 +296,7 @@ async def run_ffmpeg(cmd: list, stop: asyncio.Event = None, proxy: str = None) -
         )
         if waiter not in done:
             try:
-                if proc.stdin and not proc.stdin.is_closing():
+                if proc.stdin and not getattr(proc.stdin, "is_closing", lambda: False)():
                     proc.stdin.write(b"q\n")
                     await proc.stdin.drain()
             except (BrokenPipeError, ConnectionResetError, RuntimeError):
@@ -403,7 +403,7 @@ class LiveRecorder:
             "title": stream.get("title"),
             "startedAt": utc_start(stream.get("startedAt")).isoformat(),
             "parts": parts,
-            "chat": chat_path(self.base).name if chat_path(self.base).exists() else self.earlier["chat"],
+            "chat": chat_path(self.base).name if self.chat else self.earlier["chat"],
             "endReason": self.end_reason,
         }
         path = sidecar_path(self.base)
@@ -587,7 +587,7 @@ class LiveWatcher:
     def __init__(self, fetch_online, record, max_concurrent=DEFAULT_MAX_CONCURRENT,
                  interval=DEFAULT_INTERVAL, jitter=DEFAULT_JITTER, once=False,
                  site: str = "fansly", chat_enabled: bool = False,
-                 include_following: bool = True, extra_usernames=None, excluded_usernames=None):
+                 include_following: bool | None = None, extra_usernames=None, excluded_usernames=None):
         self.fetch_online = fetch_online
         self.record = record
         self.max_concurrent = max(1, int(max_concurrent or 1))
@@ -596,17 +596,21 @@ class LiveWatcher:
         self.once = once
         self.site = site
         self.chat_enabled = bool(chat_enabled)
-        self.include_following = bool(include_following)
-        self.extra_usernames = {
-            str(u).strip().lower()
-            for u in (extra_usernames or [])
-            if str(u).strip() and str(u).strip().upper() != "ALL"
-        }
-        self.excluded_usernames = {
-            str(u).strip().lower()
-            for u in (excluded_usernames or [])
-            if str(u).strip()
-        }
+        self.include_following = None if include_following is None else bool(include_following)
+        self.extra_usernames = (
+            None if extra_usernames is None else {
+                str(u).strip().lower()
+                for u in extra_usernames
+                if str(u).strip() and str(u).strip().upper() != "ALL"
+            }
+        )
+        self.excluded_usernames = (
+            None if excluded_usernames is None else {
+                str(u).strip().lower()
+                for u in excluded_usernames
+                if str(u).strip()
+            }
+        )
         self.active = {}
         self.max_seen = 0
         self.paused = False
@@ -754,6 +758,10 @@ class LiveWatcher:
         self.request_poll()
 
     def add_usernames(self, names):
+        if self.extra_usernames is None:
+            self.extra_usernames = set()
+        if self.excluded_usernames is None:
+            self.excluded_usernames = set()
         for raw in names or ():
             clean = str(raw).strip().lstrip("@").lower()
             if clean and clean != "all":
@@ -762,6 +770,10 @@ class LiveWatcher:
         self.request_poll()
 
     def remove_username(self, username: str, account_id=None):
+        if self.extra_usernames is None:
+            self.extra_usernames = set()
+        if self.excluded_usernames is None:
+            self.excluded_usernames = set()
         clean = str(username or "").strip().lstrip("@").lower()
         if clean:
             self.extra_usernames.discard(clean)
@@ -805,6 +817,9 @@ class LiveWatcher:
                 self.active.pop(key_str, None)
 
         def _on_done(_task):
+            forwarder.cancel()
+            self.creator_stops.pop(key_str, None)
+            self.active.pop(key_str, None)
             release(key_str)
             if key_str in self._pending_resume and not stop.is_set():
                 self._pending_resume.discard(key_str)
@@ -873,7 +888,7 @@ class LiveWatcher:
                                     status="stopped",
                                     title=s.get("title"),
                                     started_at=s.get("startedAt"),
-                                    reason="Paused by user (press s to resume)",
+                                    reason="Paused by user (press r to resume)",
                                 )
                         queue = [
                             s for s in fetched
@@ -902,8 +917,12 @@ class LiveWatcher:
                 if self.once:
                     if not queue and not self.active:
                         break
-                    poll = False
                     await _either(wake, stop)
+                    if self._force_poll:
+                        self._force_poll = False
+                        poll = True
+                    else:
+                        poll = False
                     continue
                 timeout = self.interval + random.uniform(0, self.jitter)
                 events.emit_sync(
@@ -1344,9 +1363,20 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
         async def fetch_online():
             nonlocal announced_no_targets
             lookups["poll"] += 1
-            include_following = getattr(watcher, "include_following", wants_all_usernames(opts["usernames"]))
-            extra_names = sorted(getattr(watcher, "extra_usernames", set()))
-            excluded = getattr(watcher, "excluded_usernames", set())
+            w_inc = getattr(watcher, "include_following", None)
+            include_following = wants_all_usernames(opts["usernames"]) if w_inc is None else bool(w_inc)
+            w_extra = getattr(watcher, "extra_usernames", None)
+            if w_extra is None:
+                raw = opts["usernames"]
+                extra_list = [raw] if isinstance(raw, str) else list(raw or [])
+                extra_names = sorted({
+                    str(u).strip().lower() for u in extra_list
+                    if str(u).strip() and str(u).strip().upper() != "ALL"
+                })
+            else:
+                extra_names = sorted(w_extra)
+            w_excl = getattr(watcher, "excluded_usernames", None)
+            excluded = opts["excluded"] if w_excl is None else w_excl
             search_mode = opts["username_search"]
             active_usernames = None if include_following else extra_names
 
@@ -1357,8 +1387,8 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     _log_poll_state([])
                     return []
 
-                # Explicit-only mode (Following OFF) or individual search (-fi)
-                if not include_following or (extra_names and search_mode == "individual"):
+                # Individual search (-fi) with explicit usernames only (Following OFF)
+                if not include_following and search_mode == "individual":
                     targets = await _resolve_fansly_targets(extra_names, unfollowed_only=False)
                     skip = username_keys(excluded)
                     targets = [
@@ -1375,9 +1405,9 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     _log_poll_state(selected)
                     return selected
 
-                # Include Following ON: fetch followed online streams + any explicit extra usernames
+                # Fetch followed online streams first, then fall back for unfollowed explicit targets
                 online = await live_api.get_online_streams(c)
-                selected = select_streams(online, None, excluded)
+                selected = select_streams(online, active_usernames, excluded)
                 explicit_targets = []
 
                 if extra_names and search_mode != "list":
@@ -1392,7 +1422,9 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     ]
                     if missing:
                         try:
-                            explicit_targets = await _resolve_fansly_targets(missing, unfollowed_only=False)
+                            explicit_targets = await _resolve_fansly_targets(
+                                missing, unfollowed_only=(search_mode != "individual")
+                            )
                             explicit_targets = [
                                 t for t in explicit_targets
                                 if not matches_account(t.get("username"), t.get("accountId"), skip)
@@ -1429,7 +1461,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         s for s in selected if filtered_cache.get(str(s["accountId"]), False)
                     ]
 
-                selected = select_streams(selected, None, excluded)
+                selected = select_streams(selected, active_usernames, excluded)
                 merged_targets = {str(t["accountId"]): t for t in explicit_targets}
                 for s in selected:
                     merged_targets[str(s["accountId"])] = {

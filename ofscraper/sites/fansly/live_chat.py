@@ -1,13 +1,14 @@
 """Read-only livestream chat recorder (off by default, ``--live-chat``).
 
-The chat socket (``wss://chatws.fansly.com/?v=3``) gets exactly two kinds of
+The chat socket (``wss://chatws.fansly.com/?v=3``) gets only three kinds of
 frame from us, and ``ChatRecorder._send`` refuses anything else:
 
 - the auth frame ``{"t":1,"d":"{\\"token\\":\\"<token>\\",\\"v\\":3}"}``, once;
+- the room-join frame ``{"t":46001,"d":"{\\"chatRoomId\\":\\"<id>\\"}"}``, once when a room id is present;
 - the keep-alive ``p``, every 20-25 s (jittered).
 
-No chat-room join, subscription alerts, likes, tips, messages or acks are ever
-sent. Received chat messages (service 46, ``chatRoomMessage``) are appended to
+No subscription alerts, likes, tips, messages or acks are ever sent.
+Received chat messages (service 46, ``chatRoomMessage``) are appended to
 ``..._chat.jsonl``, one JSON object per line.
 """
 
@@ -34,7 +35,7 @@ TYPE_JOIN_ROOM = 46001
 
 
 class ForbiddenFrame(Exception):
-    """Raised instead of sending anything other than auth or keep-alive."""
+    """Raised instead of sending anything other than auth, room-join (46001) or keep-alive."""
 
 
 def auth_frame(token: str) -> str:

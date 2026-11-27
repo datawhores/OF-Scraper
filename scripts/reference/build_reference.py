@@ -44,6 +44,7 @@ COMMANDS = [
     "post_check",
     "metadata",
     "db",
+    "live_tui",
 ]
 
 
@@ -304,6 +305,7 @@ def command_objects():
     import ofscraper.utils.args.parse.commands.db as db
     import ofscraper.utils.args.parse.commands.main as main
     import ofscraper.utils.args.parse.commands.manual as manual
+    import ofscraper.utils.args.parse.commands.live_tui as live_tui
     import ofscraper.utils.args.parse.commands.message as message
     import ofscraper.utils.args.parse.commands.metadata as metadata
     import ofscraper.utils.args.parse.commands.paid as paid
@@ -319,6 +321,7 @@ def command_objects():
         "post_check": post.post_check,
         "metadata": metadata.metadata,
         "db": db.db,
+        "live_tui": live_tui.live_tui,
     }
 
 

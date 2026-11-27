@@ -224,6 +224,7 @@ class LiveStreamApp(App):
 
         self._streams: dict[str, StreamRowState] = {}
         self._username_index: dict[tuple[str, str], str] = {}
+        self._removed_keys: set[str] = set()
         self._chat_buffers: dict[str, deque[Text]] = {}
         self._active_chat_user: str | None = None
         self._shown_keys: set[str] = set()
@@ -346,6 +347,8 @@ class LiveStreamApp(App):
                 raw_id = t.get("accountId")
                 uname = str(t.get("username") or raw_id or "unknown")
                 row_key = f"{site}:{raw_id}" if raw_id is not None else f"{site}:{uname.lower()}"
+                if row_key in self._removed_keys:
+                    continue
                 self._username_index[(site, uname.lower())] = row_key
                 if row_key not in self._streams:
                     self._streams[row_key] = StreamRowState(
@@ -369,6 +372,8 @@ class LiveStreamApp(App):
                 raw_id = s.get("accountId")
                 uname = str(s.get("username") or raw_id or "unknown")
                 row_key = f"{site}:{raw_id}" if raw_id is not None else f"{site}:{uname.lower()}"
+                if row_key in self._removed_keys:
+                    continue
                 self._username_index[(site, uname.lower())] = row_key
                 online_keys.add(row_key)
                 entry = self._streams.get(row_key)
@@ -427,6 +432,9 @@ class LiveStreamApp(App):
         else:
             row_key = self._username_index.get(lookup) or f"{site}:{username.lower()}"
             self._username_index[lookup] = row_key
+
+        if row_key in self._removed_keys:
+            return
 
         entry = self._streams.get(row_key)
         was_status = entry.status if entry else None
@@ -856,6 +864,12 @@ class LiveStreamApp(App):
         if not self._watcher:
             self.notify("Watcher is not active right now.", severity="warning")
             return
+        site = self._site_label.lower()
+        for n in names:
+            self._removed_keys.discard(f"{site}:{n.lower()}")
+            rk = self._username_index.get((site, n.lower()))
+            if rk:
+                self._removed_keys.discard(rk)
         self._call_watcher(self._watcher.add_usernames, names)
         self.notify(f"Added {', '.join(names)} to live watchlist; checking now...", markup=False)
 
@@ -863,6 +877,7 @@ class LiveStreamApp(App):
         if not self._watcher:
             self.notify("Watcher has already finished.", severity="warning")
             return
+        self._removed_keys.add(entry.key)
         self._call_watcher(self._watcher.remove_username, entry.username, entry.account_id)
         self._streams.pop(entry.key, None)
         self._username_index = {
@@ -949,6 +964,7 @@ class LiveStreamApp(App):
         ids = [e.account_id for e in active_entries]
         self._call_watcher(self._watcher.stop_all, ids)
         for e in active_entries:
+            e.user_stopped = True
             e.status = "stopped"
             e.reason = "Stopped all by user (press a to start all)"
         self._rebuild_table()
@@ -964,6 +980,7 @@ class LiveStreamApp(App):
         stopped_entries = [e for e in self._streams.values() if e.status in {"stopped", "stopping"}]
         self._call_watcher(self._watcher.resume_all)
         for e in stopped_entries:
+            e.user_stopped = False
             e.status = "queued"
             e.reason = "Resuming on immediate check..."
         self._rebuild_table()
@@ -1004,15 +1021,6 @@ class LiveStreamApp(App):
             self._call_watcher(self._watcher.set_max_concurrent, self._max_concurrent)
         self._refresh_telemetry()
         self.notify(f"Max concurrent recordings set to {self._max_concurrent}")
-
-    def action_toggle_online_only(self) -> None:
-        if self._is_input_open:
-            return
-        self._online_only = not self._online_only
-        mode = "Online / Active Only" if self._online_only else "All Seen Creators"
-        self.notify(f"Filter: {mode}")
-        if hasattr(self, "_rebuild_table"):
-            self._rebuild_table()
 
     def action_slots_up(self) -> None:
         if self._is_input_open:
@@ -1058,20 +1066,22 @@ class LiveStreamApp(App):
         import ofscraper.utils.paths.common as common_paths
         from ofscraper.sites.fansly.live import folder_name
 
-        # VS Code terminals often omit DISPLAY / WAYLAND_DISPLAY / DBUS_SESSION_BUS_ADDRESS
+        # Build a local env for fallback subprocesses without mutating os.environ
+        sub_env = os.environ.copy()
         uid = os.getuid() if hasattr(os, "getuid") else None
         if uid is not None:
             runtime_dir = pathlib.Path(f"/run/user/{uid}")
-            if not os.environ.get("WAYLAND_DISPLAY") and runtime_dir.is_dir():
+            if not sub_env.get("WAYLAND_DISPLAY") and runtime_dir.is_dir():
                 wl = [w for w in sorted(runtime_dir.glob("wayland-[0-9]*")) if not w.name.endswith(".lock")]
                 if wl:
-                    os.environ["WAYLAND_DISPLAY"] = wl[0].name
-            if not os.environ.get("DBUS_SESSION_BUS_ADDRESS") and (runtime_dir / "bus").exists():
-                os.environ["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
-        if not os.environ.get("DISPLAY"):
+                    sub_env["WAYLAND_DISPLAY"] = wl[0].name
+            dbus_key = "DBUS_SESSION_BUS_ADDRESS"
+            if not sub_env.get(dbus_key) and (runtime_dir / "bus").exists():
+                sub_env[dbus_key] = f"unix:path=/run/user/{uid}/bus"
+        if not sub_env.get("DISPLAY"):
             x_socks = sorted(pathlib.Path("/tmp/.X11-unix").glob("X[0-9]*"))
             if x_socks:
-                os.environ["DISPLAY"] = f":{x_socks[0].name[1:]}"
+                sub_env["DISPLAY"] = f":{x_socks[0].name[1:]}"
 
         save_root = pathlib.Path(common_paths.get_save_location()).expanduser()
         target = None
@@ -1104,6 +1114,7 @@ class LiveStreamApp(App):
                 try:
                     subprocess.Popen(
                         ["code", "--new-window", str(target.folder)],
+                        env=sub_env,
                         stdin=subprocess.DEVNULL,
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,

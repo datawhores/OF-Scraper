@@ -661,7 +661,7 @@ def drain(page, file) -> int:
     return written
 
 
-def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmpeg=None, proxy=None):
+def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmpeg=None, proxy=None, account_id=None):
     """Record ``username``'s livestream to ``out`` until it ends or ``halt`` is set.
 
     Returns the saved path, or None when nothing was recorded.
@@ -690,6 +690,7 @@ def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmp
                 events.emit_sync(
                     "live_stream",
                     site="onlyfans",
+                    account_id=account_id,
                     username=username,
                     status="recording",
                     part_path=out,
@@ -720,6 +721,7 @@ def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmp
     events.emit_sync(
         "live_stream",
         site="onlyfans",
+        account_id=account_id,
         username=username,
         status="remuxing",
         part_path=out,
