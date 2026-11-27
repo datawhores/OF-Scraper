@@ -342,6 +342,18 @@ def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, li
     return (missing + missing)[start:start + most]
 
 
+def _get_extra_cache(cache: dict, extra, excluded) -> dict:
+    extra_cache = cache.setdefault("_extra", {})
+    extra_sig = (
+        tuple(sorted(username_match.username_keys(extra))),
+        tuple(sorted(username_match.username_keys(excluded))),
+    )
+    if extra_cache.get("_sig") != extra_sig:
+        extra_cache.clear()
+        extra_cache["_sig"] = extra_sig
+    return extra_cache
+
+
 async def get_online_streams(c, checks=None) -> list:
     import ofscraper.utils.settings as settings
     from ofscraper.data.api.subscriptions.subscriptions import scrape_subscriptions_active
@@ -389,26 +401,34 @@ async def get_online_streams(c, checks=None) -> list:
         events.emit_sync("live_poll", state="targets", site="onlyfans", targets=live)
         return live
 
+    cache = _TARGET_CACHE.get()
+    if cache is None:
+        cache = {}
+
     if all_users and not has_filters and extra:
         pages = [page async for page in scrape_subscriptions_active(c)]
         live = live_subscriptions(pages)
+        extra_cache = _get_extra_cache(cache, extra, excluded)
+        extra_live_ids = await _update_targets(
+            c, extra_cache, extra, excluded, False, False, True
+        )
+        extra_targets = extra_cache.get("targets") or {}
         seen_ids = {str(x["accountId"]) for x in live}
-        seen_names = {str(x["username"]).lower() for x in live}
-        missing = [u for u in extra if u.lower() not in seen_names and u.lower() not in seen_ids]
-        extra_targets = []
-        if missing:
-            extra_targets, extra_live_ids, _ = await _look_up_names(c, missing, excluded, False, {})
-            extra_online = await _check_targets_concurrently(check_session, extra_targets, extra_live_ids, {})
+        to_check = [t for t in extra_targets.values() if str(t["accountId"]) not in seen_ids]
+        if to_check:
+            extra_online = await _check_targets_concurrently(
+                check_session, to_check, extra_live_ids, extra_cache
+            )
             for item in extra_online:
                 if str(item["accountId"]) not in seen_ids:
                     seen_ids.add(str(item["accountId"]))
                     live.append(item)
-        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=live + extra_targets)
+        merged_targets = {str(x["accountId"]): x for x in live}
+        for t in extra_targets.values():
+            merged_targets.setdefault(str(t["accountId"]), t)
+        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(merged_targets.values()))
         return live
 
-    cache = _TARGET_CACHE.get()
-    if cache is None:
-        cache = {}
     sig = (all_users, tuple(sorted(username_match.username_keys(usernames))), tuple(sorted(username_match.username_keys(excluded))))
     if cache.get("_sig") != sig:
         cache.clear()
@@ -423,25 +443,47 @@ async def get_online_streams(c, checks=None) -> list:
     )
     initial_live = await _update_targets(c, cache, usernames, excluded, all_users, has_filters, by_name)
     targets = cache["targets"]
-    events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(targets.values()))
-    if not targets:
+    extra_cache = None
+    extra_initial_live = set()
+    extra_targets = {}
+    if all_users and has_filters and extra:
+        extra_cache = _get_extra_cache(cache, extra, excluded)
+        extra_initial_live = await _update_targets(
+            c, extra_cache, extra, excluded, False, False, True
+        )
+        extra_targets = extra_cache.get("targets") or {}
+
+    combined_targets = dict(targets)
+    for aid, t in extra_targets.items():
+        combined_targets.setdefault(aid, t)
+
+    events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(combined_targets.values()))
+    if not combined_targets:
         return []
 
     # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
     if list_mode or len(targets) > _individual_max():
         # a failed read fails the poll: it would look like nobody is subscribed
         pages = [page async for page in scrape_subscriptions_active(c, strict=True)]
-        live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
+        live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live | extra_initial_live
         direct = _direct_targets(cache, all_users, targets, pages, live_ids)
         live_ids |= {
             t["accountId"] for t in await _check_targets_concurrently(check_session, direct, set(), cache)
         }
+        if extra_targets:
+            checked_ids = live_ids | {t["accountId"] for t in direct}
+            extra_to_check = [t for t in extra_targets.values() if t["accountId"] not in checked_ids]
+            if extra_to_check:
+                live_ids |= {
+                    t["accountId"]
+                    for t in await _check_targets_concurrently(check_session, extra_to_check, set(), extra_cache)
+                }
         # the cached target, which keeps the name a renamed creator was looked up as
-        return [t for t in targets.values() if t["accountId"] in live_ids]
+        return [t for t in combined_targets.values() if t["accountId"] in live_ids]
 
     # Individual target path (-fi or auto-selected individual search):
     # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
-    return await _check_targets_concurrently(check_session, list(targets.values()), initial_live, cache)
+    return await _check_targets_concurrently(check_session, list(combined_targets.values()), initial_live | extra_initial_live, cache)
 
 
 def recording_path(

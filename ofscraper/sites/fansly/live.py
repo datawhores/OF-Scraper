@@ -617,6 +617,7 @@ class LiveWatcher:
         self.suppressed = set()
         self.creator_stops = {}
         self._pending_resume = set()
+        self._removed_ids = {}
         self._last_online = {}
         self._wake = None
         self._force_poll = False
@@ -736,10 +737,16 @@ class LiveWatcher:
         return stopped
 
     def resume_all(self):
-        was_suppressed = list(self.suppressed)
-        self.suppressed.clear()
-        for key_str in was_suppressed:
+        skip = username_keys(self.excluded_usernames)
+        removed_ids = {aid for ids in self._removed_ids.values() for aid in ids}
+        to_resume = []
+        for key_str in list(self.suppressed):
             info = self._last_online.get(key_str) or {}
+            if key_str in removed_ids or matches_account(info.get("username"), key_str, skip):
+                continue
+            self.suppressed.discard(key_str)
+            to_resume.append((key_str, info))
+        for key_str, info in to_resume:
             uname = info.get("username") or key_str
             if key_str in self.active:
                 self._pending_resume.add(key_str)
@@ -767,6 +774,15 @@ class LiveWatcher:
             if clean and clean != "all":
                 self.extra_usernames.add(clean)
                 self.excluded_usernames.discard(clean)
+                for key_str in self._removed_ids.pop(clean, ()):
+                    self.excluded_usernames.discard(key_str.lower())
+                    self.suppressed.discard(key_str)
+                for key_str in list(self.suppressed):
+                    info = self._last_online.get(key_str) or {}
+                    uname = str(info.get("username") or "").strip().lower()
+                    if key_str.lower() == clean or uname == clean:
+                        self.excluded_usernames.discard(key_str.lower())
+                        self.suppressed.discard(key_str)
         self.request_poll()
 
     def remove_username(self, username: str, account_id=None):
@@ -781,6 +797,8 @@ class LiveWatcher:
         if account_id is not None:
             key_str = str(account_id)
             self.excluded_usernames.add(key_str.lower())
+            if clean:
+                self._removed_ids.setdefault(clean, set()).add(key_str)
             self._pending_resume.discard(key_str)
             self.suppressed.add(key_str)
             ev = self.creator_stops.get(key_str)
@@ -901,7 +919,7 @@ class LiveWatcher:
                     s for s in queue
                     if str(s["accountId"]) not in self.active and str(s["accountId"]) not in self.suppressed
                 ]
-                while queue and len(self.active) < self.max_concurrent:
+                while not self.paused and queue and len(self.active) < self.max_concurrent:
                     self._start(queue.pop(0), stop, wake)
                 for waiting in queue:
                     events.emit_sync(

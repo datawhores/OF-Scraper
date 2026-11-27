@@ -2,6 +2,7 @@ import contextlib
 import threading
 
 from textual.containers import Horizontal, Vertical
+from textual.dom import NoActiveAppError
 from textual.widgets import Button, Input, RichLog, Static
 
 from ofscraper.classes.table.sections.table import DataTableExtended
@@ -18,12 +19,18 @@ class LiveConsole(RichLog):
     def write(self, *args, **kwargs):
         if not self.is_mounted:
             return self
-        app_thread = getattr(self.app, "_thread_id", None)
-        if app_thread is not None and app_thread != threading.get_ident():
-            with contextlib.suppress(RuntimeError):
-                self.app.call_from_thread(super().write, *args, **kwargs)
+        try:
+            app = self.app
+        except (NoActiveAppError, RuntimeError):
             return self
-        return super().write(*args, **kwargs)
+        app_thread = getattr(app, "_thread_id", None)
+        if app_thread is not None and app_thread != threading.get_ident():
+            with contextlib.suppress(NoActiveAppError, RuntimeError):
+                app.call_from_thread(super().write, *args, **kwargs)
+            return self
+        with contextlib.suppress(NoActiveAppError, RuntimeError):
+            return super().write(*args, **kwargs)
+        return self
 
 
 class LiveStreamTable(DataTableExtended):
@@ -65,10 +72,10 @@ def compose_live_tui():
     with Horizontal(id="bottom_split"):
         with Vertical(id="log_pane", classes="pane_box"):
             yield Static("Activity & Scraper Logs", classes="pane_title")
-            yield LiveConsole(id="live_console", wrap=True, highlight=True, markup=True)
+            yield LiveConsole(id="live_console", wrap=True, highlight=True, markup=True, max_lines=1000)
         with Vertical(id="chat_pane", classes="pane_box"):
             yield Static("Fansly Live Chat (--live-chat)", id="chat_pane_title", classes="pane_title")
-            yield RichLog(id="live_chat_log", wrap=True, highlight=False, markup=False)
+            yield RichLog(id="live_chat_log", wrap=True, highlight=False, markup=False, max_lines=1000)
 
     yield Static(
         "[bold cyan]Click Cell[/bold cyan] [Stop/Resume] / [Remove] / [Folder]  "
