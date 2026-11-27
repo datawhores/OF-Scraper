@@ -28,6 +28,9 @@ class _Live:
     def update(self, *a, **k):
         pass
 
+    def get_renderable(self):
+        return self.renderable
+
 
 @pytest.fixture
 def env(monkeypatch):
