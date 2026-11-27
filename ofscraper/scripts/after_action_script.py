@@ -1,0 +1,107 @@
+import json
+import logging
+import os
+import subprocess
+import traceback
+
+import ofscraper.managers.manager as manager
+import ofscraper.utils.dry_run as dry_run
+import ofscraper.utils.of_env.of_env as env
+import ofscraper.utils.settings as settings
+from ofscraper.utils.system.subprocess import run
+
+
+def run_after_action_script(
+    username,
+    media,
+    posts=None,
+    action=None,
+    *,
+    default_action,
+    label,
+    level_key,
+):
+    log = logging.getLogger("shared")
+    action = action or default_action
+    script_path = settings.get_settings().after_action_script
+    if not script_path:
+        log.debug(f"After {label} action script is disabled; skipping execution")
+        return
+    if dry_run.active():
+        log.debug("dry run: not running the after action script")
+        return
+    if not os.path.exists(script_path):
+        log.info(
+            f"After {label} action script path is invalid: '{script_path}'. Aborting after {label} action script."
+        )
+        return
+
+    userdata = manager.Manager.current_model_manager.get_model(username)
+    if not userdata:
+        log.info(
+            f"Could not retrieve user data for {username}. Aborting after {label} action script."
+        )
+        return
+    if not posts:
+        posts = list({ele.post.id: ele.post for ele in media}.values())
+    processed_username = username
+    try:
+        processed_username = (
+            userdata["username"] if isinstance(userdata, dict) else userdata.name
+        )
+        model_id = userdata["id"] if isinstance(userdata, dict) else userdata.id
+        userdict_data = (
+            userdata
+            if isinstance(userdata, dict)
+            else (userdata.model if hasattr(userdata, "model") else None)
+        )
+        log.info(
+            f"Running post user script for {processed_username} with script: {script_path}"
+        )
+        processed_media = [x.media for x in (media or [])]
+        processed_posts = [x.post for x in (posts or [])]
+
+        master_dump_payload = {
+            "username": processed_username,
+            "action": action,
+            "model_id": model_id,
+            "media": processed_media,
+            "posts": processed_posts,
+            "userdata": userdict_data,
+        }
+
+        input_json_str = json.dumps(
+            master_dump_payload, indent=None, ensure_ascii=False
+        )
+
+        run(
+            [script_path],
+            input=input_json_str,
+            capture_output=True,
+            text=True,
+            check=True,
+            name=f"after {label} action script",
+            level=env.getattr(level_key),
+            timeout=1800,
+        )
+        log.info(
+            f"After {label} action script ran successfully for {processed_username} via stdin."
+        )
+
+    except FileNotFoundError:
+        log.info(
+            f"After {label} action script executable not found: '{script_path}'. Please ensure the path is correct and the script is executable."
+        )
+    except subprocess.CalledProcessError as e:
+        log.info(
+            f"After {label} action script failed for {processed_username} with exit code {e.returncode}: '{script_path}'"
+        )
+        log.debug(f"After {label} action script stdout:\n{e.stdout.strip()}")
+        log.debug(f"After {label} action script stderr:\n{e.stderr.strip()}")
+    except Exception as e:
+        log.info(
+            f"An unexpected error occurred while running after {label} script for {processed_username} with script '{script_path}': {e}",
+            exc_info=True,
+        )
+        log.traceback_(e)
+        log.traceback_(traceback.format_exc())

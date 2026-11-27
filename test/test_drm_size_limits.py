@@ -572,6 +572,7 @@ def _script_media(tmp_path, monkeypatch, items):
     import json
 
     import ofscraper.managers.manager as manager
+    import ofscraper.scripts.after_action_script as action_runner
     import ofscraper.scripts.after_download_action_script as script_mod
 
     script = tmp_path / "script"
@@ -583,7 +584,7 @@ def _script_media(tmp_path, monkeypatch, items):
     monkeypatch.setattr(manager, "Manager", SimpleNamespace(current_model_manager=SimpleNamespace(
         get_model=lambda username: {"username": username, "id": 1})))
     sent = []
-    monkeypatch.setattr(script_mod, "run", lambda cmd, input=None, **k: sent.append(input))
+    monkeypatch.setattr(action_runner, "run", lambda cmd, input=None, **k: sent.append(input))
     script_mod.after_download_action_script("model", items)
     (payload,) = sent
     return json.loads(payload)["media"]
