@@ -121,6 +121,7 @@ def switch_site_helper():
     if scope == "profile":
         sites.write_profile_site(common_paths.get_profile_path(), target)
     sites.set_active_site(target)
+    settings.update_settings()
     actions.remove_post_area()
     actions.remove_download_area()
     actions.remove_like_area()
@@ -142,14 +143,16 @@ def _action_name(choice):
 
 @back_to_menu
 def profile_menu_helper(result_profiles_prompt):
-    if result_profiles_prompt in {"default", "active"}:
+    if result_profiles_prompt in {"default", "active", "create"}:
         previous_profile = profile_data.get_active_profile()
         previous_site = sites.current_site()
         if result_profiles_prompt == "default":
             profiles_manage.change_default_profile()
-        else:
+        elif result_profiles_prompt == "active":
             profiles_manage.change_active_profile()
-        # Re-selecting the active profile is a no-op, including its session site.
+        else:
+            profiles_manage.create_profile()
+        # Re-selecting the active profile (or creating without activating) is a no-op, including its session site.
         if profile_data.get_active_profile() != previous_profile:
             sites.set_active_site(None)
             settings.update_settings()
@@ -160,11 +163,6 @@ def profile_menu_helper(result_profiles_prompt):
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()
-
-    elif result_profiles_prompt == "create":
-        # Create a new profile
-
-        profiles_manage.create_profile()
 
     elif result_profiles_prompt == "delete":
         # Delete a profile

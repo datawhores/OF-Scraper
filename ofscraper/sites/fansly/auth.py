@@ -196,17 +196,21 @@ def token_prompt(current):
     import ofscraper.prompts.promptConvert as promptClasses
 
     name = "input"
-    answers = promptClasses.batchConverter(
-        {
-            "type": "input",
-            "name": name,
-            "message": "Enter the Fansly authorization token",
-            "default": current or "",
-            "secret": True,
-            "validate": EmptyInputValidator(),
-        }
-    )
-    return answers[name]
+    question = {
+        "type": "input",
+        "name": name,
+        "message": (
+            "Enter the Fansly authorization token (leave blank to keep current)"
+            if current
+            else "Enter the Fansly authorization token"
+        ),
+        "default": "",
+        "secret": True,
+    }
+    if not current:
+        question["validate"] = EmptyInputValidator()
+    answers = promptClasses.batchConverter(question)
+    return answers[name] if answers[name].strip() else (current or "")
 
 
 def load() -> dict:

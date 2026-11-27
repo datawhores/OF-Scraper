@@ -61,6 +61,17 @@ def set_active_site(site: str | None) -> str | None:
     return _session_site
 
 
+def rename_session_profile(old_name: str, new_name: str) -> None:
+    """Keep a session-only site override attached when its profile is renamed."""
+    global _session_profile
+    if _session_profile is None:
+        return
+    import ofscraper.utils.profiles.tools as profile_tools
+
+    if _session_profile == profile_tools.profile_name_fixer(old_name):
+        _session_profile = profile_tools.profile_name_fixer(new_name)
+
+
 def init_session_site() -> str:
     """Capture the initial site (including ``--site``) so prompt mode can switch later."""
     import ofscraper.utils.settings as settings
@@ -95,9 +106,7 @@ def resolve_site(args) -> str:
         _session_profile = profile
         if _session_site:
             return _session_site
-        profile_dir = common_paths.get_config_home() / profile_tools.profile_name_fixer(
-            profile
-        )
+        profile_dir = common_paths.get_config_home() / profile
     except Exception as e:
         log.debug(f"could not locate the profile folder to read its site: {e}")
         if _session_site:

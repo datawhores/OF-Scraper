@@ -26,10 +26,10 @@ def _main_menu_status() -> str:
     import ofscraper.utils.profiles.data as profile_data
     import ofscraper.utils.settings as settings
 
-    dl_areas = list(areas.get_download_area() or [])
+    dl_areas = sorted(areas.get_download_area() or [])
     if getattr(settings.get_settings(), "scrape_paid", False) and "Paid" not in dl_areas:
         dl_areas.append("Paid")
-    like_areas = list(areas.get_like_area() or [])
+    like_areas = sorted(areas.get_like_area() or [])
 
     area_parts = []
     if dl_areas:

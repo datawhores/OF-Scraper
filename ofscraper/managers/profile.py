@@ -45,8 +45,8 @@ class ProfileManager:
             log.error(f"Cannot delete the active profile ('{profile_name}').")
             return
 
-        if profile_name in self.model_managers:
-            self.model_managers.pop(profile_name)
+        for key in [k for k in self.model_managers if k[0] == profile_name]:
+            self.model_managers.pop(key)
 
         profile_path = common_paths.get_config_home() / profile_name
         if profile_path.exists():
@@ -83,9 +83,13 @@ class ProfileManager:
         else:
             new_folder.mkdir(parents=True,exist_ok=True)
 
-        if old_name in self.model_managers:
+        moved = [k for k in self.model_managers if k[0] == old_name]
+        if moved:
             log.debug(f"Moving ModelManager instance from '{old_name}' to '{new_name}'.")
-            self.model_managers[new_name] = self.model_managers.pop(old_name)
+            for old_key in moved:
+                self.model_managers[(new_name, old_key[1])] = self.model_managers.pop(old_key)
+
+        sites.rename_session_profile(old_name, new_name)
 
         if self.config_profile == old_name:
             log.info(f"Default config profile was '{old_name}', updating to '{new_name}'.")
@@ -102,12 +106,11 @@ class ProfileManager:
         """Get the creator manager for the active profile and site."""
         profile = self.active_profile
         site = sites.current_site()
-        cached_site, model_manager = self.model_managers.get(profile, (None, None))
-        if cached_site != site:
-            log.info(f"Creating new ModelManager for profile: '{profile}'")
-            model_manager = ModelManager()
-            self.model_managers[profile] = (site, model_manager)
-        return model_manager
+        key = (profile, site)
+        if key not in self.model_managers:
+            log.info(f"Creating new ModelManager for profile: '{profile}' ({site})")
+            self.model_managers[key] = ModelManager()
+        return self.model_managers[key]
     
     @property
     def active_profile(self) -> str:

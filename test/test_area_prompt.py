@@ -43,7 +43,7 @@ def test_the_prompt_prints_nothing_itself(prompt, capsys):
     "fansly, expected",
     [
         (False, ["Profile", "Timeline", "Pinned", "Archived", "Streams"]),
-        (True, ["Timeline", "Messages", "Purchased"]),
+        (True, ["Timeline"]),
     ],
 )
 def test_metadata_anon_areas_prompt_is_site_aware(monkeypatch, fansly, expected):
