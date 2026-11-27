@@ -157,6 +157,101 @@ def test_pages_follow_the_area_endpoints(area):
     ]
 
 
+def undated(n):
+    return {"id": n}
+
+
+def scan(area, client):
+    scrape = area.module.get_tasks([], client, MODEL_ID, USER, 0)[0]
+    return [p["id"] for batch in collect(scrape) for p in batch]
+
+
+def test_undated_post_keeps_page_and_later_pages(area, logged):
+    client = Client(
+        Response(200, {"list": [post(1), undated(2), post(3)], "hasMore": True}),
+        Response(200, {"list": [post(4)], "hasMore": False}),
+    )
+
+    assert scan(area, client) == [1, 2, 3, 4]
+    # the next page starts after the newest dated post of the first page
+    assert client.urls[1] == of_env.getattr(area.next_endpoint).format(
+        MODEL_ID, str(ts(3))
+    )
+    assert f"{area.api}: post 2 has no date" in logged(logging.WARNING)
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_null_or_empty_date_counts_as_undated(area, logged, value):
+    blank = {"id": 2, "postedAtPrecise": value}
+    client = Client(Response(200, {"list": [post(1), blank, post(3)], "hasMore": False}))
+
+    assert scan(area, client) == [1, 2, 3]
+    assert f"{area.api}: post 2 has no date" in logged(logging.WARNING)
+
+
+def test_page_crossing_before_keeps_undated_post(area):
+    area.settings.before = ts(2.5)
+    client = Client(
+        Response(200, {"list": [post(1), undated(2), post(3)], "hasMore": True})
+    )
+
+    assert scan(area, client) == [1, 2]
+
+
+def test_page_with_no_dated_post_is_kept_and_ends_the_scan(area, logged, monkeypatch):
+    marked = Mock()
+    monkeypatch.setattr(area.module.incomplete, "mark_incomplete", marked)
+    client = Client(
+        Response(200, {"list": [undated(1), undated(2)], "hasMore": True}),
+        Response(200, {"list": [post(3)], "hasMore": False}),
+    )
+
+    assert scan(area, client) == [1, 2]
+    assert len(client.urls) == 1
+    assert (
+        f"{area.api}: no post on this page has a date, stopping the scan here"
+        in logged(logging.WARNING)
+    )
+    marked.assert_called_once_with(MODEL_ID, area.api, "no post on page has a date")
+
+
+def test_final_page_with_no_dated_post_is_not_marked_incomplete(
+    area, logged, monkeypatch
+):
+    marked = Mock()
+    monkeypatch.setattr(area.module.incomplete, "mark_incomplete", marked)
+    client = Client(Response(200, {"list": [undated(1), undated(2)], "hasMore": False}))
+
+    assert scan(area, client) == [1, 2]
+    assert len(client.urls) == 1
+    marked.assert_not_called()
+
+
+def test_stalled_cursor_marks_incomplete_and_stops(area, logged, monkeypatch):
+    marked = Mock()
+    monkeypatch.setattr(area.module.incomplete, "mark_incomplete", marked)
+    client = Client(
+        Response(200, {"list": [post(1)], "hasMore": True}),
+        Response(200, {"list": [undated(2), post(1)], "hasMore": True}),
+        Response(200, {"list": [post(3)], "hasMore": False}),
+    )
+
+    assert scan(area, client) == [1, 2, 1]
+    assert len(client.urls) == 2
+    marked.assert_called_once_with(MODEL_ID, area.api, "page cursor did not advance")
+
+
+def test_next_page_follows_a_post_dated_zero(area):
+    zero = {"id": 1, "postedAtPrecise": "0"}
+    client = Client(
+        Response(200, {"list": [zero], "hasMore": True}),
+        Response(200, {"list": [post(2)], "hasMore": False}),
+    )
+
+    assert scan(area, client) == [1, 2]
+    assert client.urls[1] == of_env.getattr(area.next_endpoint).format(MODEL_ID, "0.0")
+
+
 def test_failed_page_is_logged_with_the_area_name(area, logged, monkeypatch):
     marked = Mock()
     monkeypatch.setattr(area.module.incomplete, "mark_incomplete", marked)
@@ -360,3 +455,23 @@ def test_after_starts_at_the_oldest_missing_media(area, after_db):
     after_db.deleted = [3]
 
     assert after(area) == arrow.get("2024-02-01T00:00:00").float_timestamp
+
+
+@pytest.mark.parametrize("blank_date", [None, 0, arrow.get(0)])
+def test_after_everything_downloaded_and_newest_post_undated_starts_in_2000(
+    area, after_db, blank_date
+):
+    after_db.media = [media_row(1, 1, "2024-01-01T00:00:00", downloaded=1)]
+    after_db.youngest = blank_date
+
+    assert after(area) == YEAR_2000
+
+
+@pytest.mark.parametrize("blank_date", [None, 0, arrow.get(0)])
+def test_after_oldest_missing_media_undated_starts_in_2000(area, after_db, blank_date):
+    after_db.media = [
+        media_row(1, 1, blank_date),
+        media_row(2, 2, "2024-02-01T00:00:00"),
+    ]
+
+    assert after(area) == YEAR_2000
