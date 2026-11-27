@@ -1,14 +1,16 @@
-"""The archived and streams scans, which differ only in names and endpoints.
+"""The timeline, archived and streams scans, which differ only in names and endpoints.
 
-Both page oldest-first by ``postedAtPrecise`` from a start point worked out
+All three page oldest-first by ``postedAtPrecise`` from a start point worked out
 from the database, split the cached posts into chunks with one worker each,
 and flag cached posts the API no longer returns as deleted.
 
-``archive.py`` and ``streams.py`` keep their public functions as thin
-wrappers. Each passes its own module as ``m``; the functions here call the
-area's other functions and database helpers through it (``m.get_tasks``,
-``m.mark_post_as_deleted``, ...), so patching a name on the area module still
-changes what its scan does.
+``timeline.py``, ``archive.py`` and ``streams.py`` keep their public functions
+as thin wrappers. Each passes its own module as ``m`` (for shared-name hooks
+such as ``m.get_tasks`` and ``m.mark_post_as_deleted``) and passes its own
+area-specific callables (``post_info``, ``media``, ``youngest_date``,
+``scrape``) at call time, so patching a name on the area module changes only
+that area's scan. Shared utilities (``settings``, ``of_env``, ``incomplete``,
+``log``) are read directly here.
 """
 
 import logging
@@ -41,6 +43,8 @@ class Area:
     cache_trace: str
     # end of the "Flagging N ..." line
     ghosts: str
+    # log each batch's post ids at debug level as pages arrive
+    log_progress_ids: bool = False
     # log the final ids and count once the pages are merged
     log_final: bool = False
 
@@ -82,10 +86,18 @@ async def get_old_posts(m, post_info, model_id, username):
 
 async def process_tasks_batch(m, generators):
     api = m.AREA.api
+
+    def on_new(new_posts):
+        if m.AREA.log_progress_ids:
+            log.debug(
+                f"{common_logs.PROGRESS_IDS.format(api)} {list(map(lambda x: x['id'], new_posts))}"
+            )
+        trace_progress_log(f"{api} task", new_posts)
+
     responseArray = await collect_pages(
         generators,
         f"{api} Content Pages Progress",
-        lambda new_posts: trace_progress_log(f"{api} task", new_posts),
+        on_new,
     )
     if m.AREA.log_final:
         log.debug(
@@ -100,13 +112,10 @@ def split_posts(m, oldposts, after):
     if len(oldposts) == 0:
         return []
     min_posts = m.get_min_posts_batch(len(oldposts), m.AREA.api)
-    postsDataArray = sorted(oldposts, key=lambda x: x.get("created_at"))
-    filteredArray = list(
-        filter(
-            lambda x: arrow.get(x.get("created_at")).float_timestamp >= after,
-            postsDataArray,
-        )
-    )
+    postsDataArray = sorted(oldposts, key=lambda x: float(x.get("created_at") or 0))
+    filteredArray = [
+        x for x in postsDataArray if float(x.get("created_at") or 0) >= after
+    ]
 
     splitArrays = [
         filteredArray[i : i + min_posts]
@@ -216,6 +225,7 @@ async def scrape_posts(
                 else of_env.getattr(area.endpoint).format(model_id)
             )
 
+            log.debug(f"Fetching {area.api} API: {url}")
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"{area.api} API Error: {r.status} for {url}")
@@ -227,6 +237,7 @@ async def scrape_posts(
                 has_more = data.get("hasMore", False)
                 if not batch:
                     break
+                log.debug(f"Received batch with {len(batch)} items.")
 
                 # an undated post is kept; it doesn't move the page cursor
                 batch_timestamps = []
@@ -274,6 +285,7 @@ async def scrape_posts(
                 # Boundary condition: this page reaches past the "before" date limit.
                 # Keep its in-range posts before stopping.
                 if max_ts > before:
+                    log.debug("Passed the user's '--before' upper boundary. Exiting.")
                     yield [
                         x
                         for x, ts in zip(batch, batch_timestamps)
@@ -284,6 +296,9 @@ async def scrape_posts(
                 # This chunk has found all of its cached posts. Keep the page
                 # that contained them; the next chunk only starts after its tail.
                 if not is_last_chunk and len(required_ids) == 0:
+                    log.debug(
+                        "All required gap IDs found or resolved as ghosts. Exiting early."
+                    )
                     yield batch
                     break
 
@@ -309,6 +324,9 @@ async def scrape_posts(
         if all_ghosts_found:
             log.info(
                 f"Worker finished. Flagging {len(all_ghosts_found)} {area.ghosts}"
+            )
+            log.debug(
+                f"Flagging the following post_ids as deleted for {username}: {all_ghosts_found}"
             )
             await m.mark_post_as_deleted(
                 post_ids=all_ghosts_found, model_id=model_id, username=username
