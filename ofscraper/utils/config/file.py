@@ -56,6 +56,8 @@ def _json_type(value):
         return "a string"
     if isinstance(value, (int, float)):
         return "a number"
+    if isinstance(value, dict):
+        return "an object"
     return type(value).__name__
 
 
@@ -162,15 +164,17 @@ def log_notes():
         log.warning(_notes.pop(0))
 
 
-def _leaves(config):
-    """{"key" or "section.key": value} for a config's settings"""
+def _leaves(config, prefix=""):
+    """{"key", "section.key" or "type_options.type.key": value} for a
+    config's settings. Only sections and type_options entries are opened: a
+    setting that holds an object by mistake stays one value."""
     out = {}
     for key, value in config.items():
         # an empty section is kept, so one nothing reads is named too
-        if isinstance(value, dict) and value:
-            out.update({f"{key}.{sub}": v for sub, v in value.items()})
+        if isinstance(value, dict) and value and prefix in ("", "type_options."):
+            out.update(_leaves(value, f"{prefix}{key}."))
         else:
-            out[key] = value
+            out[f"{prefix}{key}"] = value
     return out
 
 
@@ -192,6 +196,16 @@ def rewrite_notes(old, new, defaults, reads):
             notes.append(
                 f'config.json: "{path}" should hold settings but holds'
                 f" {_json_type(value)}, so its settings were reset to the defaults"
+            )
+        elif path not in new_leaves and path.startswith("type_options.") and path.count(".") == 1:
+            notes.append(
+                f'config.json: "{path}" should hold settings (save_location, dir_format,'
+                f" file_format) but holds {_json_type(value)}, so it was removed"
+            )
+        elif path not in new_leaves and path.startswith("type_options.") and path in reads:
+            notes.append(
+                f'config.json: "{path}" should be text but holds {_json_type(value)},'
+                " so it was removed"
             )
         elif path not in new_leaves:
             if path not in reads:

@@ -411,16 +411,16 @@ async def get_online_streams(c, checks=None, watcher=None) -> list:
     return await _check_targets_concurrently(check_session, list(targets.values()), initial_live, cache)
 
 
-def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:
+def recording_path(
+    save_location, username: str, when: datetime.datetime | None = None, *, model_id=None
+) -> pathlib.Path:
+    """``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``"""
+    import ofscraper.classes.placeholder as placeholder
+
     when = when or datetime.datetime.now(datetime.timezone.utc)
-    stamp = when.strftime("%Y%m%d_%H%M%S")
-    username = shared.folder_name(username)
-    return (
-        pathlib.Path(save_location)
-        / "OnlyFans"
-        / username
-        / "Livestreams"
-        / f"{username}_{stamp}_live.webm"
+    return placeholder.live_recording_path(
+        save_location, shared.folder_name(username), when,
+        site_name="OnlyFans", ext="webm", model_id=model_id,
     )
 
 
@@ -520,7 +520,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
 
                 username = stream["username"]
                 account_id = str(stream["accountId"])
-                out = recording_path(save_location, username)
+                out = recording_path(save_location, username, model_id=stream["accountId"])
                 os.makedirs(os.path.dirname(out), exist_ok=True)
                 auth = auth_file.read_auth()
                 proxy = _session_proxy(c)

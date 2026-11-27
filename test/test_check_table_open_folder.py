@@ -459,6 +459,7 @@ def opened(monkeypatch, tmp_path):
     monkeypatch.setattr(table_app.settings, "update_args", lambda *a, **k: None)
     monkeypatch.setattr(table_app, "row_queue", queue.Queue())
     monkeypatch.setattr(open_folder, "default_root", lambda: tmp_path / "save")
+    monkeypatch.setattr(open_folder, "type_templates", lambda row: (None, None))
     monkeypatch.setattr(open_folder, "get_dir_format", lambda: DIR_FORMAT)
 
     calls = []
@@ -642,3 +643,48 @@ def test_config_error_is_a_notice(opened, monkeypatch):
 
 
 _real_open_target = open_folder.open_target
+
+
+def test_a_row_not_on_disk_opens_the_folder_its_type_options_entry_sets(tmp_path, monkeypatch):
+    import ofscraper.classes.placeholder as placeholder
+
+    seen = []
+
+    def media_templates(type_keys):
+        seen.append(type_keys)
+        return tmp_path / "videos", "{model_username}/clips", "x.{ext}"
+
+    monkeypatch.setattr(placeholder, "media_templates", media_templates)
+    monkeypatch.setattr("ofscraper.utils.config.data.get_type_options", lambda *a, **k: {"videos": {"save_location": "x"}})
+    row = {**_row(), "responsetype": "Timeline", "mediatype": "Videos"}
+
+    target = open_folder.row_target(row)
+
+    # as a download looks it up: the area, its folder name, the media type
+    assert seen == [("Timeline", "Posts", "Videos")]
+    assert target == Target(tmp_path / "videos" / "a_creator")
+
+
+def test_an_archived_row_opens_the_archived_type_options_folder(tmp_path, monkeypatch):
+    """An archived post keeps responsetype "timeline" but is saved under the
+    archived folder, and its type_options entry is looked up by that folder."""
+    import ofscraper.classes.of.posts as posts
+    import ofscraper.utils.config.data as data
+    from ofscraper.classes.placeholder import media_type_keys
+
+    archived_root = tmp_path / "archive_disk"
+    monkeypatch.setattr(data, "get_type_options", lambda *a, **k: {"archived": {"save_location": str(archived_root)}})
+    monkeypatch.setattr(data, "get_archived_responsetype", lambda *a, **k: "Archived")
+    monkeypatch.setattr(data, "get_dirformat", lambda *a, **k: "{model_username}/{responsetype}")
+    monkeypatch.setattr(data, "get_fileformat", lambda *a, **k: "{filename}.{ext}")
+    monkeypatch.setattr(posts.Post, "archived", property(lambda self: True))
+    monkeypatch.setattr(posts.Post, "responsetype", property(lambda self: "timeline"))
+    post = posts.Post({"id": 1}, 1, "a_creator", responsetype="timeline")
+    ele = SimpleNamespace(responsetype=post.responsetype,
+                          modified_responsetype=post.modified_responsetype, mediatype="videos")
+    row = {**_row(), "responsetype": "Timeline", "mediatype": "Videos",
+           "type_keys": media_type_keys(ele)}
+
+    target = open_folder.row_target(row)
+
+    assert target.path.parent == open_folder.absolute(archived_root)

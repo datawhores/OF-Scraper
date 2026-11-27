@@ -255,12 +255,18 @@ def setDirectoriesDate(log=None):
     output = set()
     # resolved the same way as dirSet so is_relative_to compares like with like
     # (resolve() can turn a mapped drive letter into a UNC path)
-    rootDir = _resolve(common_paths.get_save_location())
+    # every save location: save_location and the live_options and
+    # type_options ones; a folder is dated up to the one it's under
+    roots = [_resolve(root) for root in common_paths.get_save_locations().values()]
     log.debug(f"Original DirSet {list(common_globals.dirSet)}")
-    log.debug(f"rootDir {rootDir}")
+    log.debug(f"roots {roots}")
 
     for ele in common_globals.dirSet:
         output.add(ele)
+        under = [root for root in roots if pathlib.PurePath(ele).is_relative_to(root)]
+        if not under:
+            continue
+        rootDir = max(under, key=lambda root: len(root.parts))
         try:
             while not os.path.samefile(ele, rootDir) and not os.path.samefile(
                 ele.parent, rootDir

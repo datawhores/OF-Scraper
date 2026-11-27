@@ -3,6 +3,7 @@ changed (utils/dry_run.py)."""
 
 import asyncio
 import contextlib
+import json
 import os
 import sqlite3
 from types import SimpleNamespace
@@ -736,3 +737,26 @@ def test_the_action_loop_offers_no_menu_or_check_table_in_a_dry_run(library, mon
     assert "Go to main menu" not in names
     assert "Browse and pick media (check table)" not in names
     assert "Download content from a user" in names and "Quit" in names
+
+
+def test_the_naming_script_is_sent_the_formats_the_file_was_named_with(monkeypatch, library, tmp_path):
+    import ofscraper.scripts.naming_script as naming
+
+    script = tmp_path / "name.py"
+    script.write_text("", encoding="utf-8")
+    monkeypatch.setitem(library.settings, "naming_script", str(script))
+    monkeypatch.setitem(library.settings, "dry_run", False)
+    sent = []
+
+    async def async_run(*a, **k):
+        sent.append(json.loads(k["input"]))
+        return SimpleNamespace(stdout="", returncode=0)
+
+    monkeypatch.setattr(naming, "async_run", async_run)
+    ele = SimpleNamespace(
+        username="a creator", model_id=5, value="free", modified_responsetype="Timeline",
+        label_string="", id=7, post={}, date=None,
+    )
+    monkeypatch.setattr(naming, "Post", SimpleNamespace)
+    asyncio.run(naming.naming_script("dir", "file.jpg", ele, ("{media_id}", "{post_id}.{ext}")))
+    assert (sent[0]["dir_format"], sent[0]["file_format"]) == ("{media_id}", "{post_id}.{ext}")

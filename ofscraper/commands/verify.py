@@ -34,6 +34,7 @@ from ofscraper.commands.recover_collisions import (
     _unconfirmed,
 )
 from ofscraper.commands.stash_sync import map_path
+from ofscraper.utils.paths.spelling import Spellings
 
 MISSING, EMPTY, SIZE_DIFFERS, HASH_DIFFERS, NO_FILE_RECORDED, OK = (
     "missing", "empty", "size_differs", "hash_differs", "no_file_recorded", "ok"
@@ -124,52 +125,17 @@ def _check(path, recorded_size, recorded_hash=None, hashing=False):
     return OK, actual
 
 
-class _Spellings:
+class _Spellings(Spellings):
     """A file whose recorded name is spelt otherwise on disk: in another
     Unicode form (a Mac writes names decomposed, NFD; the database holds
     what the site sent, usually NFC), or, on a disk that doesn't tell case
     apart, in another case. Each folder is read once."""
 
-    def __init__(self):
-        self._folders = {}
-        self._folds = {}
-
-    def folds_case(self, folder):
-        """The disk doesn't tell case apart here: tried on the nearest
-        folder whose name has letters."""
-        if folder not in self._folds:
-            name, parent = os.path.basename(folder), os.path.dirname(folder)
-            if parent == folder:
-                self._folds[folder] = False
-            elif name.swapcase() != name and os.path.lexists(folder):
-                other = os.path.join(parent, name.swapcase())
-                try:
-                    self._folds[folder] = os.path.samefile(folder, other)
-                except OSError:
-                    self._folds[folder] = False
-            else:
-                self._folds[folder] = self.folds_case(parent)
-        return self._folds[folder]
-
     def key(self, path):
-        """`path` as this disk tells paths apart, in one Unicode form."""
+        """`path` as this disk tells paths apart, in one Unicode form: any
+        form will do, as verify only finds the file"""
         path = unicodedata.normalize("NFC", os.path.normcase(path))
         return path.casefold() if self.folds_case(os.path.dirname(path)) else path
-
-    def find(self, path):
-        """The path the file is at, or None when no name in its folder, or
-        more than one, is its name spelt otherwise."""
-        folder = os.path.dirname(path)
-        if folder not in self._folders:
-            names = defaultdict(list)
-            try:
-                for name in os.listdir(folder):
-                    names[self.key(os.path.join(folder, name))].append(os.path.join(folder, name))
-            except OSError:
-                pass
-            self._folders[folder] = names
-        found = self._folders[folder].get(self.key(path), [])
-        return found[0] if len(found) == 1 else None
 
 
 def _creator_folders(paths):

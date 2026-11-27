@@ -142,7 +142,7 @@ def env(monkeypatch, tmp_path):
     for module in (md, stream_mod):
         monkeypatch.setattr(module, "set_profile_cache", _noop)
     monkeypatch.setattr(dm, "after_download_script", _noop)
-    monkeypatch.setattr(dm.system, "check_free_size", lambda: True)
+    monkeypatch.setattr(dm.system, "check_free_size", lambda *a: True)
     monkeypatch.setattr(filters.separate, "seperate_avatars", lambda m: m)
     yield SimpleNamespace(stub=stub, db=db, out=out_dir, temp=temp_dir)
     pool.shutdown(wait=True)

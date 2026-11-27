@@ -226,7 +226,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(stream_mod, "set_profile_cache", noop)
     monkeypatch.setattr(dm, "after_download_script", noop)
     monkeypatch.setattr(dm, "skip_download_script", no_skip)
-    monkeypatch.setattr(dm.system, "check_free_size", lambda: True)
+    monkeypatch.setattr(dm.system, "check_free_size", lambda *a: True)
     ffmpeg_runs, ffmpeg_procs, ffmpeg_cwds, ffmpeg_timeouts = [], [], [], []
     if FFMPEG:
         monkeypatch.setattr(stream_mod, "get_ffmpeg", lambda: FFMPEG)

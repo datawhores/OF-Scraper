@@ -442,3 +442,15 @@ def test_known_placeholders_match_what_names_are_built_from():
         built = {k for k, kinds in rows.items() if kind in kinds}
         built |= {k.replace("_", "") for k in built}
         assert known == built, kind
+
+
+def test_type_options_match_the_area_folders_downloads_use():
+    """An entry named after an area's folder matches, with the folder names
+    a download gives (Post.modified_responsetype), set or not"""
+    config = {"responsetype": {"timeline": "Wall", "message": "DMs", "archived": "Old"}}
+
+    names = naming_check.area_type_names(config)
+
+    assert {"wall", "dms", "old"} <= names
+    for area in naming_check.POST_AREAS:
+        assert naming_check.type_name(posts_.responsetype_folder(area, config=config)) in names

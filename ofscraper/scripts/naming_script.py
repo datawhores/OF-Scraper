@@ -13,7 +13,9 @@ from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
 
 
-async def naming_script(dir, file, ele): # Made async
+async def naming_script(dir, file, ele, formats=None): # Made async
+    """formats: the (dir_format, file_format) the file was named with, which
+    a type_options entry can set; file_options' when not given"""
     log = logging.getLogger("shared")
     script_path = settings.get_settings().naming_script
 
@@ -37,8 +39,8 @@ async def naming_script(dir, file, ele): # Made async
         payload_data = {
             "dir": str(dir),
             "file": str(file),
-            "dir_format": config_data.get_dirformat(),
-            "file_format": config_data.get_fileformat(),
+            "dir_format": formats[0] if formats else config_data.get_dirformat(),
+            "file_format": formats[1] if formats else config_data.get_fileformat(),
             "metadata": config_data.get_metadata(),
             "username": ele.username,
             "model_id": ele.model_id,

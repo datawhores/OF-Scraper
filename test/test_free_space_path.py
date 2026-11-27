@@ -160,3 +160,113 @@ def test_a_lookup_that_another_thread_replaces_mid_call_still_answers(
     finally:
         sys.settrace(previous)
     assert switched and got == str(first)
+
+
+def _write_overrides(tmp_path, save, live, videos):
+    config = tmp_path / "home" / ".config" / "ofscraper" / "config.json"
+    config.write_text(json.dumps({
+        "file_options": {"save_location": str(save)},
+        "live_options": {"save_location": str(live)},
+        "type_options": {"videos": {"save_location": str(videos)}},
+    }), encoding="utf-8")
+
+
+def _media(mediatype):
+    return SimpleNamespace(responsetype="Timeline", modified_responsetype="Posts", mediatype=mediatype)
+
+
+def test_a_file_is_measured_on_the_disk_it_is_saved_on(measured, tmp_path):
+    """A type_options save_location on another disk is checked for its own
+    files only: a full disk there (or a livestream disk) doesn't stop the
+    rest of the scrape"""
+    from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+
+    save, live, videos = (tmp_path / name for name in ("downloads", "live", "videos"))
+    for folder in (save, live, videos):
+        folder.mkdir()
+    _write_overrides(tmp_path, save, live, videos)
+
+    # the scrape-level check: save_location only, as before type_options
+    assert free.check_free_size()
+    assert measured.calls == [save.resolve()]
+    measured.calls.clear()
+    DownloadManager._downloadspace(None, _media("Videos"))
+    DownloadManager._downloadspace(None, _media("Images"))
+    assert measured.calls == [videos.resolve(), save.resolve()]
+
+
+def test_a_full_override_disk_stops_only_its_files(measured, tmp_path, monkeypatch):
+    from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+
+    save, live, videos = (tmp_path / name for name in ("downloads", "live", "videos"))
+    for folder in (save, live, videos):
+        folder.mkdir()
+    _write_overrides(tmp_path, save, live, videos)
+    monkeypatch.setattr(free.shutil, "disk_usage", lambda path: SimpleNamespace(
+        free=0 if pathlib.Path(path) == videos.resolve() else 10**12))
+    monkeypatch.setattr(free, "alert_full", lambda *a: None)
+
+    assert free.check_free_size()
+    DownloadManager._downloadspace(None, _media("Images"))
+    with pytest.raises(Exception):
+        DownloadManager._downloadspace(None, _media("Videos"))
+
+
+def test_a_type_entry_without_a_save_location_is_on_the_save_location(measured, tmp_path, monkeypatch):
+    """On Fansly a dir_format naming {sitename} drops the Fansly folder from
+    the root, but the files are still on save_location's disk: no type_options
+    save disk is named in the alert"""
+    import ofscraper.sites as sites
+
+    save = tmp_path / "downloads"
+    save.mkdir()
+    config = tmp_path / "home" / ".config" / "ofscraper" / "config.json"
+    config.write_text(json.dumps({
+        "file_options": {"save_location": str(save)},
+        "type_options": {"videos": {"dir_format": "{sitename}/{model_username}"}},
+    }), encoding="utf-8")
+    monkeypatch.setattr(sites, "current_site", lambda: sites.FANSLY)
+
+    assert free.save_folder(("Timeline", "Posts", "Videos")) is None
+
+
+def test_save_locations_leave_out_type_entries_that_are_never_used(tmp_path):
+    """Of two spellings of one type only the last is used, and a name that
+    isn't a type is never used: neither is a folder files are saved under"""
+    import ofscraper.utils.paths.common as common_paths
+
+    config = {
+        "file_options": {"save_location": str(tmp_path / "downloads")},
+        "type_options": {
+            "post": {"save_location": str(tmp_path / "shadowed")},
+            "timeline": {"save_location": str(tmp_path / "timeline")},
+            "nonsense": {"save_location": str(tmp_path / "unused")},
+        },
+    }
+
+    assert common_paths.get_save_locations(config) == {
+        "file_options.save_location": str(tmp_path / "downloads"),
+        "type_options.timeline.save_location": str(tmp_path / "timeline"),
+    }
+
+
+def test_the_folder_a_download_goes_to_is_worked_out_once(measured, tmp_path, monkeypatch):
+    """the check runs before every download; config.json was read again
+    each time, even with no limit"""
+    import ofscraper.classes.placeholder as placeholder
+    from ofscraper.commands.scraper.actions.download.managers.downloadmanager import DownloadManager
+
+    save, live, videos = (tmp_path / name for name in ("downloads", "live", "videos"))
+    for folder in (save, live, videos):
+        folder.mkdir()
+    _write_overrides(tmp_path, save, live, videos)
+    calls = []
+    real = placeholder.media_templates
+    monkeypatch.setattr(placeholder, "media_templates", lambda *a, **k: calls.append(a) or real(*a, **k))
+    for _ in range(3):
+        DownloadManager._downloadspace(None, _media("Videos"))
+    assert len(calls) == 1
+    monkeypatch.setattr(settings, "get_settings", lambda: SimpleNamespace(system_free_min=0))
+    measured.calls.clear()
+    DownloadManager._downloadspace(None, _media("Images"))
+    assert len(calls) == 1 and measured.calls == []

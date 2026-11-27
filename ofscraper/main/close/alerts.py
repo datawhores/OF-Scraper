@@ -194,7 +194,9 @@ def _has_free_space():
     try:
         import ofscraper.utils.system.free as free
 
-        return free.check_free_size()
+        # every disk downloads go to: an alert one type_options disk raised
+        # isn't over while that disk is still full
+        return free.check_every_disk()
     except Exception as e:
         log.debug(f"free space not checked: {e}")
         return False
