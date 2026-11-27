@@ -17,6 +17,7 @@ import json
 import logging
 import random
 
+import ofscraper.utils.events as events
 from ofscraper.sites.fansly import constants
 
 log = logging.getLogger("shared")
@@ -29,6 +30,7 @@ TYPE_SESSION = 1
 TYPE_SERVICE_EVENT = 10000
 TYPE_BATCH = 10001
 CHAT_SERVICE_ID = 46
+TYPE_JOIN_ROOM = 46001
 
 
 class ForbiddenFrame(Exception):
@@ -37,6 +39,10 @@ class ForbiddenFrame(Exception):
 
 def auth_frame(token: str) -> str:
     return json.dumps({"t": TYPE_SESSION, "d": json.dumps({"token": token, "v": 3})})
+
+
+def join_frame(chat_room_id: str) -> str:
+    return json.dumps({"t": TYPE_JOIN_ROOM, "d": json.dumps({"chatRoomId": str(chat_room_id)})})
 
 
 def _loads(value):
@@ -76,16 +82,20 @@ def chat_messages(frame, chat_room_id=None) -> list:
 class ChatRecorder:
     """``connect()`` returns a socket with async ``send(str)``, ``recv()`` and ``close()``."""
 
-    def __init__(self, connect, token: str, ping_interval=PING_INTERVAL):
+    def __init__(self, connect, token: str, ping_interval=PING_INTERVAL, username: str = ""):
         self.connect = connect
         self.token = token
         self.ping_interval = ping_interval
+        self.username = username
         self.ws = None
         self.received = 0
 
-    async def _send(self, frame: str):
-        if frame != PING and frame != auth_frame(self.token):
-            raise ForbiddenFrame("only the auth frame and the keep-alive may be sent")
+    async def _send(self, frame: str, chat_room_id=None):
+        allowed = {PING, auth_frame(self.token)}
+        if chat_room_id:
+            allowed.add(join_frame(chat_room_id))
+        if frame not in allowed:
+            raise ForbiddenFrame("only auth, room-join (46001), and keep-alive frames may be sent")
         await self.ws.send(frame)
 
     async def _pinger(self):
@@ -101,6 +111,8 @@ class ChatRecorder:
         pinger = None
         try:
             await self._send(auth_frame(self.token))
+            if chat_room_id:
+                await self._send(join_frame(chat_room_id), chat_room_id=chat_room_id)
             pinger = asyncio.ensure_future(self._pinger())
             while not stop.is_set():
                 frame = await self.ws.recv()
@@ -126,6 +138,22 @@ class ChatRecorder:
             for m in messages:
                 f.write(json.dumps({"receivedAt": now, "chatRoomMessage": m}, ensure_ascii=False) + "\n")
         self.received += len(messages)
+        for m in messages:
+            sender = (
+                m.get("username")
+                or m.get("displayName")
+                or (m.get("author") or {}).get("username")
+                or str(m.get("accountId") or m.get("senderId") or "user")
+            )
+            events.emit_sync(
+                "live_chat",
+                site="fansly",
+                username=self.username,
+                sender=str(sender),
+                content=str(m.get("content") or ""),
+                received_at=now,
+                total_received=self.received,
+            )
 
 
 class _AiohttpSocket:

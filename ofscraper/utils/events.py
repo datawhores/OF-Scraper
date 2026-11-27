@@ -26,7 +26,14 @@ import inspect
 import logging
 import threading
 
-EVENTS = ("item_downloaded", "item_finished")
+EVENTS = (
+    "item_downloaded",
+    "item_finished",
+    "live_watcher",
+    "live_poll",
+    "live_stream",
+    "live_chat",
+)
 
 _subscribers = {}
 _lock = threading.Lock()
@@ -58,6 +65,24 @@ async def emit(name, **kwargs):
             result = fn(**kwargs)
             if inspect.isawaitable(result):
                 await result
+        except Exception as E:
+            logging.getLogger("shared").debug(
+                f"{name} subscriber {getattr(fn, '__qualname__', fn)} failed: {E}",
+                exc_info=True,
+            )
+
+
+def emit_sync(name, **kwargs):
+    """Send an event without awaiting; subscribers must be plain functions."""
+    for fn in _subscribers.get(name, ()):
+        try:
+            result = fn(**kwargs)
+            if inspect.isawaitable(result):
+                if hasattr(result, "close"):
+                    result.close()
+                logging.getLogger("shared").debug(
+                    f"{name} async subscriber {getattr(fn, '__qualname__', fn)} skipped in emit_sync"
+                )
         except Exception as E:
             logging.getLogger("shared").debug(
                 f"{name} subscriber {getattr(fn, '__qualname__', fn)} failed: {E}",
