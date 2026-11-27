@@ -213,7 +213,10 @@ class ModelManager:
         """The usual creator questions (filters, then the picker), without
         queueing anyone. The check table opened from the Action Menu (#425)
         uses it."""
-        self._load_all_subs_if_needed()
+        if self._refresh_users():
+            self._fetch_all_subs(force_refetch=True, reset=True)
+        else:
+            self._load_all_subs_if_needed()
         return self._select_models_scraper()
 
     @run
@@ -288,8 +291,6 @@ class ModelManager:
         """
         Forces a background sync of models from the API without interacting with queues.
         """
-        if self._refresh_users():
-            return
         fetched_models = await retriver.get_models(
             all_main_models=all_main_models,
         )

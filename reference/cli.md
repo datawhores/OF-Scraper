@@ -886,7 +886,7 @@ Fansly only: also save livestream chat to a .jsonl file (read-only; off by defau
 
 **Also:** `--live-pull`, `--daemon-pull` · **Type:** flag · **Default:** off · **Commands:** main program
 
-Force a refresh of the model list on each pass in daemon,live modes, and prompt mode across OnlyFans and Fansly
+Force a refresh of the model list on each pass in daemon, live, and prompt modes across OnlyFans and Fansly
 
 **Dest:** `refresh_users` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 

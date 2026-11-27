@@ -117,7 +117,7 @@ refresh_users_option = click.option(
     "--live-pull",
     "--daemon-pull",
     "refresh_users",
-    help="Force a refresh of the model list on each pass in daemon,live modes, and prompt mode across OnlyFans and Fansly",
+    help="Force a refresh of the model list on each pass in daemon, live, and prompt modes across OnlyFans and Fansly",
     is_flag=True,
     default=False,
 )

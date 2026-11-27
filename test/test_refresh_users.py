@@ -14,6 +14,7 @@ import ofscraper.sites.fansly.live_api as fansly_live_api
 import ofscraper.sites.fansly.scrape as fansly_scrape
 import ofscraper.sites.onlyfans.live as of_live
 import ofscraper.utils.settings as settings
+import ofscraper.utils.system.ffmpeg as ffmpeg_finder
 from ofscraper.classes.of.models import Model
 from ofscraper.managers.model import ModelManager
 from ofscraper.utils.args.parse.groups.automatic import (
@@ -79,10 +80,6 @@ def test_daemon_refresh_users_adds_new_subs_and_drops_unsubs(monkeypatch, event_
 
     try:
         mm = ModelManager()
-
-        # Startup sync_models() is a no-op when --refresh-users is active
-        mm.sync_models()
-        assert fetch_calls == 0
 
         mm.prepare_scraper_activity()
         assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
@@ -226,6 +223,7 @@ def test_fansly_live_refresh_users_clears_filter_cache_between_polls(monkeypatch
     monkeypatch.setattr(fansly_scrape, "get_models", fake_fansly_get_models)
     monkeypatch.setattr(ModelManager, "filter_models", fake_filter_models)
     monkeypatch.setattr(fansly_live, "LiveWatcher", TwoPollWatcher)
+    monkeypatch.setattr(ffmpeg_finder, "get_ffmpeg", lambda: "ffmpeg")
 
     args = settings.get_args(copy=True)
     args.live_watch = True
