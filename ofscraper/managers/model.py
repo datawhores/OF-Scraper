@@ -583,12 +583,12 @@ class ModelManager:
         if self._all_subs_dict and not force_refetch and not reset:
             return
         self._last_fetched = None
-        if reset:
-            self._all_subs_dict = {}
 
         while True:
             self._fetch_all_subs_async(all_main_models=all_main_models)
             if self._last_fetched:
+                if reset:
+                    self._all_subs_dict = {}
                 self._update_all_subs(self._last_fetched)
                 return
             console.get_console().print(
@@ -598,6 +598,8 @@ class ModelManager:
             if settings.get_settings().daemon:
                 # an empty scan can be a network error the fetch swallowed, so
                 # don't end the daemon: the next pass scans again
+                if reset:
+                    self._all_subs_dict = {}
                 log.error(
                     "No creators were found, so there's nothing to scrape this "
                     "pass. The daemon scans again on its next pass."

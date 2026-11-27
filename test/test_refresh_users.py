@@ -238,3 +238,197 @@ def test_fansly_live_refresh_users_clears_filter_cache_between_polls(monkeypatch
         assert [s["username"] for s in poll_results[1]] == ["fansly_creator"]
     finally:
         settings.update_args(orig_args)
+
+
+def test_interactive_refresh_users_failed_scan_preserves_cache_and_avoids_loop(
+    monkeypatch, event_loop
+):
+    """In non-daemon prompt mode with --refresh-users, a failed/empty rescan
+    whose retry is declined must keep the previously cached creators instead of
+    wiping them and looping forever on 'filtered the user list to zero'."""
+    import ofscraper.utils.interactive as interactive
+
+    orig_args = settings.get_args(copy=True)
+    passes = iter(
+        [
+            [Model({"id": 1, "username": "alice", "subscribedBy": True})],
+            [],
+        ]
+    )
+
+    async def fake_get_models(all_main_models=False):
+        return next(passes)
+
+    retry_calls = []
+
+    def decline_retry():
+        retry_calls.append(1)
+        return False
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(retriver, "get_selected_model", lambda models, selected, **kw: models)
+    monkeypatch.setattr(interactive, "is_interactive", lambda: True)
+    monkeypatch.setattr(prompts, "retry_user_scan", decline_retry)
+
+    args = settings.get_args(copy=True)
+    args.daemon = None
+    args.refresh_users = True
+    args.actions = ["download"]
+    args.usernames = []
+    settings.update_args(args)
+
+    try:
+        mm = ModelManager()
+
+        def fail_on_filter_loop():
+            raise AssertionError("entered filter loop after empty scan")
+
+        monkeypatch.setattr(mm, "setfilter", fail_on_filter_loop)
+
+        mm.prepare_scraper_activity()
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+
+        mm.prepare_scraper_activity()
+        assert retry_calls == [1]
+        assert [m.name for m in mm.all_subs] == ["alice"]
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+    finally:
+        settings.update_args(orig_args)
+
+
+def test_daemon_refresh_users_empty_scan_skips_pass(monkeypatch, event_loop):
+    """In daemon mode with --refresh-users, an empty scan clears the cache and
+    skips the pass cleanly without prompting, then recovers on the next pass."""
+    orig_args = settings.get_args(copy=True)
+    passes = iter(
+        [
+            [Model({"id": 1, "username": "alice", "subscribedBy": True})],
+            [],
+            [Model({"id": 2, "username": "bob", "subscribedBy": True})],
+        ]
+    )
+
+    async def fake_get_models(all_main_models=False):
+        return next(passes)
+
+    def fail_if_prompted(*a, **kw):
+        raise AssertionError("daemon must not prompt")
+
+    monkeypatch.setattr(retriver, "get_models", fake_get_models)
+    monkeypatch.setattr(prompts, "retry_user_scan", fail_if_prompted)
+
+    args = settings.get_args(copy=True)
+    args.daemon = 5.0
+    args.refresh_users = True
+    args.actions = ["download"]
+    args.usernames = []
+    settings.update_args(args)
+
+    try:
+        mm = ModelManager()
+
+        mm.prepare_scraper_activity()
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["alice"]
+
+        mm.prepare_scraper_activity()
+        assert mm.all_subs == []
+        assert mm.get_scrape_selected_models() == []
+
+        mm.prepare_scraper_activity()
+        assert [m.name for m in mm.get_scrape_selected_models()] == ["bob"]
+    finally:
+        settings.update_args(orig_args)
+
+
+def test_onlyfans_live_refresh_users_preserves_miss_backoff_individual(
+    monkeypatch, caplog
+):
+    """With --refresh-users in individual mode, found creators refresh on every
+    poll while names that missed 3+ times back off to every 10th poll."""
+    orig_args = settings.get_args(copy=True)
+    looked_up = []
+
+    async def fake_fetch_models(c, cache, names=None):
+        looked_up.append(list(names))
+        if "creator_a" in names:
+            return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+        return []
+
+    async def fake_still_live(c, username):
+        return False
+
+    monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
+    monkeypatch.setattr(of_live, "still_live", fake_still_live)
+
+    args = settings.get_args(copy=True)
+    args.live_watch = True
+    args.refresh_users = True
+    args.usernames = ["creator_a", "no_such_name"]
+    args.username_search = "individual"
+    settings.update_args(args)
+
+    token = of_live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            for _ in range(25):
+                asyncio.run(of_live.get_online_streams(c=None))
+    finally:
+        of_live._TARGET_CACHE.reset(token)
+        settings.update_args(orig_args)
+
+    creator_a_polls = [i + 1 for i, names in enumerate(looked_up) if "creator_a" in names]
+    missing_polls = [i + 1 for i, names in enumerate(looked_up) if "no_such_name" in names]
+    assert len(creator_a_polls) == 25
+    assert missing_polls == [1, 2, 3, 10, 20]
+    assert caplog.text.count("every 10th check") == 1
+
+
+def test_onlyfans_live_refresh_users_preserves_miss_backoff_list_mode(
+    monkeypatch, caplog
+):
+    """With --refresh-users in list mode, subscription lists still refresh on
+    every poll while missing -u names back off to every 10th poll."""
+    import ofscraper.data.api.subscriptions.subscriptions as subs
+
+    orig_args = settings.get_args(copy=True)
+    list_fetches = 0
+    individual_lookups = []
+
+    async def fake_fetch_models(c, cache, names=None):
+        nonlocal list_fetches
+        if names is None:
+            list_fetches += 1
+            return [Model({"id": 1, "username": "creator_a", "hasStream": False})]
+        individual_lookups.append(list(names))
+        return []
+
+    async def fake_active(c, strict=False):
+        yield [{"id": 1, "username": "creator_a", "hasStream": False}]
+
+    async def fake_still_live(c, username):
+        return False
+
+    monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
+    monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
+    monkeypatch.setattr(of_live, "still_live", fake_still_live)
+
+    args = settings.get_args(copy=True)
+    args.live_watch = True
+    args.refresh_users = True
+    args.usernames = ["creator_a", "no_such_name"]
+    args.username_search = "list"
+    settings.update_args(args)
+
+    token = of_live._TARGET_CACHE.set({})
+    try:
+        with caplog.at_level("WARNING", logger="shared"):
+            for _ in range(25):
+                asyncio.run(of_live.get_online_streams(c=None))
+    finally:
+        of_live._TARGET_CACHE.reset(token)
+        settings.update_args(orig_args)
+
+    assert list_fetches == 25
+    assert individual_lookups == [["no_such_name"]] * 5
+    assert caplog.text.count("every 10th check") == 1
+
