@@ -36,7 +36,7 @@ Every command and option the CLI accepts. Built from the click program in `ofscr
 
 | Command | Summary |
 |---|---|
-| [Main program (no command)](#main-program-no-command) (110 options) | OF-Scraper Options |
+| [Main program (no command)](#main-program-no-command) (111 options) | OF-Scraper Options |
 | [`manual`](#manual) (54 options) | Manually download media by providing a list of URLs or IDs |
 | [`msg_check`](#msg_check) (54 options) | Produces a media table from messages with filterable entries and quick downloads |
 | [`story_check`](#story_check) (52 options) | Produces a media table from stories and highlights with filterable entries and quick downloads |
@@ -61,7 +61,7 @@ Run `OF-Scraper [OPTIONS] [COMMAND] [COMMAND OPTIONS]`.
 
 ### Main program (no command)
 
-**Options:** 110 · **`--help` summary:** OF-Scraper Options
+**Options:** 111 · **`--help` summary:** OF-Scraper Options
 
 Runs when no subcommand is given. The entry point is `ofscraper/__main__.py`. Then `Manager.pick()` calls `commands/scraper/scraper.main()`, which cleans temp files and the database and checks the CDM. After that, the run goes one of these ways:
 
@@ -862,9 +862,19 @@ When `-u`, a user list or other subscription filters choose the creators, the ch
 
 **Type:** integer range · **Default:** none · **Commands:** main program
 
-Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)
+Seconds between live checks in --live-watch (default 60, plus random jitter up to --live-jitter)
 
 **Dest:** `live_interval` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
+
+#### `--live-jitter`
+
+**Type:** float range · **Default:** none · **Commands:** main program
+
+Max random extra seconds added to each --live-watch check interval (default 10)
+
+Overrides `LIVE_JITTER` (`OFSC_LIVE_JITTER`) for the run, on OnlyFans and Fansly. Without the option, or with a value that isn't a finite number, the wait falls back to `LIVE_JITTER`. Fractions of a second are accepted, and `0` turns the jitter off.
+
+**Dest:** `live_jitter` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
 #### `--live-max`
 

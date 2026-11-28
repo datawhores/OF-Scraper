@@ -22,6 +22,7 @@ import asyncio
 import datetime
 import json
 import logging
+import math
 import os
 import pathlib
 import random
@@ -629,6 +630,19 @@ def _int_env(key: str, default: int, minimum: int = 1) -> int:
         return default
 
 
+def _float_env(key: str, default: float, minimum: float = 0.0) -> float:
+    import ofscraper.utils.of_env.of_env as of_env
+
+    try:
+        val = of_env.getattr(key, default)
+        parsed = float(default if val is None else val)
+    except (TypeError, ValueError):
+        return float(default)
+    if not math.isfinite(parsed):
+        return float(default)
+    return max(minimum, parsed)
+
+
 def has_custom_user_filters(s=None) -> bool:
     """True when userlists, blacklists, or model filters narrow the creator pool."""
     from ofscraper.managers.model import ModelManager
@@ -709,6 +723,18 @@ def count_misses(misses: dict, tried, missing) -> None:
             log.warning(f"Still can't look up {name} for livestreams; trying again every 10th check")
 
 
+def _resolve_live_jitter(s) -> float:
+    val = getattr(s, "live_jitter", None)
+    if val is not None:
+        try:
+            parsed = float(val)
+            if math.isfinite(parsed):
+                return max(0.0, parsed)
+        except (TypeError, ValueError):
+            pass
+    return _float_env("LIVE_JITTER", float(DEFAULT_JITTER), minimum=0.0)
+
+
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
@@ -719,7 +745,7 @@ def options(s=None) -> dict:
         "watch": bool(getattr(s, "live_watch", False)),
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
-        "jitter": _int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0),
+        "jitter": _resolve_live_jitter(s),
         "max_failures": _int_env("LIVE_MAX_FAILURES", DEFAULT_MAX_FAILURES, minimum=1),
         "check_concurrency": _int_env("LIVE_CHECK_CONCURRENCY", 5, minimum=1),
         "chat": bool(getattr(s, "live_chat", False)),

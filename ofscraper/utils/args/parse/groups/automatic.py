@@ -8,6 +8,7 @@ from ofscraper.utils.args.parse.arguments.automatic import (
     dry_run_option,
     live_chat_option,
     live_interval_option,
+    live_jitter_option,
     live_max_option,
     live_option,
     live_watch_option,
@@ -29,6 +30,7 @@ automatic_options_tuple = (
     live_option,
     live_watch_option,
     live_interval_option,
+    live_jitter_option,
     live_max_option,
     live_chat_option,
 )

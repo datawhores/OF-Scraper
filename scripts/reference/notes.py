@@ -26,6 +26,7 @@ CLI = {
     "no_cache": "Disables both the general cache and the API cache for the run, and turns off incremental downloads. Setting `advanced_options.cache-mode` to `disabled` in `config.json` does the same.",
     "no_api_cache": "Disables only the API response cache. Setting `advanced_options.cache-mode` to `api_disabled` does the same.",
     "download_limit": "Values below 1024 bytes per second are raised to 1024. All downloads in the run share the limit.",
+    "live_jitter": "Overrides `LIVE_JITTER` (`OFSC_LIVE_JITTER`) for the run, on OnlyFans and Fansly. Without the option, or with a value that isn't a finite number, the wait falls back to `LIVE_JITTER`. Fractions of a second are accepted, and `0` turns the jitter off.",
     "key_mode": "`manual` uses the local CDM files (`--private-key`, `--client-id`). `cdrm` is deprecated: its service, cdrm-project.com, no longer works, and each run that uses it warns. It isn't contacted: protected videos are skipped before download, with a message to switch to `manual`. Only a server of your own set in `OFSC_CDRM_URL` is still sent the request headers, cookies included.",
     "quality": "The lowest video quality to accept. The smallest available quality at or above it is downloaded, or `source` when none matches (`ofscraper/utils/args/accessors/quality.py`, `classes/of/media.py`). Without this option, `source` is used.",
     "env_files": "Loaded before settings are built. It replaces `advanced_options.env_files` instead of adding to it.",

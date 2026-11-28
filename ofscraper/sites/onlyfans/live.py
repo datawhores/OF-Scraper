@@ -52,14 +52,6 @@ def _check_concurrency() -> int:
     return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
 
 
-def _jitter() -> int:
-    try:
-        val = of_env.getattr("LIVE_JITTER", 10)
-        return max(0, int(10 if val is None else val))
-    except (TypeError, ValueError):
-        return 10
-
-
 def _stream_active_url(username: str) -> str:
     return of_env.getattr("STREAM_ACTIVE_URL").format(quote(username, safe=""))
 
@@ -518,7 +510,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 record,
                 max_concurrent=opts["max_concurrent"],
                 interval=opts["interval"],
-                jitter=opts.get("jitter", _jitter()),
+                jitter=opts["jitter"],
                 once=not watch,
             )
             await watcher.run(stop)
