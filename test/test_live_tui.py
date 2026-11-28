@@ -744,7 +744,9 @@ def test_emit_sync_dispatches_sync_isolates_errors_and_closes_async(monkeypatch,
 
 
 def test_live_tui_cli_sets_flags_and_rejects_no_rich():
-    main_cmd.program.add_command(live_tui_cmd.live_tui, "live_tui")
+    # the program may already have the command: adding it twice raises
+    if "live_tui" not in main_cmd.program.commands:
+        main_cmd.program.add_command(live_tui_cmd.live_tui, "live_tui")
 
     params, _ = main_cmd.program(standalone_mode=False, prog_name="OF-Scraper", args=["live_tui"])
     assert params["live_tui"] is True

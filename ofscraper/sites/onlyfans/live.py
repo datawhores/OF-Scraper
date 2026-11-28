@@ -430,9 +430,11 @@ async def get_online_streams(c, checks=None) -> list:
         return live
 
     sig = (all_users, tuple(sorted(username_match.username_keys(usernames))), tuple(sorted(username_match.username_keys(excluded))))
-    if cache.get("_sig") != sig:
+    # a cache with no signature yet holds nothing from another choice of
+    # creators, so only a changed signature empties it
+    if cache.get("_sig", sig) != sig:
         cache.clear()
-        cache["_sig"] = sig
+    cache["_sig"] = sig
 
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
