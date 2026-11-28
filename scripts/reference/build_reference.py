@@ -34,7 +34,7 @@ HEADER = (
     " change the code or scripts/reference/notes.py, then rerun the script. -->\n\n"
 )
 
-# commands in the order parse_args registers them; "" is the main program
+# commands in registration order; "" is the main program
 COMMANDS = [
     "",
     "manual",
@@ -1070,14 +1070,20 @@ PLACEHOLDER_KINDS = {
     "metadata": ("Database path (`metadata`)", [("", "_base_path_variables"), ("databasePlaceholder", "databasePathHelper")]),
     "dir": (
         "Media folders (`dir_format`)",
-        [("", "_base_path_variables"), ("Placeholders", "add_main_variables"), ("Placeholders", "add_price_variables")],
+        [
+            ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
+            ("Placeholders", "add_main_variables"),
+        ],
     ),
     "file": (
         "Media file names (`file_format`)",
         [
             ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Placeholders", "add_main_variables"),
-            ("Placeholders", "add_price_variables"),
             ("Placeholders", "createfilename"),
         ],
     ),
@@ -1085,8 +1091,9 @@ PLACEHOLDER_KINDS = {
         "Text files (`--text`)",
         [
             ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Textholders", "add_main_variables"),
-            ("Textholders", "add_price_variables"),
             ("Textholders", "createfilename"),
         ],
     ),

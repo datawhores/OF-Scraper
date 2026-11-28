@@ -131,7 +131,10 @@ class ProgressLayoutManager:
 
     def __enter__(self):
         live = get_live()
-        self.previous_layout = live.renderable
+        # get_renderable(), not .renderable: rich wraps a started display's
+        # content in a new Group there, so reverting to it would nest the
+        # layout one level deeper on every screen
+        self.previous_layout = live.get_renderable()
         if self.supress_key:
             # unset leaves quiet following the output options
             supress = of_env.getattr(self.supress_key)

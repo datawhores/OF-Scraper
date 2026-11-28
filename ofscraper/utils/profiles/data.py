@@ -1,5 +1,6 @@
 import re
 
+import ofscraper.sites as sites
 import ofscraper.utils.config.data as data
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.profiles.tools as tools
@@ -9,18 +10,24 @@ currentProfile = None
 currentData = None
 
 
+def clear_my_info():
+    """Discard the signed-in identity after credentials have changed."""
+    global currentData, currentProfile
+    currentData = None
+    currentProfile = None
+
+
 def get_my_info():
     global currentData
     global currentProfile
-    if currentProfile == get_active_profile():
-        return currentData
-    else:
+    profile_site = (get_active_profile(), sites.current_site())
+    if currentProfile != profile_site:
         import ofscraper.data.api.me as me
 
         # remember the profile only once its data is in, so a failed
         # request is tried again on the next call
         currentData = me.scrape_user()
-        currentProfile = get_active_profile()
+        currentProfile = profile_site
     return currentData
 
 

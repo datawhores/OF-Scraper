@@ -17,6 +17,8 @@ SITE_FILE = "site.json"
 # display name used for the {site_name} placeholder
 SITE_NAMES = {ONLYFANS: "Onlyfans", FANSLY: "Fansly"}
 SITES = tuple(SITE_NAMES)
+_session_site = None
+_session_profile = None
 
 log = logging.getLogger("shared")
 
@@ -52,11 +54,44 @@ def write_profile_site(profile_dir, site: str) -> pathlib.Path:
     return path
 
 
+def set_active_site(site: str | None) -> str | None:
+    """Set (or clear) the active site for the current interactive session."""
+    global _session_site
+    _session_site = normalize(site) if site is not None else None
+    return _session_site
+
+
+def rename_session_profile(old_name: str, new_name: str) -> None:
+    """Keep a session-only site override attached when its profile is renamed."""
+    global _session_profile
+    if _session_profile is None:
+        return
+    import ofscraper.utils.profiles.tools as profile_tools
+
+    if _session_profile == profile_tools.profile_name_fixer(old_name):
+        _session_profile = profile_tools.profile_name_fixer(new_name)
+
+
+def init_session_site() -> str:
+    """Capture the initial site (including ``--site``) so prompt mode can switch later."""
+    import ofscraper.utils.settings as settings
+
+    site = current_site()
+    set_active_site(site)
+    args = settings.get_args()
+    if args is not None and getattr(args, "site", None):
+        args.site = None
+        settings.update_args(args)
+    return site
+
+
 def resolve_site(args) -> str:
     """``--site`` if given, else the profile's stored site, else OnlyFans."""
+    global _session_site, _session_profile
     override = normalize(getattr(args, "site", None) if args is not None else None)
     if override:
         return override
+    profile = None
     try:
         import ofscraper.utils.config.data as config_data
         import ofscraper.utils.paths.common as common_paths
@@ -65,11 +100,17 @@ def resolve_site(args) -> str:
         profile = (getattr(args, "profile", None) if args is not None else None) or (
             config_data.get_main_profile()
         )
-        profile_dir = common_paths.get_config_home() / profile_tools.profile_name_fixer(
-            profile
-        )
+        profile = profile_tools.profile_name_fixer(profile)
+        if _session_profile is not None and profile != _session_profile:
+            _session_site = None
+        _session_profile = profile
+        if _session_site:
+            return _session_site
+        profile_dir = common_paths.get_config_home() / profile
     except Exception as e:
         log.debug(f"could not locate the profile folder to read its site: {e}")
+        if _session_site:
+            return _session_site
         return DEFAULT_SITE
     return read_profile_site(profile_dir)
 

@@ -15,6 +15,16 @@ import ofscraper.utils.args.parse.commands.story as story
 import ofscraper.utils.args.parse.commands.live_tui as live_tui
 
 
+main.program.add_command(manual.manual, "manual")
+main.program.add_command(message.message_check, "msg_check")
+main.program.add_command(story.story_check, "story_check")
+main.program.add_command(paid.paid_check, "paid_check")
+main.program.add_command(post.post_check, "post_check")
+main.program.add_command(metadata.metadata, "metadata")
+main.program.add_command(db.db, "db")
+main.program.add_command(live_tui.live_tui, "live_tui")
+
+
 class AutoDotDict(dict):
     """
     Class that automatically converts a dictionary to an object-like structure
@@ -40,15 +50,6 @@ class AutoDotDict(dict):
 
 def parse_args():
     try:
-        main.program.add_command(manual.manual, "manual")
-        main.program.add_command(message.message_check, "msg_check")
-        main.program.add_command(story.story_check, "story_check")
-        main.program.add_command(paid.paid_check, "paid_check")
-        main.program.add_command(post.post_check, "post_check")
-        main.program.add_command(metadata.metadata, "metadata")
-        main.program.add_command(db.db, "db")
-        main.program.add_command(live_tui.live_tui, "live_tui")
-
         result = main.program(
             standalone_mode=False,
             prog_name="OF-Scraper",

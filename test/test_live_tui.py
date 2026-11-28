@@ -760,6 +760,17 @@ def test_live_tui_cli_sets_flags_and_rejects_no_rich():
     assert params_once["live_watch"] is False
     assert params_once["live"] is True
 
+    # the watch options added since: off unless given
+    assert params["live_jitter"] is None
+    assert params["refresh_users"] is False
+    params_watch, _ = main_cmd.program(
+        standalone_mode=False,
+        prog_name="OF-Scraper",
+        args=["live_tui", "--live-jitter", "2.5", "--refresh-users"],
+    )
+    assert params_watch["live_jitter"] == 2.5
+    assert params_watch["refresh_users"] is True
+
     with pytest.raises(click.UsageError, match="no-rich"):
         main_cmd.program(
             standalone_mode=False, prog_name="OF-Scraper", args=["--no-rich", "live_tui"]

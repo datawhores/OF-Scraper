@@ -4,7 +4,9 @@ from click import UsageError
 from ofscraper.utils.args.parse.arguments.automatic import (
     live_chat_option,
     live_interval_option,
+    live_jitter_option,
     live_max_option,
+    refresh_users_option,
 )
 from ofscraper.utils.args.parse.groups.advanced_processing import (
     advanced_processing_options,
@@ -45,8 +47,10 @@ live_once_option = click.option(
     "Livestream Options",
     live_once_option,
     live_interval_option,
+    live_jitter_option,
     live_max_option,
     live_chat_option,
+    refresh_users_option,
     help="Control livestream polling, concurrency, and Fansly live chat capture",
 )
 @user_select_options

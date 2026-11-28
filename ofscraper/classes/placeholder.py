@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import pathlib
-import platform
 import re
 import string
 import arrow
@@ -14,6 +13,7 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.me as me
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.paths.names as names
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
@@ -46,16 +46,12 @@ def post_date(date, fallback, name, ele):
     return arrow.get(date)
 
 
-# can't be in a folder or file name on Windows; a slash would add a folder
-_NOT_IN_A_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
-
 def path_safe_label(label):
     """The {label} value: the label's name without characters a file name
     can't hold. Names arrive decoded ("Q&A <3", not "Q&amp;A &lt;3"), so
     ``<`` and ``>`` would otherwise stop the folder being made on Windows.
     Spaces and dashes are kept, so existing label folders keep their names."""
-    return _NOT_IN_A_NAME.sub("", str(label)).strip() or "None"
+    return names.clean_label(label)
 
 
 def site_save_location():
@@ -468,12 +464,8 @@ class databasePlaceholder(basePlaceholder):
         self._metadata = input
 
 
-# names Windows keeps for devices, with or without an extension ("con.txt")
-_WINDOWS_DEVICE = re.compile(r"(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?=\s*(\.|$))")
-
-
 def _on_windows():
-    return platform.system() == "Windows"
+    return names.on_windows()
 
 
 def _safe_parts(path, literal=None):
@@ -483,21 +475,7 @@ def _safe_parts(path, literal=None):
     gets "CON_"): a caption or a name can be either. literal marks each character the template itself wrote: a
     name made only of those (dir_format ".", to save in save_location) is
     kept."""
-    path = str(path)
-    literal = literal or [False] * len(path)
-    out, start = [], 0
-    for part in re.split(r"([/\\])", path):
-        own = all(literal[start : start + len(part)])
-        start += len(part)
-        if len(out) % 2:
-            pass
-        elif re.fullmatch(r"\s*\.[.\s]*", part) and not own:
-            part = "_"
-        elif _on_windows():
-            # only Windows has device names: elsewhere "aux" is a name
-            part = _WINDOWS_DEVICE.sub(r"\1_", part)
-        out.append(part)
-    return "".join(out)
+    return names.safe_parts(path, literal, windows=_on_windows())
 
 
 def _safe_format(template, variables):
@@ -538,7 +516,9 @@ def _safe_name(out, template, variables):
     return _safe_parts(out)
 
 
-class Placeholders(basePlaceholder):
+class _ContentPlaceholder(basePlaceholder):
+    _skip_mediadir = False
+
     def __init__(self, ele, ext) -> None:
         super().__init__()
         self._filename = None
@@ -547,6 +527,114 @@ class Placeholders(basePlaceholder):
         self._filepath = None
         self._ele = ele
         self._ext = ext
+
+    def add_price_variables(self, username):
+        modelObj = manager.Manager.current_model_manager.get_model(username)
+        placeholder_val = of_env.getattr("MODEL_PRICE_PLACEHOLDER")
+
+        def _label(attr):
+            if not modelObj:
+                return placeholder_val
+            return "Free" if getattr(modelObj, attr) == 0 else "Paid"
+
+        self._variables.update(
+            {
+                "current_price": _label("final_current_price"),
+                "regular_price": _label("final_regular_price"),
+                "promo_price": _label("final_promo_price"),
+                "renewal_price": _label("final_renewal_price"),
+            }
+        )
+
+    async def add_common_variables(self, ele, username, model_id):
+        await self.add_main_variables(ele, username, model_id)
+        self.add_price_variables(username)
+        self.add_no_underline()
+
+    def _add_shared_variables(
+        self,
+        ele,
+        username,
+        model_id,
+        *,
+        post_id,
+        media_id,
+        posted,
+        media_type,
+        download_type,
+    ):
+        self._variables.update(
+            {
+                "user_name": username,
+                "model_id": model_id,
+                "post_id": post_id,
+                "media_id": media_id,
+                "first_letter": username[0].capitalize(),
+                "media_type": media_type,
+                "value": ele.value.capitalize(),
+                "date": posted.format(data.get_date()),
+                "year": posted.format("YYYY"),
+                "month": posted.format("MM"),
+                "day": posted.format("DD"),
+                "model_username": username,
+                "response_type": ele.modified_responsetype,
+                "label": path_safe_label(ele.label_string),
+                "download_type": download_type,
+                "modelObj": manager.Manager.current_model_manager.get_model(username),
+                "config": config_file.open_config(),
+                "args": settings.get_args(),
+            }
+        )
+
+    @basePlaceholder.async_wrapper
+    async def getmediadir(self, root=None, create=True):
+        if self._skip_mediadir and of_env.getattr("SKIP_MEDIADIR_RETRIVAL"):
+            return None
+        ele = self._ele
+        username = ele.username
+        model_id = ele.model_id
+        default_root, dir_fmt, _ = self.templates()
+        root = pathlib.Path(root) if root else default_root
+        await self.add_common_variables(ele, username, model_id)
+        # the date setting can hold ":" or "*", which a folder name can't on
+        # Windows; a date fills one folder, so its "/" adds none
+        if "date" in self._variables:
+            self._variables["date"] = name_safe(self._variables["date"])
+        globals().update(self._variables)
+        log.trace(
+            f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        )
+        final_path = _template_folder(root, _safe_format(dir_fmt, self._variables))
+        log.trace(f"final mediadir path {final_path}")
+        self._mediadir = final_path
+        self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
+        return final_path
+
+    @property
+    def filepath(self):
+        return pathlib.Path(self._filepath)
+
+    @property
+    def filename(self):
+        return pathlib.Path(self._filepath).name
+
+    @property
+    def filedir(self):
+        return pathlib.Path(self._filepath).parent
+
+    @property
+    def trunicated_filename(self):
+        return pathlib.Path(self.trunicated_filepath).name
+
+    @property
+    def trunicated_filepath(self):
+        if getattr(settings.get_settings(), "trunicate", True):
+            return pathlib.Path(paths.truncate(self._filepath))
+        return self._filepath
+
+
+class Placeholders(_ContentPlaceholder):
+    _skip_mediadir = True
 
     def type_keys(self):
         return media_type_keys(self._ele)
@@ -606,104 +694,30 @@ class Placeholders(basePlaceholder):
             return None
         return self._addcount(self._ele, out, file_fmt)
 
-    def add_price_variables(self, username):
-        modelObj = manager.Manager.current_model_manager.get_model(username)
-        self._variables.update(
-            {
-                "current_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_current_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "regular_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_regular_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "promo_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_promo_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "renewal_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_renewal_price == 0 else "Paid"
-                )
-            }
-        )
-
-    async def add_common_variables(self, ele, username, model_id):
-        await self.add_main_variables(ele, username, model_id)
-        self.add_price_variables(username)
-        self.add_no_underline()
-
     async def add_main_variables(self, ele, username, model_id):
-        self._variables.update({"user_name": username})
-        self._variables.update({"model_id": model_id})
-        self._variables.update({"post_id": ele.post_id})
-        self._variables.update({"media_id": ele.id})
-        self._variables.update({"first_letter": username[0].capitalize()})
-        self._variables.update({"media_type": ele.mediatype.capitalize()})
-        self._variables.update({"value": ele.value.capitalize()})
         posted = post_date(
             ele.postdate, ele.date, f"Post {ele.post_id} (media {ele.id})", ele
         )
-        self._variables.update({"date": posted.format(data.get_date())})
-        self._variables.update({"year": posted.format("YYYY")})
-        self._variables.update({"month": posted.format("MM")})
-        self._variables.update({"day": posted.format("DD")})
-        self._variables.update({"model_username": username})
-        self._variables.update({"response_type": ele.modified_responsetype})
-        self._variables.update({"label": path_safe_label(ele.label_string)})
-        self._variables.update({"download_type": ele.downloadtype})
+        self._add_shared_variables(
+            ele,
+            username,
+            model_id,
+            post_id=ele.post_id,
+            media_id=ele.id,
+            posted=posted,
+            media_type=ele.mediatype.capitalize(),
+            download_type=ele.downloadtype,
+        )
         self._variables.update(
-            {"modelObj": manager.Manager.current_model_manager.get_model(username)}
+            {
+                "quality": await ele.selected_quality_placeholder,
+                "file_name": await ele.final_filename,
+                "original_filename": ele.filename,
+                "only_file_name": ele.no_quality_final_filename,
+                "only_filename": ele.no_quality_final_filename,
+                "text": ele.file_text,
+            }
         )
-        self._variables.update({"quality": await ele.selected_quality_placeholder})
-        self._variables.update({"file_name": await ele.final_filename})
-        self._variables.update({"original_filename": ele.filename})
-        self._variables.update({"only_file_name": ele.no_quality_final_filename})
-        self._variables.update({"only_filename": ele.no_quality_final_filename})
-        self._variables.update({"text": ele.file_text})
-        self._variables.update({"config": config_file.open_config()})
-        self._variables.update({"args": settings.get_args()})
-
-    @basePlaceholder.async_wrapper
-    async def getmediadir(self, root=None, create=True):
-        if of_env.getattr("SKIP_MEDIADIR_RETRIVAL"):
-            return None
-        ele = self._ele
-        username = ele.username
-        model_id = ele.model_id
-        default_root, dir_fmt, _ = self.templates()
-        root = pathlib.Path(root) if root else default_root
-        await self.add_common_variables(ele, username, model_id)
-        # the date setting can hold ":" or "*", which a folder name can't on
-        # Windows; a date fills one folder, so its "/" adds none
-        if "date" in self._variables:
-            self._variables["date"] = name_safe(self._variables["date"])
-        globals().update(self._variables)
-        log.trace(
-            f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
-        )
-        final_path = _template_folder(root, _safe_format(dir_fmt, self._variables))
-        log.trace(f"final mediadir path {final_path}")
-        self._mediadir = final_path
-        self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
-        return final_path
 
     @basePlaceholder.async_wrapper
     async def createfilename(self):
@@ -771,28 +785,6 @@ class Placeholders(basePlaceholder):
         ]:
             return True
         return False
-
-    @property
-    def filepath(self):
-        return pathlib.Path(self._filepath)
-
-    @property
-    def filename(self):
-        return pathlib.Path(self._filepath).name
-
-    @property
-    def filedir(self):
-        return pathlib.Path(self._filepath).parent
-
-    @property
-    def trunicated_filename(self):
-        return pathlib.Path(self.trunicated_filepath).name
-
-    @property
-    def trunicated_filepath(self):
-        if getattr(settings.get_settings(), "trunicate", True):
-            return pathlib.Path(paths.truncate(self._filepath))
-        return self._filepath
 
     @property
     def trunicated_filedir(self):
@@ -869,16 +861,7 @@ def _without_left_out(file_format, variables, fill):
     return name.replace(_START, "").replace(_END, "")
 
 
-class Textholders(basePlaceholder):
-    def __init__(self, ele, ext) -> None:
-        super().__init__()
-        self._filename = None
-        self._mediadir = None
-        self._metadata = None
-        self._filepath = None
-        self._ele = ele
-        self._ext = ext
-
+class Textholders(_ContentPlaceholder):
     def type_keys(self):
         ele = self._ele
         return (ele.responsetype, ele.modified_responsetype, "text")
@@ -890,107 +873,32 @@ class Textholders(basePlaceholder):
         self._filepath = final_path(script_name or pathlib.Path(dir, file))
         return self
 
-    def add_price_variables(self, username):
-        modelObj = manager.Manager.current_model_manager.get_model(username)
-        self._variables.update(
-            {
-                "current_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_current_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "regular_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_regular_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "promo_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_promo_price == 0 else "Paid"
-                )
-            }
-        )
-        self._variables.update(
-            {
-                "renewal_price": (
-                    of_env.getattr("MODEL_PRICE_PLACEHOLDER")
-                    if not modelObj
-                    else "Free" if modelObj.final_renewal_price == 0 else "Paid"
-                )
-            }
-        )
-
-    async def add_common_variables(self, ele, username, model_id):
-        await self.add_main_variables(ele, username, model_id)
-        self.add_price_variables(username)
-        self.add_no_underline()
-
     async def add_main_variables(self, ele, username, model_id):
-        self._variables.update({"user_name": username})
-        self._variables.update({"model_id": model_id})
-        self._variables.update({"post_id": ele.id})
         # a text file is named with the same file_format as media, so it has
         # the media's placeholders too: the post's id for the media id, and
         # Normal, as text is never DRM-protected
-        self._variables.update({"media_id": ele.id})
-        self._variables.update({"download_type": "Normal"})
-        self._variables.update({"first_letter": username[0].capitalize()})
-        self._variables.update({"value": ele.value.capitalize()})
         posted = post_date(ele.date, None, f"Post {ele.id}", ele)
-        self._variables.update({"date": posted.format(data.get_date())})
-        self._variables.update({"year": posted.format("YYYY")})
-        self._variables.update({"month": posted.format("MM")})
-        self._variables.update({"day": posted.format("DD")})
-        self._variables.update({"model_username": username})
-        self._variables.update({"media_type": "Text"})
-        self._variables.update({"response_type": ele.modified_responsetype})
-        self._variables.update({"label": path_safe_label(ele.label_string)})
-        self._variables.update(
-            {"modelObj": manager.Manager.current_model_manager.get_model(username)}
+        self._add_shared_variables(
+            ele,
+            username,
+            model_id,
+            post_id=ele.id,
+            media_id=ele.id,
+            posted=posted,
+            media_type="Text",
+            download_type="Normal",
         )
-        self._variables.update({"text": ele.text_trunicate(ele.file_sanitized_text)})
-        self._variables.update({"config": config_file.open_config()})
-        self._variables.update({"args": settings.get_args()})
-
         sanitized_name = ele.text_trunicate(ele.file_sanitized_text)
-
-        self._variables.update({"quality": "source"})
-        self._variables.update({"file_name": sanitized_name})
-        self._variables.update({"original_filename": sanitized_name})
-        self._variables.update({"only_file_name": sanitized_name})
-        self._variables.update({"only_filename": sanitized_name})
-
-    @basePlaceholder.async_wrapper
-    async def getmediadir(self, root=None, create=True):
-        ele = self._ele
-        username = ele.username
-        model_id = ele.model_id
-        default_root, dir_fmt, _ = self.templates()
-        root = pathlib.Path(root) if root else default_root
-        await self.add_common_variables(ele, username, model_id)
-        # the date setting can hold ":" or "*", which a folder name can't on
-        # Windows; a date fills one folder, so its "/" adds none
-        if "date" in self._variables:
-            self._variables["date"] = name_safe(self._variables["date"])
-        globals().update(self._variables)
-        log.trace(
-            f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        self._variables.update(
+            {
+                "text": sanitized_name,
+                "quality": "source",
+                "file_name": sanitized_name,
+                "original_filename": sanitized_name,
+                "only_file_name": sanitized_name,
+                "only_filename": sanitized_name,
+            }
         )
-
-        final_path = _template_folder(root, _safe_format(dir_fmt, self._variables))
-        log.trace(f"final mediadir path {final_path}")
-        self._mediadir = final_path
-        self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
-        return final_path
 
     @basePlaceholder.async_wrapper
     async def createfilename(self):
@@ -1032,24 +940,6 @@ class Textholders(basePlaceholder):
         log.debug(f"final filename path {out}")
         self._filename = _safe_name(out, file_fmt, self._variables)
         return self._filename
-
-    @property
-    def filepath(self):
-        return pathlib.Path(self._filepath)
-
-    @property
-    def filename(self):
-        return pathlib.Path(self._filepath).name
-
-    @property
-    def trunicated_filename(self):
-        return pathlib.Path(self.trunicated_filepath).name
-
-    @property
-    def trunicated_filepath(self):
-        if getattr(settings.get_settings(), "trunicate", True):
-            return pathlib.Path(paths.truncate(self._filepath))
-        return self._filepath
 
     @property
     def filedir(self):

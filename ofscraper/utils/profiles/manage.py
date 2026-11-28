@@ -1,12 +1,10 @@
 import logging
-import shutil
 
 from rich import print
 
 import ofscraper.db.postgres as postgres
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
-import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.manage as manage
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.tools as tools
@@ -48,9 +46,8 @@ def delete_profile():
     if profile==profile_data.get_active_profile():
         log.error("can't delete active profile")
         return
-    p = common_paths.get_config_home() / profile
-    shutil.rmtree(p)
-    manager.Manager.profile_manager.delete_profile()
+    # removes the folder and the creator lists kept for the profile
+    manager.Manager.profile_manager.delete_profile(profile)
     print(f"[green]Successfully deleted[/green] {escape_text(profile)}")
 
 

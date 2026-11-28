@@ -22,11 +22,13 @@ import asyncio
 import datetime
 import json
 import logging
+import math
 import os
 import pathlib
 import random
 import re
 import threading
+import time
 from urllib.parse import parse_qsl, urljoin, urlparse
 
 import ofscraper.utils.events as events
@@ -168,10 +170,9 @@ def utc_start(started_at) -> datetime.datetime:
 def folder_name(username) -> str:
     """The API username, safe as one folder or file name component."""
     from ofscraper.classes.of.base import base
+    import ofscraper.utils.paths.names as names
 
-    # the app's own filename cleanup; it leaves backslashes and dots alone
-    name = base().file_cleanup(username).replace("\\", "").strip(" .")
-    return name or "unknown"
+    return names.clean_folder_name(base().file_cleanup(username))
 
 
 def recording_base(save_location, username, started_at, *, model_id=None) -> pathlib.Path:
@@ -1014,6 +1015,19 @@ def _int_env(key: str, default: int, minimum: int = 1) -> int:
         return default
 
 
+def _float_env(key: str, default: float, minimum: float = 0.0) -> float:
+    import ofscraper.utils.of_env.of_env as of_env
+
+    try:
+        val = of_env.getattr(key, default)
+        parsed = float(default if val is None else val)
+    except (TypeError, ValueError):
+        return float(default)
+    if not math.isfinite(parsed):
+        return float(default)
+    return max(minimum, parsed)
+
+
 def has_custom_user_filters(s=None) -> bool:
     """True when userlists, blacklists, or model filters narrow the creator pool."""
     from ofscraper.managers.model import ModelManager
@@ -1037,10 +1051,67 @@ def warn_streak(streaks: dict, key: str, message: str = None) -> None:
     streaks[key] = bool(message)
 
 
+class PollStateLogger:
+    """Tracks announced live/idle state across poll cycles and logs transitions."""
+
+    def __init__(self, site_name: str, watch: bool):
+        self._site_name = site_name
+        self._watch = watch
+        self.announced_idle = False
+        self.announced_live_ids = set()
+
+    def __call__(self, selected) -> None:
+        current_ids = {s["accountId"] for s in selected}
+        self.announced_live_ids &= current_ids
+
+        new_live = [
+            s for s in selected if s["accountId"] not in self.announced_live_ids
+        ]
+        if new_live:
+            names = ", ".join(s["username"] for s in new_live)
+            log.info(f"Live now ({len(new_live)}): {names}")
+            self.announced_live_ids.update(s["accountId"] for s in new_live)
+            self.announced_idle = False
+        elif selected:
+            names = ", ".join(s["username"] for s in selected)
+            log.debug(f"Still live ({len(selected)}): {names}")
+            self.announced_idle = False
+        elif not self.announced_idle:
+            if self._watch:
+                log.info(
+                    f"No active {self._site_name} livestreams; waiting for selected creators to go live..."
+                )
+            else:
+                log.info(
+                    f"No active {self._site_name} livestreams found for the selected creators."
+                )
+            self.announced_idle = True
+        else:
+            log.debug(f"No active {self._site_name} livestreams found.")
+
+
 def lookup_due(misses: dict, name: str, poll: int) -> bool:
     """Whether to look up a name the lookups missed again on this poll: on
     every poll for its first 3 misses, then on every 10th poll."""
     return misses.get(name, 0) < 3 or poll % 10 == 0
+
+
+# with --refresh-users, the least time between two rereads of the creator
+# lists in a live watch. Rereading on every check would scan every
+# subscription once a minute.
+REFRESH_USERS_SECONDS = 600
+
+
+def refresh_due(state: dict, now: float | None = None) -> bool:
+    """With --refresh-users, whether this check reads the creator lists again:
+    at most once per ``REFRESH_USERS_SECONDS``. The first call only starts the
+    clock in ``state``, as the first check reads everything anyway."""
+    now = time.monotonic() if now is None else now
+    last = state.get("refreshed_at")
+    if last is not None and now - last < REFRESH_USERS_SECONDS:
+        return False
+    state["refreshed_at"] = now
+    return last is not None
 
 
 def count_misses(misses: dict, tried, missing) -> None:
@@ -1053,6 +1124,18 @@ def count_misses(misses: dict, tried, missing) -> None:
         misses[name] = misses.get(name, 0) + 1
         if misses[name] == 3:
             log.warning(f"Still can't look up {name} for livestreams; trying again every 10th check")
+
+
+def _resolve_live_jitter(s) -> float:
+    val = getattr(s, "live_jitter", None)
+    if val is not None:
+        try:
+            parsed = float(val)
+            if math.isfinite(parsed):
+                return max(0.0, parsed)
+        except (TypeError, ValueError):
+            pass
+    return _float_env("LIVE_JITTER", float(DEFAULT_JITTER), minimum=0.0)
 
 
 def options(s=None) -> dict:
@@ -1074,7 +1157,7 @@ def options(s=None) -> dict:
         "tui": tui,
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
-        "jitter": _int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0),
+        "jitter": _resolve_live_jitter(s),
         "max_failures": _int_env("LIVE_MAX_FAILURES", DEFAULT_MAX_FAILURES, minimum=1),
         "check_concurrency": _int_env("LIVE_CHECK_CONCURRENCY", 5, minimum=1),
         "chat": bool(getattr(s, "live_chat", False)),
@@ -1082,6 +1165,7 @@ def options(s=None) -> dict:
         "excluded": getattr(s, "excluded_username", None),
         "username_search": getattr(s, "username_search", None),
         "has_filters": has_custom_user_filters(s),
+        "refresh_users": bool(getattr(s, "refresh_users", False)),
     }
 
 
@@ -1256,8 +1340,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     # playlists get one attempt each: a 403 means "fetch a fresh URL", not "retry"
     async with manager.Manager.session.aget_ofsession() as c, \
             manager.Manager.session.aget_ofsession(retries=1) as playlists:
-        announced_idle = False
-        announced_live_ids = set()
+        log_poll_state = PollStateLogger("Fansly", watch)
         announced_no_targets = False
         streaks = {}
         lookups = {"poll": 0, "misses": {}}
@@ -1373,33 +1456,14 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             ))
             return [r for r in results if isinstance(r, dict)]
 
-        def _log_poll_state(selected):
-            nonlocal announced_idle, announced_live_ids
-            current_ids = {s["accountId"] for s in selected}
-            announced_live_ids &= current_ids
-
-            new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
-            if new_live:
-                names = ", ".join(s["username"] for s in new_live)
-                log.info(f"Live now ({len(new_live)}): {names}")
-                announced_live_ids.update(s["accountId"] for s in new_live)
-                announced_idle = False
-            elif selected:
-                names = ", ".join(s["username"] for s in selected)
-                log.debug(f"Still live ({len(selected)}): {names}")
-                announced_idle = False
-            elif not announced_idle:
-                if watch:
-                    log.info("No active Fansly livestreams; waiting for selected creators to go live...")
-                else:
-                    log.info("No active Fansly livestreams found for the selected creators.")
-                announced_idle = True
-            else:
-                log.debug("No active Fansly livestreams found.")
-
         async def fetch_online():
-            nonlocal announced_no_targets
+            nonlocal announced_no_targets, following_set
             lookups["poll"] += 1
+            if opts["refresh_users"] and refresh_due(lookups):
+                resolved_cache.clear()
+                unfollowed_cache.clear()
+                filtered_cache.clear()
+                following_set = None
             w_inc = getattr(watcher, "include_following", None)
             include_following = wants_all_usernames(opts["usernames"]) if w_inc is None else bool(w_inc)
             w_extra = getattr(watcher, "extra_usernames", None)
@@ -1421,7 +1485,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 if not include_following and not extra_names:
                     events.emit_sync("live_poll", state="targets", site="fansly", targets=[])
                     warn_streak(streaks, "poll")
-                    _log_poll_state([])
+                    log_poll_state([])
                     return []
 
                 # Individual search (-fi) with explicit usernames only (Following OFF)
@@ -1439,7 +1503,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     selected = select_streams(online, active_usernames, excluded)
                     events.emit_sync("live_poll", state="targets", site="fansly", targets=targets)
                     warn_streak(streaks, "poll")
-                    _log_poll_state(selected)
+                    log_poll_state(selected)
                     return selected
 
                 # Fetch followed online streams first, then fall back for unfollowed explicit targets
@@ -1507,7 +1571,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     }
                 events.emit_sync("live_poll", state="targets", site="fansly", targets=list(merged_targets.values()))
                 warn_streak(streaks, "poll")
-                _log_poll_state(selected)
+                log_poll_state(selected)
                 return selected
             except Exception as e:
                 warn_streak(streaks, "poll", f"Fansly livestream check failed: {e}")

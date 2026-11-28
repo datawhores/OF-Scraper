@@ -15,11 +15,25 @@ from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator
 from prompt_toolkit.shortcuts import prompt as prompt
 from InquirerPy.base import Choice
+import pathlib
 
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.sites as sites
 import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.paths.common as common_paths
+
+
+def _profile_choice(profile) -> Choice:
+    profile_dir = (
+        profile
+        if isinstance(profile, pathlib.Path)
+        else common_paths.get_config_home() / str(profile)
+    )
+    name = profile.stem if isinstance(profile, pathlib.Path) else str(profile)
+    site_label = sites.site_name(sites.read_profile_site(profile_dir))
+    return Choice(value=profile, name=f"{name} [{site_label}]")
 
 
 def profiles_prompt() -> int:
@@ -44,7 +58,7 @@ def profiles_prompt() -> int:
 def edit_profiles_prompt(profiles) -> str:
     name = "edit"
 
-    profile_names = [profile.stem for profile in profiles]
+    profile_choices = [Choice(value=profile.stem, name=f"{profile.stem} [{sites.site_name(sites.read_profile_site(profile))}]") for profile in profiles]
 
     questions = promptClasses.batchConverter(
         *[
@@ -52,7 +66,7 @@ def edit_profiles_prompt(profiles) -> str:
                 "type": "list",
                 "name": name,
                 "message": "Which profile would you like to edit?",
-                "choices": [*profile_names],
+                "choices": [*profile_choices],
             }
         ]
     )
@@ -111,7 +125,7 @@ def get_profile_prompt(profiles: list) -> str:
                 "type": "list",
                 "name": name,
                 "message": "Select Profile",
-                "choices": profiles,
+                "choices": [_profile_choice(p) for p in profiles],
                 "validate": prompt_validators.MultiValidator(
                     prompt_validators.emptyListValidator()
                 ),

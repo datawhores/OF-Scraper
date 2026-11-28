@@ -478,8 +478,10 @@ def test_scripts_run_only_outside_a_dry_run(monkeypatch, library, tmp_path, run_
         get_unprocessed=lambda a: [],
         get_model=lambda name: {"username": name, "id": 5},
     )
+    import ofscraper.scripts.after_action_script as after_action
+
     ran = []
-    for module in (after_download, after_like, final_script):
+    for module in (after_action, final_script):
         monkeypatch.setattr(module, "run", lambda *a, **k: ran.append(a))
         monkeypatch.setattr(
             module, "manager", SimpleNamespace(Manager=SimpleNamespace(current_model_manager=models))

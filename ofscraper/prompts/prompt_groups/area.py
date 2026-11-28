@@ -17,13 +17,64 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.sites as sites
 import ofscraper.utils.args.accessors.areas as areas
+import ofscraper.utils.const as const
 import ofscraper.utils.settings as settings
+
+
+_ALL_AREAS = (
+    "Profile",
+    "Timeline",
+    "Pinned",
+    "Archived",
+    "Highlights",
+    "Stories",
+    "Messages",
+    "Purchased",
+    "Streams",
+)
+_LIKE_AREAS = const.TIMELINE_POST_AREAS
+_ANON_AREAS = ("Profile", *const.TIMELINE_POST_AREAS)
+_FANSLY_AREAS = ("Timeline", "Messages", "Purchased")
+
+
+def _area_choices(include_extra: bool = True) -> tuple:
+    """The areas the current site has: all of them, or without
+    ``include_extra`` only the ones whose posts can be liked."""
+    if sites.is_fansly():
+        return _FANSLY_AREAS if include_extra else ("Timeline",)
+    return _ALL_AREAS if include_extra else _LIKE_AREAS
+
+
+def _areas_prompt(
+    message,
+    choices,
+    *,
+    name="areas",
+    validate=None,
+    with_labels=True,
+    more_instruction=None,
+) -> list:
+    prompt_cfg = {
+        "type": "checkbox",
+        "qmark": "[?]",
+        "name": name,
+        "message": message,
+        "validate": validate or prompt_validators.emptyListValidator(),
+        "choices": [Choice(c) for c in choices],
+    }
+    if more_instruction is not None:
+        prompt_cfg["more_instruction"] = more_instruction
+    answers = promptClasses.batchConverter(prompt_cfg)
+    if with_labels:
+        answers[name].append(scrape_labels_prompt())
+        return answers[name] if answers[name][-1] is not None else answers[name][:-1]
+    return answers[name]
 
 
 def areas_prompt() -> list:
     args = settings.get_args()
-    name = "value"
     message = None
     if "like" in args.actions and len(args.like_area) == 0:
         message = "Which area(s) would you do you want to download and like"
@@ -39,168 +90,52 @@ def areas_prompt() -> list:
         and len(args.like_area) == 0
         else ""
     )
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": message,
-                "more_instruction": more_instruction,
-                "validate": prompt_validators.MultiValidator(
-                    prompt_validators.emptyListValidator(),
-                    prompt_validators.like_area_validator_posts(),
-                ),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        message,
+        _area_choices(),
+        name="value",
+        validate=prompt_validators.MultiValidator(
+            prompt_validators.emptyListValidator(),
+            prompt_validators.like_area_validator_posts(),
+        ),
+        more_instruction=more_instruction,
     )
-
-    answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def like_areas_prompt(like=True) -> list:
-    name = "areas"
-
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
-                "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
+        _area_choices(include_extra=False),
     )
-    answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def download_areas_prompt() -> list:
-    name = "areas"
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": "Which area(s) would you to perform download actions on",
-                "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        "Which area(s) would you to perform download actions on",
+        _area_choices(),
     )
-    answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def metadata_areas_prompt() -> list:
-    name = "areas"
-
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": "Which area(s) would you to perform metadata actions on",
-                "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        "Which area(s) would you to perform metadata actions on",
+        _area_choices(),
     )
-    answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def db_areas_prompt() -> list:
-    name = "areas"
-
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": "Which area(s) would you to database  information from",
-                "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Highlights"),
-                    Choice("Stories"),
-                    Choice("Messages"),
-                    Choice("Purchased"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        "Which area(s) would you to database  information from",
+        (*_area_choices(), *(("Labels",) if sites.is_fansly() else ())),
+        with_labels=False,
     )
-    return answers[name]
 
 
 def metadata_anon_areas_prompt() -> list:
-    name = "areas"
-    answers = promptClasses.batchConverter(
-        *[
-            {
-                "type": "checkbox",
-                "qmark": "[?]",
-                "name": name,
-                "message": "Which area(s) would you to perform metadata actions on anonymously",
-                "validate": prompt_validators.emptyListValidator(),
-                "choices": [
-                    Choice("Profile"),
-                    Choice("Timeline"),
-                    Choice("Pinned"),
-                    Choice("Archived"),
-                    Choice("Streams"),
-                ],
-            }
-        ]
+    return _areas_prompt(
+        "Which area(s) would you to perform metadata actions on anonymously",
+        _area_choices(include_extra=False) if sites.is_fansly() else _ANON_AREAS,
     )
-    answers[name].append(scrape_labels_prompt())
-    return answers[name] if answers[name][-1] is not None else answers[name][:-1]
 
 
 def scrape_labels_prompt():
@@ -222,6 +157,8 @@ def scrape_labels_prompt():
 
 
 def scrape_paid_prompt():
+    if sites.is_fansly():
+        return False
     name = "value"
     answer = promptClasses.batchConverter(
         *[
@@ -267,35 +204,23 @@ def reset_areas_prompt() -> bool:
     return answer[name]
 
 
-def reset_like_areas_prompt() -> bool:
+def _yes_no_reset_prompt(message):
     name = "reset areas"
     answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": name,
-                "message": "Do you want to reset the selected like area",
-                "choices": ["Yes", "No"],
-                "default": "No",
-            }
-        ]
+        {
+            "type": "list",
+            "name": name,
+            "message": message,
+            "choices": ["Yes", "No"],
+            "default": "No",
+        }
     )
-
     return answer[name]
+
+
+def reset_like_areas_prompt() -> bool:
+    return _yes_no_reset_prompt("Do you want to reset the selected like area")
 
 
 def reset_download_areas_prompt() -> bool:
-    name = "reset areas"
-    answer = promptClasses.batchConverter(
-        *[
-            {
-                "type": "list",
-                "name": name,
-                "message": "Do you want to reset the selected download area(s)",
-                "choices": ["Yes", "No"],
-                "default": "No",
-            }
-        ]
-    )
-
-    return answer[name]
+    return _yes_no_reset_prompt("Do you want to reset the selected download area(s)")

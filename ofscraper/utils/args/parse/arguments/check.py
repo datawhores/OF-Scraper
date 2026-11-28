@@ -6,6 +6,7 @@ from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
     StringSplitParseTitle,
 )
+import ofscraper.utils.const as const
 from ofscraper.utils.args.types.choice import MultiChoice
 
 # check
@@ -16,9 +17,9 @@ check_areas = click.option(
     "--posts",
     "check_area",
     help="Select areas to check (multiple allowed, separated by spaces)",
-    default=["Timeline", "Pinned", "Archived", "Streams"],
+    default=list(const.TIMELINE_POST_AREAS),
     type=MultiChoice(
-        ["All", "Archived", "Timeline", "Pinned", "Labels", "Streams"],
+        list(const.TIMELINE_POST_AREA_CHOICES),
         case_sensitive=False,
     ),
     callback=StringSplitParseTitle,

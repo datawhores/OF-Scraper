@@ -77,7 +77,7 @@ def test_every_option_is_described(build, notes, environment):
 
 
 def test_the_generator_knows_every_subcommand(build):
-    # parse_args registers the subcommands; the generator lists them by hand
+    # The generator lists the registered subcommands by hand.
     tree = ast.parse((ROOT / "ofscraper/utils/args/main.py").read_text(encoding="utf-8"))
     registered = {
         node.args[1].value

@@ -6,11 +6,13 @@ import traceback
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
+import ofscraper.sites as sites
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
 import ofscraper.managers.manager as manager
@@ -35,6 +37,7 @@ def main_menu_action():
 
     global count
     log.debug("[bold deep_sky_blue2] Running Prompt Menu Mode[/bold deep_sky_blue2]")
+    sites.init_session_site()
     scapingManager = scraperManager()
     while True:
         result_main_prompt = None
@@ -84,6 +87,8 @@ def main_menu_action():
                             profile_menu_helper(result_profiles_prompt)
                 elif result_main_prompt == "merge":
                     merge.merge_runner()
+                elif result_main_prompt == "site":
+                    switch_site_helper()
                 elif result_main_prompt == "quit":
                     return True
         except interactive.NoConsoleError:
@@ -94,6 +99,35 @@ def main_menu_action():
             log.debug(traceback.format_exc())
 
 
+@back_to_menu
+def switch_site_helper():
+    from InquirerPy.base import Choice
+    import ofscraper.prompts.promptConvert as promptClasses
+    import ofscraper.utils.paths.common as common_paths
+
+    target = sites.FANSLY if not sites.is_fansly() else sites.ONLYFANS
+    target_label = sites.site_name(target)
+    scope = promptClasses.getChecklistSelection(
+        message=f"Switch active site from {sites.site_name()} to {target_label}:",
+        choices=[
+            Choice("session", f"Switch to {target_label} for this session only"),
+            Choice("profile", f"Switch to {target_label} and save to profile site.json"),
+            Choice(None, "Cancel"),
+        ],
+        default="session",
+    )
+    if not scope:
+        return
+    if scope == "profile":
+        sites.write_profile_site(common_paths.get_profile_path(), target)
+    sites.set_active_site(target)
+    settings.update_settings()
+    actions.remove_post_area()
+    actions.remove_download_area()
+    actions.remove_like_area()
+    log.info(f"Switched active site to {target_label}")
+
+
 def run_check_table():
     from ofscraper.commands.check_menu import run_check_table
 
@@ -101,26 +135,34 @@ def run_check_table():
 
 
 def _action_name(choice):
+    if choice == "site":
+        return "Switch Site"
     names = {value: name for name, value in of_env.getattr("mainPromptChoices").items()}
     return names.get(choice, "Main Menu")
 
 
 @back_to_menu
 def profile_menu_helper(result_profiles_prompt):
-    if result_profiles_prompt == "default":
-        # Change profiles
-        profiles_manage.change_default_profile()
-    elif result_profiles_prompt == "active":
-        # Change profiles
-        profiles_manage.change_active_profile()
+    if result_profiles_prompt in {"default", "active", "create"}:
+        previous_profile = profile_data.get_active_profile()
+        previous_site = sites.current_site()
+        if result_profiles_prompt == "default":
+            profiles_manage.change_default_profile()
+        elif result_profiles_prompt == "active":
+            profiles_manage.change_active_profile()
+        else:
+            profiles_manage.create_profile()
+        # Re-selecting the active profile (or creating without activating) is a no-op, including its session site.
+        if profile_data.get_active_profile() != previous_profile:
+            sites.set_active_site(None)
+            settings.update_settings()
+            if sites.current_site() != previous_site:
+                actions.remove_post_area()
+                actions.remove_download_area()
+                actions.remove_like_area()
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()
-
-    elif result_profiles_prompt == "create":
-        # Create a new profile
-
-        profiles_manage.create_profile()
 
     elif result_profiles_prompt == "delete":
         # Delete a profile

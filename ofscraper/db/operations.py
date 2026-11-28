@@ -48,6 +48,7 @@ from ofscraper.db.operations_.stories import (
     make_stories_table_changes,
 )
 from ofscraper.db.transition import modify_tables, size_skip_labels_in_backups
+import ofscraper.utils.const as const
 from ofscraper.utils.context.run_async import run
 
 console = Console()
@@ -62,8 +63,7 @@ async def make_changes_to_content_tables(
     # --metadata leaves alone
     await make_post_table_changes(
         filter(
-            lambda x: x.responsetype.capitalize()
-            in {"Timeline", "Pinned", "Archived", "Streams"},
+            lambda x: x.responsetype.capitalize() in const.TIMELINE_POST_AREA_SET,
             posts,
         ),
         model_id=model_id,

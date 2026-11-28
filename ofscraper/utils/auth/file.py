@@ -17,6 +17,7 @@ import re
 
 from rich.console import Console
 
+import ofscraper.sites as sites
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.auth.utils.error as auth_error
@@ -86,6 +87,11 @@ def edit_auth():
     Opens the auth editing menu, handling errors interactively.
     Returns the new auth dictionary or a command string ('quit', 'main').
     """
+    if sites.is_fansly():
+        import ofscraper.sites.fansly.auth as fansly_auth
+
+        return fansly_auth.edit_auth()
+
     while True:
         try:
             auth_dict.get_auth_dict()           
