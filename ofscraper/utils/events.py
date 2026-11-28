@@ -62,6 +62,13 @@ def unsubscribe(name, fn):
             _subscribers[name] = tuple(f for f in current if f != fn)
 
 
+def _log_subscriber_error(name, fn, err):
+    logging.getLogger("shared").debug(
+        f"{name} subscriber {getattr(fn, '__qualname__', fn)} failed: {err}",
+        exc_info=True,
+    )
+
+
 async def emit(name, **kwargs):
     # a tuple, replaced on (un)subscribe: another thread may change the list
     for fn in _subscribers.get(name, ()):
@@ -70,10 +77,7 @@ async def emit(name, **kwargs):
             if inspect.isawaitable(result):
                 await result
         except Exception as E:
-            logging.getLogger("shared").debug(
-                f"{name} subscriber {getattr(fn, '__qualname__', fn)} failed: {E}",
-                exc_info=True,
-            )
+            _log_subscriber_error(name, fn, E)
 
 
 def emit_sync(name, **kwargs):
@@ -88,7 +92,4 @@ def emit_sync(name, **kwargs):
                     f"{name} async subscriber {getattr(fn, '__qualname__', fn)} skipped in emit_sync"
                 )
         except Exception as E:
-            logging.getLogger("shared").debug(
-                f"{name} subscriber {getattr(fn, '__qualname__', fn)} failed: {E}",
-                exc_info=True,
-            )
+            _log_subscriber_error(name, fn, E)

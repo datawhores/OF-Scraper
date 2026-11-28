@@ -17,7 +17,7 @@ import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.ffmpeg as ffmpeg_finder
-from ofscraper.sites.fansly import live as shared
+from ofscraper.utils.live import runtime as shared
 from ofscraper.sites.onlyfans import live, live_capture
 
 AUTH = {"auth_id": "12345", "sess": "s" * 30, "auth_uid": "", "user_agent": "UA/1", "x-bc": "b" * 40}

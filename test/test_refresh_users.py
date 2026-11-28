@@ -14,6 +14,7 @@ import ofscraper.sites.fansly.live as fansly_live
 import ofscraper.sites.fansly.live_api as fansly_live_api
 import ofscraper.sites.fansly.scrape as fansly_scrape
 import ofscraper.sites.onlyfans.live as of_live
+import ofscraper.utils.live.runtime as live_runtime
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.ffmpeg as ffmpeg_finder
 from ofscraper.classes.of.models import Model
@@ -228,7 +229,7 @@ def test_fansly_live_refresh_users_clears_filter_cache_between_polls(monkeypatch
     monkeypatch.setattr(fansly_live, "LiveWatcher", TwoPollWatcher)
     monkeypatch.setattr(ffmpeg_finder, "get_ffmpeg", lambda: "ffmpeg")
     # every check after the first is a refresh
-    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
+    monkeypatch.setattr(live_runtime, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -365,7 +366,7 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_individual(
 
     monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
     monkeypatch.setattr(of_live, "still_live", fake_still_live)
-    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
+    monkeypatch.setattr(live_runtime, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -419,7 +420,7 @@ def test_onlyfans_live_refresh_users_preserves_miss_backoff_list_mode(
     monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
     monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
     monkeypatch.setattr(of_live, "still_live", fake_still_live)
-    monkeypatch.setattr(fansly_live, "REFRESH_USERS_SECONDS", 0)
+    monkeypatch.setattr(live_runtime, "REFRESH_USERS_SECONDS", 0)
 
     args = settings.get_args(copy=True)
     args.live_watch = True
@@ -574,7 +575,7 @@ def test_onlyfans_live_refresh_users_does_not_rescan_on_every_poll(monkeypatch):
     monkeypatch.setattr(of_live, "_fetch_models", fake_fetch_models)
     monkeypatch.setattr(subs, "scrape_subscriptions_active", fake_active)
     monkeypatch.setattr(of_live, "still_live", fake_still_live)
-    monkeypatch.setattr(fansly_live.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(live_runtime.time, "monotonic", lambda: clock[0])
 
     args = settings.get_args(copy=True)
     args.live_watch = True
