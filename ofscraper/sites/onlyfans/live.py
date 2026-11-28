@@ -17,7 +17,7 @@ the browser's MediaRecorder (see ``live_capture``).
 Recordings go to
 ``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``.
 The watcher, the Ctrl+C handling and the options are shared with Fansly
-(``ofscraper.sites.fansly.live``).
+(``ofscraper.utils.live.runtime``).
 """
 
 import asyncio
@@ -34,9 +34,9 @@ import ofscraper.utils.events as events
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.system.ffmpeg as ffmpeg_finder
-from ofscraper.sites.fansly import live as shared
 from ofscraper.sites.onlyfans import live_capture
 from ofscraper.utils import username_match
+from ofscraper.utils.live import runtime as shared
 
 log = logging.getLogger("shared")
 
@@ -201,6 +201,20 @@ async def _look_up_names(c, names, excluded, has_filters: bool, cache: dict):
     return await _resolve_target_creators(names, excluded, False, has_filters, models, cache)
 
 
+async def _lookup_due_names(c, names, excluded, has_filters: bool, cache: dict, misses: dict, poll: int):
+    """Look up only the names due on ``poll`` and update ``misses``.
+
+    Returns ``(due, targets, initial_live, unresolved)``.
+    """
+    due = [n for n in names if shared.lookup_due(misses, n, poll)]
+    skipped = [n for n in names if n not in due]
+    if not due:
+        return [], [], set(), skipped
+    targets, initial_live, missing = await _look_up_names(c, due, excluded, has_filters, cache)
+    shared.count_misses(misses, due, missing)
+    return due, targets, initial_live, skipped + missing
+
+
 # the name the lookups of all subscriptions are counted under for the backoff
 _ALL = "the creator list"
 
@@ -240,17 +254,9 @@ async def _update_targets(
             cache.pop("named_ids", None)
         names = None if all_users else ([usernames] if isinstance(usernames, str) else list(usernames))
         if by_name:
-            due = [n for n in names if shared.lookup_due(misses, n, poll)]
-            skipped = [n for n in names if n not in due]
-            if due:
-                models = await _fetch_models(c, cache, due)
-                targets, initial_live, missing = await _resolve_target_creators(
-                    due, excluded, False, has_filters, models, cache
-                )
-                shared.count_misses(misses, due, missing)
-            else:
-                targets, initial_live, missing = [], set(), []
-            unresolved = skipped + missing
+            _, targets, initial_live, unresolved = await _lookup_due_names(
+                c, names, excluded, has_filters, cache, misses, poll
+            )
         else:
             models = await _fetch_models(c, cache, None)
             targets, initial_live, unresolved = await _resolve_target_creators(
@@ -259,33 +265,22 @@ async def _update_targets(
             # -u names the lists don't have, such as a creator's old name, are
             # looked up one by one, as the scraper does (#662)
             if unresolved:
-                due = [n for n in unresolved if shared.lookup_due(misses, n, poll)]
-                skipped = [n for n in unresolved if n not in due]
-                if due:
-                    more, more_live, missing = await _look_up_names(
-                        c, due, excluded, has_filters, cache
-                    )
-                    targets, initial_live = targets + more, initial_live | more_live
-                else:
-                    missing = []
-                unresolved = skipped + missing
-                tried, missed = [_ALL, *due], missing
-            else:
-                tried = [_ALL]
-                missed = [_ALL] if unresolved is None else []
+                _, more, more_live, unresolved = await _lookup_due_names(
+                    c, unresolved, excluded, has_filters, cache, misses, poll
+                )
+                targets, initial_live = targets + more, initial_live | more_live
             if names:
                 for n in names:
                     if n not in (unresolved or ()):
                         misses.pop(n, None)
-            shared.count_misses(misses, tried, missed)
+            shared.count_misses(misses, [_ALL], [_ALL] if unresolved is None else [])
     elif cache["unresolved"]:
         # a name that keeps missing (a typo, a deleted account) is asked less often
-        due = [n for n in cache["unresolved"] if shared.lookup_due(misses, n, poll)]
+        due, targets, initial_live, unresolved = await _lookup_due_names(
+            c, cache["unresolved"], excluded, has_filters, cache, misses, poll
+        )
         if not due:
             return set()
-        targets, initial_live, missing = await _look_up_names(c, due, excluded, has_filters, cache)
-        shared.count_misses(misses, due, missing)
-        unresolved = [n for n in cache["unresolved"] if n not in due] + missing
     else:
         return set()
 
@@ -308,21 +303,7 @@ async def _update_targets(
     return initial_live
 
 
-def select_streams(online: list, usernames=None, excluded=None) -> list:
-    """``shared.select_streams``, also matching a stream by the name its creator
-    was looked up as, so ``-u oldname`` keeps a renamed creator (#662)."""
-
-    def matches(stream, keys):
-        return username_match.matches_account(
-            stream.get("username"), stream.get("accountId"), keys
-        ) or not keys.isdisjoint(username_match.username_keys(stream.get("looked_up_as")))
-
-    wanted = username_match.username_keys(usernames)
-    skip = username_match.username_keys(excluded)
-    out = [s for s in online if not matches(s, skip)]
-    if not wanted or "all" in wanted:
-        return out
-    return [s for s in out if matches(s, wanted)]
+select_streams = shared.select_streams
 
 
 async def _check_targets_concurrently(check_session, targets, initial_live: set, cache=None) -> list:
@@ -398,32 +379,24 @@ def _get_extra_cache(cache: dict, extra, excluded) -> dict:
 
 async def get_online_streams(c, checks=None) -> list:
     import ofscraper.utils.settings as settings
-    from ofscraper.data.api.subscriptions.subscriptions import scrape_subscriptions_active
+    from ofscraper.data.api.subscriptions.subscriptions import (
+        scrape_subscriptions_active,
+    )
 
     s = settings.get_settings()
     opts = shared.options()
     watcher = _WATCHER.get()
-    extra = []
     raw_u = opts.get("usernames") if opts.get("usernames") is not None else getattr(s, "usernames", None)
     raw_ex = opts.get("excluded") if opts.get("excluded") is not None else getattr(s, "excluded_username", None)
     if watcher is not None and getattr(watcher, "include_following", None) is not None:
-        all_users = bool(watcher.include_following)
-        w_extra = getattr(watcher, "extra_usernames", None)
-        if w_extra is None:
-            extra_list = [raw_u] if isinstance(raw_u, str) else list(raw_u or [])
-            extra = sorted({
-                str(u).strip().lower() for u in extra_list
-                if str(u).strip() and str(u).strip().upper() != "ALL"
-            })
-        else:
-            extra = sorted(w_extra)
-        usernames = None if all_users else extra
-        w_excl = getattr(watcher, "excluded_usernames", None)
-        excluded = raw_ex if w_excl is None else w_excl
+        all_users, extra, usernames, excluded = shared.LiveWatcher.effective_scope(
+            watcher, {"usernames": raw_u, "excluded": raw_ex}
+        )
         if not all_users and not extra:
             events.emit_sync("live_poll", state="targets", site="onlyfans", targets=[])
             return []
     else:
+        extra = []
         usernames = raw_u
         excluded = raw_ex
         all_users = shared.wants_all_usernames(usernames)
@@ -603,12 +576,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                     raise
 
                 shared.warn_streak(streaks, "poll")
-                w_inc = getattr(watcher, "include_following", None)
-                inc = shared.wants_all_usernames(opts["usernames"]) if w_inc is None else bool(w_inc)
-                w_extra = getattr(watcher, "extra_usernames", None)
-                active_u = None if inc else (opts["usernames"] if w_extra is None else sorted(w_extra))
-                w_excl = getattr(watcher, "excluded_usernames", None)
-                active_ex = opts["excluded"] if w_excl is None else w_excl
+                _, _, active_u, active_ex = shared.LiveWatcher.effective_scope(watcher, opts)
                 selected = select_streams(online, active_u, active_ex)
                 log_poll_state(selected)
                 return selected

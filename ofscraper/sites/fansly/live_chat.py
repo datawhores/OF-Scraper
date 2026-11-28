@@ -158,20 +158,23 @@ class ChatRecorder:
 
 
 class _AiohttpSocket:
-    def __init__(self, session, ws):
+    def __init__(self, session, ws, ws_msg_type=None):
         self.session = session
         self.ws = ws
+        if ws_msg_type is None:
+            import aiohttp
+
+            ws_msg_type = aiohttp.WSMsgType
+        self._ws_msg_type = ws_msg_type
 
     async def send(self, frame: str):
         await self.ws.send_str(frame)
 
     async def recv(self):
-        import aiohttp
-
         msg = await self.ws.receive()
-        if msg.type in (aiohttp.WSMsgType.TEXT,):
+        if msg.type == self._ws_msg_type.TEXT:
             return msg.data
-        if msg.type == aiohttp.WSMsgType.BINARY:
+        if msg.type == self._ws_msg_type.BINARY:
             return msg.data.decode("utf-8", errors="replace")
         return None
 
@@ -200,6 +203,6 @@ def aiohttp_connect(user_agent: str, proxy: str = None):
         except Exception:
             await session.close()
             raise
-        return _AiohttpSocket(session, ws)
+        return _AiohttpSocket(session, ws, aiohttp.WSMsgType)
 
     return connect

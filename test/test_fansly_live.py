@@ -994,7 +994,7 @@ def test_a_part_with_data_is_kept_when_the_runner_fails_afterwards(tmp_path, how
 def test_claim_is_released_only_once():
     # a second release would drop a claim another thread made in between
     released = []
-    real_release = live.release
+    real_release = live.runtime.release
     stream = stream_a()
 
     async def main():
@@ -1004,13 +1004,13 @@ def test_claim_is_released_only_once():
             return None
 
         watcher = live.LiveWatcher(None, record, interval=1000, jitter=0)
-        live.release = lambda key: (released.append(key), real_release(key))
+        live.runtime.release = lambda key: (released.append(key), real_release(key))
         try:
             assert watcher._start(stream, stop, wake)
             await asyncio.gather(*watcher.active.values(), return_exceptions=True)
             await asyncio.sleep(0)
         finally:
-            live.release = real_release
+            live.runtime.release = real_release
 
     asyncio.run(main())
     assert released == [stream["accountId"]]

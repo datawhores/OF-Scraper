@@ -23,6 +23,7 @@ what the stream page itself sends.
 """
 
 import base64
+import json
 import logging
 import os
 import pathlib
@@ -30,8 +31,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import ofscraper.utils.events as events
 import time
+from urllib.parse import parse_qs, quote, unquote, urlparse, urlsplit
+
+import ofscraper.utils.events as events
 
 log = logging.getLogger("shared")
 
@@ -314,8 +317,6 @@ class BrowserMissing(Exception):
 
 def browser_proxy(proxy: str) -> dict:
     """``OFSC_PROXY`` as Playwright wants it: login details apart from the address."""
-    from urllib.parse import unquote, urlsplit
-
     u = urlsplit(proxy)
     if not u.username:
         return {"server": proxy}
@@ -385,8 +386,6 @@ def login_cookies(auth: dict) -> list:
 
 def xbc_script(auth: dict) -> str:
     """Put x-bc where the web app reads it, before any page script runs."""
-    import json
-
     xbc = str(auth.get("x-bc") or auth.get("x_bc") or "").strip()
     if not xbc:
         return ""
@@ -398,8 +397,6 @@ def xbc_script(auth: dict) -> str:
 
 def is_live_page(url: str, username: str) -> bool:
     """True only for ``/{username}/live``, not a login page that mentions it."""
-    from urllib.parse import parse_qs, unquote, urlparse
-
     try:
         u = urlparse(url or "")
         if "return_to" in parse_qs(u.query or ""):
@@ -569,8 +566,6 @@ def launch(p, profile: str, auth: dict, proxy=None):
 
 def join(page, username, halt) -> bool:
     """Open the live page and join; False (with a log line) if it can't be done."""
-    from urllib.parse import quote
-
     url = f"https://onlyfans.com/{quote(username, safe='')}/live"
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=30000)

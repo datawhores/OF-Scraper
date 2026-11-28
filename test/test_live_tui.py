@@ -578,7 +578,7 @@ def test_onlyfans_get_online_streams_all_users_with_filters_and_extra(monkeypatc
         ),
     )
     monkeypatch.setattr(
-        fansly_live,
+        onlyfans_live.shared,
         "options",
         lambda s=None: {
             "usernames": None,
@@ -586,7 +586,7 @@ def test_onlyfans_get_online_streams_all_users_with_filters_and_extra(monkeypatc
             "username_search": None,
         },
     )
-    monkeypatch.setattr(fansly_live, "has_custom_user_filters", lambda s=None: True)
+    monkeypatch.setattr(onlyfans_live.shared, "has_custom_user_filters", lambda s=None: True)
 
     async def fake_list_members(names):
         return []
@@ -658,7 +658,7 @@ def test_onlyfans_get_online_streams_all_users_no_filters_caches_extra(monkeypat
         ),
     )
     monkeypatch.setattr(
-        fansly_live,
+        onlyfans_live.shared,
         "options",
         lambda s=None: {
             "usernames": None,
@@ -666,7 +666,7 @@ def test_onlyfans_get_online_streams_all_users_no_filters_caches_extra(monkeypat
             "username_search": None,
         },
     )
-    monkeypatch.setattr(fansly_live, "has_custom_user_filters", lambda s=None: False)
+    monkeypatch.setattr(onlyfans_live.shared, "has_custom_user_filters", lambda s=None: False)
 
     async def fake_list_members(names):
         return []
