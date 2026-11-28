@@ -4,16 +4,16 @@ from typing import Union
 import ofscraper.main.close.exit as exit_manager
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.logs as logs
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.managers.model import ModelManager
 
-
-from ofscraper.commands.db import db
+# isort: split
+import ofscraper.commands.check as check
+import ofscraper.commands.manual as manual
 import ofscraper.commands.metadata.metadata as metadata
 import ofscraper.commands.scraper.scraper as actions
-import ofscraper.commands.manual as manual
-import ofscraper.commands.check as check
-import ofscraper.utils.settings as settings
+from ofscraper.commands.db import db
 
 
 # Forward declarations for type hinting to prevent circular imports
@@ -117,16 +117,16 @@ class mainManager:
             actions.main()
 
     def print_name(self):
-        console.get_shared_console().print(r""" 
-    _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+        console.get_shared_console().print(r"""
+    _______  _______         _______  _______  _______  _______  _______  _______  _______
     (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
     | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
     | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
     | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-    | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+    | |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
     | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
     (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                                                                    
+
 
     """)
 

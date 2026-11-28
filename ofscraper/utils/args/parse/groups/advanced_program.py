@@ -1,15 +1,15 @@
 import cloup as click
 
 from ofscraper.utils.args.parse.arguments.advanced_program import (
+    auth_fail,
+    client_id_option,
     dynamic_rules_option,
     key_mode_option,
-    private_key_option,
-    client_id_option,
+    migrate_sqlite_to_postgres_option,
     no_api_cache_option,
     no_cache_option,
+    private_key_option,
     update_profile_option,
-    auth_fail,
-    migrate_sqlite_to_postgres_option,
 )
 
 advanced_options_desc = "Advanced Program Options"

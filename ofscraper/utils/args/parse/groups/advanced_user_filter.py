@@ -17,7 +17,6 @@ from ofscraper.utils.args.parse.arguments.advanced_user_filter import (
     subscribed_before_option,
 )
 
-
 advanced_userfilters_desc = "Advanced User List Filter Options"
 advanced_userfilters_help = "Precise user filtering with price ranges (current/renewal/regular/promo), last seen dates, expiration dates, and subscription dates"
 advanced_userfilters_tuple = (

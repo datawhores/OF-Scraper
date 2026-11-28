@@ -12,11 +12,12 @@ r"""
 """
 
 import asyncio
-from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 from functools import partial
 
+import ofscraper.classes.labels as labels
+import ofscraper.classes.of.posts as posts_
 import ofscraper.data.api.archive as archive
 import ofscraper.data.api.highlights as highlights
 import ofscraper.data.api.labels as labels_api
@@ -26,36 +27,35 @@ import ofscraper.data.api.pinned as pinned
 import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
-import ofscraper.classes.labels as labels
-import ofscraper.classes.of.posts as posts_
 import ofscraper.db.operations as operations
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.sites as sites
-from ofscraper.sites.fansly import scrape as fansly_scrape
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.free as free
-from ofscraper.data.api.common.cache.write import set_after_checks
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.utils.strings import all_paid_model_id_str, all_paid_str
+from ofscraper.data.api.common.cache.write import set_after_checks
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
-    get_unlocked_media_ids,
     batch_set_media_downloaded,
+    get_unlocked_media_ids,
 )
-from ofscraper.filters.models.other import is_excluded_username
 from ofscraper.db.operations_.profile import (
     check_profile_table_exists,
     get_profile_info,
 )
+from ofscraper.filters.models.other import is_excluded_username
+from ofscraper.managers.postcollection import PostCollection
+from ofscraper.sites.fansly import scrape as fansly_scrape
 from ofscraper.utils.args.accessors.areas import (
     get_download_area,
     get_final_posts_area,
     get_like_area,
 )
 from ofscraper.utils.context.run_async import run
-import ofscraper.utils.settings as settings
-import ofscraper.main.close.exit_status as exit_status
-from ofscraper.managers.postcollection import PostCollection
 
 log = logging.getLogger("shared")
 

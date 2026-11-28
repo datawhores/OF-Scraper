@@ -171,7 +171,9 @@ def _extension(ele):
         suffix = ""
     if suffix and len(suffix) <= 6:
         return suffix[1:].lower()
-    from ofscraper.commands.scraper.actions.utils.general import get_unknown_content_type
+    from ofscraper.commands.scraper.actions.utils.general import (
+        get_unknown_content_type,
+    )
 
     return get_unknown_content_type(ele) or "bin"
 

@@ -1,9 +1,10 @@
+from rich.filesize import decimal
 from rich.progress import (
     TransferSpeedColumn,
 )
 from rich.text import Text
+
 import ofscraper.utils.live.progress as progress_utils
-from rich.filesize import decimal
 
 
 class OverallTransferSpeedColumn(TransferSpeedColumn):

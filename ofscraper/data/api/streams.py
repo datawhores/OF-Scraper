@@ -18,16 +18,15 @@ import logging
 import sys
 
 import ofscraper.data.api.common.dated_posts as dated_posts
-import ofscraper.data.api.common.scan_range as scan_range
-from ofscraper.commands.scraper.actions.download import stop
-from ofscraper.utils.context.run_async import run
 
 # Test handles (module.incomplete, module.progress_utils, module.of_env,
 # module.settings) and per-area helpers looked up on this module by dated_posts.
 import ofscraper.data.api.common.incomplete as incomplete  # noqa: F401
+import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.utils.live.updater as progress_utils  # noqa: F401
 import ofscraper.utils.of_env.of_env as of_env  # noqa: F401
 import ofscraper.utils.settings as settings  # noqa: F401
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.data.api.common.after import get_after_pre_checks  # noqa: F401
 from ofscraper.data.api.common.check import update_check  # noqa: F401
 from ofscraper.data.api.common.page import get_min_posts_batch  # noqa: F401
@@ -42,6 +41,7 @@ from ofscraper.db.operations_.posts import (
     get_youngest_streams_date,
     mark_post_as_deleted,  # noqa: F401
 )
+from ofscraper.utils.context.run_async import run
 
 API = "Streams"
 AREA = dated_posts.Area(

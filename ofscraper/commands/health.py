@@ -6,13 +6,13 @@ scripts get an instant answer.
 """
 
 import argparse
-from datetime import datetime, timedelta, timezone
 import json
 import math
 import os
 import pathlib
 import re
 import sys
+from datetime import datetime, timedelta, timezone
 
 DEFAULT_MAX_QUIET_MINUTES = 60
 AUTH_EXIT_CODE = 3

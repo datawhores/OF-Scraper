@@ -17,9 +17,9 @@ import random
 import time
 
 import ofscraper.managers.manager as manager
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.classes.of.posts import Post
 
 log = logging.getLogger("shared")

@@ -3,6 +3,7 @@ from typing import List, Union
 
 import ofscraper.utils.console as console_
 import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.utils.live.clear import clear_tasks_by_name
 from ofscraper.utils.live.groups import (
     activity_counter_group,
     activity_desc_counter_group,
@@ -14,8 +15,6 @@ from ofscraper.utils.live.groups import (
     userlist_group,
 )
 from ofscraper.utils.live.live import get_live, start_live, stop_live
-
-from ofscraper.utils.live.clear import clear_tasks_by_name
 from ofscraper.utils.live.updater import ActivityManager
 
 

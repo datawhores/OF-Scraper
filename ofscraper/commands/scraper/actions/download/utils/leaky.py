@@ -1,4 +1,5 @@
 from aiolimiter import AsyncLimiter
+
 import ofscraper.utils.settings as settings
 
 CHUNK_SIZE = 10 * 1024 * 1024

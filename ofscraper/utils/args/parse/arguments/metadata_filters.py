@@ -1,4 +1,5 @@
 import cloup as click
+
 from ofscraper.utils.args.types.arrow import ArrowType
 
 # Filter/sort retrived metadata

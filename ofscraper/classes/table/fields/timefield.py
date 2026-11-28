@@ -3,8 +3,8 @@ import math
 from textual.containers import Container, Horizontal
 from textual.widgets import Label
 
-from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
+from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
 
 def hms_to_seconds(value) -> float:

@@ -1,8 +1,7 @@
-import logging
-from typing import Dict, List, Set
-from enum import Enum, auto
 import inspect
-
+import logging
+from enum import Enum, auto
+from typing import Dict, List, Set
 
 log = logging.getLogger("shared")
 

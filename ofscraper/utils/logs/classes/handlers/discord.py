@@ -1,16 +1,13 @@
 import asyncio
-
-import ofscraper.utils.system.system as system
 import logging
-import threading
 import queue
+import threading
 
 import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
-from ofscraper.managers.sessionmanager.sleepers import (
-    sleepers
-)
 import ofscraper.utils.config.data as data
 import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.system.system as system
+from ofscraper.managers.sessionmanager.sleepers import sleepers
 
 
 class DiscordHandler(logging.Handler):

@@ -1,4 +1,5 @@
 import logging
+
 import ofscraper.utils.settings as settings
 from ofscraper.data.api.common.logs.logs import trace_log_raw
 
@@ -13,10 +14,10 @@ async def get_old_posts(model_id, username, db_function, api_name):
         old_data = await db_function(model_id=model_id, username=username)
     else:
         old_data = []
-        
+
     # Filter out None values just in case
     old_data = list(filter(lambda x: x is not None, old_data))
-    
+
     # 2. Deduplicate based on post_id (rows without one are kept, not collapsed)
     seen = set()
     deduped = []
@@ -28,9 +29,9 @@ async def get_old_posts(model_id, username, db_function, api_name):
             seen.add(post_id)
         deduped.append(post)
     old_data = deduped
-    
+
     # 3. Log the results
     log.debug(f"[bold]{api_name} Cache[/bold] {len(old_data)} found")
     trace_log_raw(f"old{api_name.lower()}", old_data)
-    
+
     return old_data

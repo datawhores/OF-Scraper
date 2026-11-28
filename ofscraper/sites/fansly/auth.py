@@ -18,8 +18,8 @@ import pathlib
 import re
 import time
 
-from ofscraper.sites.fansly import constants
 import ofscraper.utils.encoding as encoding
+from ofscraper.sites.fansly import constants
 
 log = logging.getLogger("shared")
 
@@ -152,9 +152,10 @@ def store_device_id(device_id: str, path=None, now=None) -> dict:
 
 def make_auth(auth=None) -> dict:
     """Ask for the token and user agent, then save them."""
+    from rich.console import Console
+
     import ofscraper.prompts.prompts as prompts
     import ofscraper.utils.settings as settings
-    from rich.console import Console
 
     if settings.get_settings().auth_fail:
         import ofscraper.main.close.exit_status as exit_status

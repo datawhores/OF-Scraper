@@ -2,6 +2,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Label, SelectionList
 from textual.widgets.selection_list import Selection
+
 import ofscraper.utils.settings as settings  # Bring in the source of truth
 
 

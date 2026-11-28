@@ -11,9 +11,9 @@ r"""
 
 """
 
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.utils.leaky import CHUNK_SIZE
-import ofscraper.utils.of_env.of_env as of_env
 
 
 def get_chunk_size():

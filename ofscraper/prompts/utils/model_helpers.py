@@ -3,6 +3,7 @@ import re
 import arrow
 from InquirerPy.base import Choice
 from rich.cells import cell_len
+
 import ofscraper.utils.settings as settings
 
 

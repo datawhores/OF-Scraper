@@ -1,11 +1,13 @@
 import logging
 import re
-from rich.text import Text
-from ofscraper.classes.table.utils.names import get_col_names, get_post_col_names
 
+from rich.text import Text
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable
+
 from ofscraper.classes.table.utils.lock import mutex
+from ofscraper.classes.table.utils.names import get_col_names, get_post_col_names
+
 log = logging.getLogger("shared")
 
 
@@ -16,7 +18,7 @@ class DataTableExtended(DataTable):
             value=value if isinstance(value,Text) else Text(value)
             for coord in coords if isinstance(coords, list) else [coords]:
                 try:
-                    
+
                     self.update_cell_at(coord, value)
                 except Exception as E:
                     log.debug("Row was probably removed")
@@ -80,7 +82,7 @@ class DataTableExtended(DataTable):
     def ordered_columns_keys(self):
         return list(map(lambda x:x.key.value,self.ordered_columns))
 
-        
+
 
 
 
@@ -105,7 +107,7 @@ def get_styled(row, columns=None):
                 style = "bold dark_orange"
             else:
                 style = "bold light_goldenrod2" # For [], [added], and Not Unlocked
-            
+
             styled_row.append(
                 Text(val, style=style)
             )
@@ -121,7 +123,7 @@ def get_styled(row, columns=None):
             styled_row.append(
                 Text(str(row[key]), style="bold bright_white")
             )
-            
+
 
         elif isinstance(row[key],str):
             styled_row.append(
@@ -135,13 +137,13 @@ def get_styled(row, columns=None):
             styled_row.append(
                 Text(str(row[key]), style="bold bright_white")
             )
-    
+
         else:
             styled_row.append(Text(str(row[key]), style="bold white"))
     return styled_row
 
 
-    
+
 
 
 

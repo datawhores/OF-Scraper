@@ -2,12 +2,9 @@
 
 import ofscraper.utils.console as console
 import ofscraper.utils.logs.classes.classes as log_class
-from ofscraper.utils.logs.classes.handlers.text import TextHandler
-
-
 import ofscraper.utils.logs.utils.level as log_helpers
 import ofscraper.utils.settings as settings
-
+from ofscraper.utils.logs.classes.handlers.text import TextHandler
 
 
 def add_stdout_handler(log, clear=True, rich_array=None):

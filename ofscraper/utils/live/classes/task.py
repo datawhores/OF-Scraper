@@ -1,6 +1,7 @@
 import pathlib
-import rich.progress
+
 import arrow
+import rich.progress
 
 
 class Task(rich.progress.Task):

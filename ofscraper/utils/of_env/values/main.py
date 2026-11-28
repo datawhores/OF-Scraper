@@ -1,6 +1,7 @@
+import json  # Import json for parsing if you decide to allow dict/list overrides via env vars
 import os
 import pathlib
-import json  # Import json for parsing if you decide to allow dict/list overrides via env vars
+
 import ofscraper.utils.const as const
 
 

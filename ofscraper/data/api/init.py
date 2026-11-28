@@ -23,8 +23,9 @@ import ofscraper.sites as sites
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console
 import ofscraper.utils.settings as settings
-from . import me
 from ofscraper.utils.auth.request import DynamicRuleUnavailable
+
+from . import me
 
 log = logging.getLogger("shared")
 

@@ -8,54 +8,53 @@ from urllib.parse import urlsplit, urlunsplit
 import arrow
 import psutil
 
-from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
 import ofscraper.commands.scraper.actions.utils.general as common
+
 # the managers use their DownloadContext (self.ctx); kept here for code
 # and tests that reach the current context through this module
 import ofscraper.commands.scraper.actions.utils.globals as common_globals  # noqa: F401
-import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
-from ofscraper.commands.scraper.actions.utils.log import (
-    get_medialog,
-    path_to_file_logger,
-    temp_file_logger,
-)
-from ofscraper.commands.scraper.actions.utils.params import get_alt_params
+import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.utils.auth.request as auth_requests
-from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 
 # the reply cache is read and written by DownloadManager; kept here for code
 # and tests that reach it through this module
 import ofscraper.utils.cache.cache as cache  # noqa: F401
 import ofscraper.utils.dates as dates
 import ofscraper.utils.host_allowlist as host_allowlist
-import ofscraper.utils.of_env.of_env as of_env
-from ofscraper.utils.system.subprocess import async_run
-from ofscraper.utils.system.ffprobe import verify_media_integrity
 import ofscraper.utils.live.updater as progress_updater
-
+import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.classes.of.media import Media
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
     StartOver,
+)
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_timeout,
+)
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_link,
 )
 from ofscraper.commands.scraper.actions.download.utils.retries import (
     download_retry,
     get_download_retries,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_timeout,
-)
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
-import ofscraper.commands.scraper.actions.download.utils.keyhelpers as keyhelpers
-from ofscraper.utils.system.ffmpeg import get_ffmpeg
-from ofscraper.commands.scraper.actions.download.utils.refresh import (
-    refresh_media_link,
+from ofscraper.commands.scraper.actions.utils.log import (
+    get_medialog,
+    path_to_file_logger,
+    temp_file_logger,
 )
-from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
-
-from ofscraper.classes.of.media import Media
+from ofscraper.commands.scraper.actions.utils.params import get_alt_params
 from ofscraper.db.operations_.media import mark_media_as_downloaded
+from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
+from ofscraper.utils.system.ffmpeg import get_ffmpeg
+from ofscraper.utils.system.ffprobe import verify_media_integrity
+from ofscraper.utils.system.subprocess import async_run
 
 
 class AltDownloadManager(DownloadManager):

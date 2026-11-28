@@ -12,8 +12,8 @@ r"""
 """
 
 import logging
-from datetime import datetime
 from contextlib import contextmanager
+from datetime import datetime
 
 import arrow
 
@@ -42,9 +42,8 @@ def scrape_context_manager():
         yield
     except BaseException as e:
         # a pass that raises still reports (post_script isn't run for it)
-        from ofscraper.commands.scraper.actions.download import stop
-
         import ofscraper.main.close.exit_status as exit_status
+        from ofscraper.commands.scraper.actions.download import stop
 
         if isinstance(e, SystemExit) and e.code not in (None, 0, exit_status.INTERRUPTED):
             # an exit with a reason (maintenance, --auth-fail), not a Ctrl+C

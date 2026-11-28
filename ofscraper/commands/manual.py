@@ -4,28 +4,27 @@ import traceback
 from collections import defaultdict
 from functools import partial
 
+import ofscraper.commands.scraper.actions.download.download as download
 import ofscraper.data.api.highlights as highlights_
 import ofscraper.data.api.messages as messages_
 import ofscraper.data.api.paid as paid
 import ofscraper.data.api.profile as profile
 import ofscraper.db.operations as operations
-import ofscraper.commands.scraper.actions.download.download as download
-import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.managers.manager as manager
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
-from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.commands.utils.strings import download_manual_str, post_str_manual
+from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.db.operations_.media import batch_mediainsert
-from ofscraper.utils.checkers import check_auth
-from ofscraper.utils.context.run_async import run
 from ofscraper.main.close.final.final import final_action
-import ofscraper.managers.manager as manager
-import ofscraper.utils.settings as settings
 from ofscraper.managers.postcollection import PostCollection
 from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 

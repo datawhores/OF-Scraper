@@ -49,7 +49,7 @@ def getLevel(input_):
     """
     if input_ in {"WARNING", "ERROR", "INFO", "DEBUG", "TRACE", "CRITICAL"}:
         return input_
-    
+
     return {
         "OFF": 100,
         # Discord only: no log lines; the run summary is sent on its own

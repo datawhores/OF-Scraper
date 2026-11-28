@@ -1,11 +1,10 @@
-from ofscraper.utils.of_env import get_all_configs
-import os
-
-
-from ofscraper.utils.of_env.values.live import OPTIONAL_BOOLS
 import contextlib
 import json
 import logging
+import os
+
+from ofscraper.utils.of_env import get_all_configs
+from ofscraper.utils.of_env.values.live import OPTIONAL_BOOLS
 
 log = logging.getLogger("shared")
 # (key, value) pairs already warned about

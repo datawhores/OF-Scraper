@@ -1,8 +1,10 @@
 import logging
-import arrow
 import operator
-from ofscraper.utils import settings  #
+
+import arrow
+
 from ofscraper.filters.models.utils.logs import trace_log_user
+from ofscraper.utils import settings  #
 
 log = logging.getLogger("shared")
 

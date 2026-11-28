@@ -1,7 +1,8 @@
 from textual.widgets import Label, SelectionList
 from textual.widgets.selection_list import Selection
-from ofscraper.classes.table.fields.selectfield import SelectField
+
 import ofscraper.utils.settings as settings  # Reconnect to the source of truth
+from ofscraper.classes.table.fields.selectfield import SelectField
 
 
 class MediaField(SelectField):

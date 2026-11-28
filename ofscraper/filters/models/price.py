@@ -1,4 +1,5 @@
 import logging
+
 import ofscraper.utils.settings as settings
 from ofscraper.filters.models.utils.logs import trace_log_user
 

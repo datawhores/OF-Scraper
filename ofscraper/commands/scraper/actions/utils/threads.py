@@ -1,5 +1,5 @@
-import time
 import logging
+import time
 
 
 def start_threads(queue_threads, processes):

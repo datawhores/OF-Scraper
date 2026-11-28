@@ -1,7 +1,8 @@
 from textual.containers import Vertical
 from textual.widgets import Label
-from ofscraper.classes.table.inputs.intergerinput import PostiveIntegerInput
+
 import ofscraper.utils.settings as settings
+from ofscraper.classes.table.inputs.intergerinput import PostiveIntegerInput
 
 
 class NumField(Vertical):

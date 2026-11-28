@@ -20,7 +20,7 @@ KEYS
    SPECIAL SELECT
    Will select and move cursor
    ================
-   TAB | SHIFT+TAB 
+   TAB | SHIFT+TAB
    =================
 
 
@@ -47,21 +47,21 @@ MAX CHOICE:ALL
 
 KEYS
 =========================================================================
-  CONFIRM KEY          
+  CONFIRM KEY
   ============
   ENTER
   ================
- 
- 
+
+
    SELECT KEYS
    ================================================
    END  |  HOME | PAGEUP | PAGEDOWN | shift+right
    ================================================
-   
+
    SPECIAL SELECT
    Will select and move cursor
    ================
-   TAB | SHIFT+TAB 
+   TAB | SHIFT+TAB
    =================
 
 
@@ -69,7 +69,7 @@ KEYS
    ========
    CTRL+D
    ========
-  
+
   TOGGLE ALL TRUE
    ========
    CTRL+S
@@ -139,7 +139,7 @@ SHOW INSTRUCTIONS: [ALT+V] or [CTRL+V] (in Windows Terminal, Ctrl+V pastes inste
 
 MODEL_SELECT = """
 CHANGE SORT/FILTER: [ALT+X] or [CTRL+B]
-MODEL DETAILS: [ALT+D] ||| RANGE SELECT: [ALT+B] 
+MODEL DETAILS: [ALT+D] ||| RANGE SELECT: [ALT+B]
 """
 PRICE_DETAILS = """
 SHOW CURRENT PRICE STATUS/INFO: [ALT+D]

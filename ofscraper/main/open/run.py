@@ -39,7 +39,9 @@ def main():
 
         args = settings.get_args()
         if getattr(args, "profiles", None):
-            from ofscraper.commands.scraper.multi_profile import run_multi_profile_daemon
+            from ofscraper.commands.scraper.multi_profile import (
+                run_multi_profile_daemon,
+            )
 
             run_multi_profile_daemon(args)
             exit_manager.shutdown()

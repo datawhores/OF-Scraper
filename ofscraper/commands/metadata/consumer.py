@@ -16,14 +16,13 @@ import traceback
 
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.live.updater as progress_updater
+from ofscraper.classes.of.media import Media
+from ofscraper.commands.metadata.desc import desc
+from ofscraper.commands.metadata.manager import MetaDataManager
 from ofscraper.commands.scraper.actions.utils.log import (
+    get_medialog,
     log_download_progress,
 )
-from ofscraper.commands.scraper.actions.utils.log import get_medialog
-
-from ofscraper.commands.metadata.manager import MetaDataManager
-from ofscraper.commands.metadata.desc import desc
-from ofscraper.classes.of.media import Media
 
 
 async def consumer(aws, task1, medialist, lock):

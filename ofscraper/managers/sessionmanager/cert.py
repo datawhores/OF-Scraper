@@ -1,11 +1,11 @@
+import getpass
+import hashlib
+import logging
 import os
+import random
 import ssl
 import sys
 import time
-import logging
-import random
-import hashlib            
-import getpass
 
 import certifi
 
@@ -139,7 +139,7 @@ def _fansly_seed():
 def create_custom_ssl_context(
     # --- Cipher Configuration ---
     cipher_suite_string: str = None,
-    reorder_default_ciphers_enabled: bool = True, 
+    reorder_default_ciphers_enabled: bool = True,
     # --- TLS Version Configuration ---
     min_tls_version: ssl.TLSVersion = ssl.TLSVersion.TLSv1_2,
     max_tls_version: ssl.TLSVersion = None,
@@ -169,7 +169,7 @@ def create_custom_ssl_context(
     # Initialize cache entry for this identity if it doesn't exist
     if user_seed not in _CONFIG_CACHE:
         _CONFIG_CACHE[user_seed] = {"ciphers": None, "logged_tls": False, "logged_curves": False, "logged_certs": False}
-    
+
     cache = _CONFIG_CACHE[user_seed]
 
     # --- TLS Version Configuration ---
@@ -199,7 +199,7 @@ def create_custom_ssl_context(
             seed_int = int(hashlib.sha256(user_seed.encode()).hexdigest(), 16)
             rng = random.Random(seed_int)
             default_ciphers = get_default_cipher_names()
-            
+
             if len(default_ciphers) >= 2:
                 shuffled_ciphers = list(default_ciphers)
                 rng.shuffle(shuffled_ciphers)

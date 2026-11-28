@@ -19,6 +19,7 @@ from rich.console import Console
 import ofscraper.classes.labels as labels
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.sites as sites
+import ofscraper.utils.const as const
 from ofscraper.db.backup import create_backup
 from ofscraper.db.difference import ALL_FLAGS
 from ofscraper.db.operations_.labels import (
@@ -48,7 +49,6 @@ from ofscraper.db.operations_.stories import (
     make_stories_table_changes,
 )
 from ofscraper.db.transition import modify_tables, size_skip_labels_in_backups
-import ofscraper.utils.const as const
 from ofscraper.utils.context.run_async import run
 
 console = Console()

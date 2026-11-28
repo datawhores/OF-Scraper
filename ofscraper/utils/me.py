@@ -1,10 +1,8 @@
-from ofscraper.utils.markup import escape_text
-
 import ofscraper.utils.console as console
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.profiles.data as profile_data
-
 import ofscraper.utils.settings as settings
+from ofscraper.utils.markup import escape_text
 
 
 def parse_user():

@@ -3,7 +3,6 @@ from typing import Any
 from textual.widgets import Input
 
 
-
 class FilterInput(Input):
     def __init__(self, *args: Any, placeholder=None, **kwargs: Any) -> None:
         """Initialise the input."""

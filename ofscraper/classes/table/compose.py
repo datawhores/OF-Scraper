@@ -1,24 +1,39 @@
-from textual.containers import Container, Horizontal, Vertical
 import re
-from textual.widgets import Button, ContentSwitcher, Rule, Static, Checkbox, SelectionList, Label
+
+from textual.containers import Container, Horizontal, Vertical
+from textual.widgets import (
+    Button,
+    Checkbox,
+    ContentSwitcher,
+    Label,
+    Rule,
+    SelectionList,
+    Static,
+)
 from textual.widgets.selection_list import Selection
-from ofscraper.classes.table.utils.names import col_names, post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
 
 from ofscraper.classes.table.fields.datefield import DateField
-from ofscraper.classes.table.fields.mediafield import MediaField, PostMediaField
 from ofscraper.classes.table.fields.downloadfield import DownloadField
+from ofscraper.classes.table.fields.mediafield import MediaField, PostMediaField
 from ofscraper.classes.table.fields.numfield import NumField, PostiveNumField
 from ofscraper.classes.table.fields.pricefield import PriceField
 from ofscraper.classes.table.fields.responsefield import ResponseField
 from ofscraper.classes.table.fields.selectfield import SelectField
+from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
 from ofscraper.classes.table.fields.textsearch import TextSearch
 from ofscraper.classes.table.fields.timefield import TimeField
-from ofscraper.classes.table.inputs.strinput import StrInput
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
-from ofscraper.classes.table.sections.table_console import OutConsole
+from ofscraper.classes.table.inputs.strinput import StrInput
 from ofscraper.classes.table.sections.sidebar import Sidebar
 from ofscraper.classes.table.sections.table import DataTableExtended
-from ofscraper.classes.table.fields.sizefield import SizeMaxField, SizeMinField
+from ofscraper.classes.table.sections.table_console import OutConsole
+from ofscraper.classes.table.utils.names import (
+    EXTRA_COLUMNS,
+    PINNED_COLUMNS,
+    POST_EXTRA_COLUMNS,
+    col_names,
+    post_col_names,
+)
 
 # a scan doesn't learn file sizes; the download request does
 SIZE_LIMIT_NOTE = (
@@ -34,7 +49,7 @@ def pagination_bar(prefix: str):
         # 1. Navigation Cluster
         yield Button("<<", id=f"{prefix}_first", classes="page_btn")
         yield Button("<", id=f"{prefix}_prev", classes="page_btn")
-        yield Static("Page 1 of 1", id=f"{prefix}_page_label", classes="page_label")      
+        yield Static("Page 1 of 1", id=f"{prefix}_page_label", classes="page_label")
         yield Button(">", id=f"{prefix}_next", classes="page_btn")
         yield Button(">>", id=f"{prefix}_last", classes="page_btn")
 
@@ -60,7 +75,7 @@ def composer():
     yield Rule()
 
     with ContentSwitcher(initial="media_table_page"):
-        
+
 # ==========================================
         # 1. MAIN DATA TABLE PAGE
         # ==========================================
@@ -71,19 +86,19 @@ def composer():
                     yield Static("", id="db_info_bar", markup=True)
                     yield Static("", classes="global_cart_info", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
-                
+
                 # Column 2: View & Filter Info (RESTORED!)
                 with Vertical(classes="page_info_column"):
                     yield Static("", id="view_info_bar", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
-                
+
                 # Column 3: Toggles
                 with Vertical(classes="toggles_column"):
                     yield Static("[bold ansi_blue]Sidebar Controls:[/bold ansi_blue]", markup=True)
                     yield Static("Options Menu:  [bold ansi_cyan]Ctrl+S[/bold ansi_cyan]", id="label_opt_sidebar", markup=True)
                     yield Static("Download Menu: [bold ansi_cyan]Ctrl+D[/bold ansi_cyan]", id="label_dl_sidebar", markup=True)
                 yield Rule(orientation="vertical", classes="header_divider")
-    
+
                 # Column 4: Instructions
                 with Vertical(classes="instructions_column"):
                     yield Static(
@@ -100,7 +115,7 @@ def composer():
                 yield Button("Open Download Folder", id="open_download_folder")
                 yield Button("Reset Filters", id="reset")
                 yield Button("Columns (v)", id="open_columns_main")
-            
+
             # Inline Pagination
             yield from pagination_bar("main")
 

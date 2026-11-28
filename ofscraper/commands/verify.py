@@ -29,8 +29,8 @@ import ofscraper.sites as sites
 from ofscraper.commands.recover_collisions import (
     MEANWHILE,
     _remove_unused,
-    _undo_folder,
     _unconfirmed,
+    _undo_folder,
 )
 from ofscraper.commands.stash_sync import map_path
 from ofscraper.commands.utils.db_cli import from_another_system

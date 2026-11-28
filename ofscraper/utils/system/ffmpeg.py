@@ -1,17 +1,18 @@
-import importlib.util
 import base64
+import importlib.util
+import logging
 import os
 import platform
+import re
 import shutil
 import signal
 import subprocess
 import sys
-import re
-import logging
-import ofscraper.utils.settings as settings
-from ofscraper.utils.system.subprocess import run
+
 import ofscraper.utils.of_env.of_env as env
+import ofscraper.utils.settings as settings
 from ofscraper.__version__ import __dist_name__
+from ofscraper.utils.system.subprocess import run
 
 log = logging.getLogger("shared")
 

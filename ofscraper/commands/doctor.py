@@ -916,7 +916,12 @@ def check_signing_rules(report):
 
 
 def check_stash(report):
-    from ofscraper.commands.stash_sync import API_KEY_ENV, URL_ENV, StashClient, StashError
+    from ofscraper.commands.stash_sync import (
+        API_KEY_ENV,
+        URL_ENV,
+        StashClient,
+        StashError,
+    )
 
     url = os.environ.get(URL_ENV, "").strip()
     if not url:

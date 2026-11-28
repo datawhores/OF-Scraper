@@ -1,26 +1,24 @@
 import logging
 from typing import List
 
-from ofscraper.commands.scraper.actions.download import stop
-import ofscraper.data.posts.post as OF
-import ofscraper.commands.scraper.actions.download.download as download
 import ofscraper.commands.metadata.metadata as metadata
-
-import ofscraper.utils.live.updater as progress_updater
+import ofscraper.commands.scraper.actions.download.download as download
+import ofscraper.data.posts.post as OF
+import ofscraper.managers.manager as manager
 import ofscraper.utils.live.screens as progress_utils
-
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.utils.strings import (
     all_paid_download_str,
+    all_paid_metadata_str,
     all_paid_progress_download_str,
+    all_paid_progress_metadata_str,
     download_activity_str,
     metadata_activity_str,
-    all_paid_progress_metadata_str,
-    all_paid_metadata_str,
 )
-from ofscraper.utils.context.run_async import run
-import ofscraper.managers.manager as manager
-import ofscraper.utils.settings as settings
 from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.utils.context.run_async import run
 
 log = logging.getLogger("shared")
 

@@ -1,10 +1,10 @@
 import logging
 import traceback
 
-import ofscraper.utils.text as text
-from ofscraper.utils.context.run_async import run
-from ofscraper.managers.postcollection import PostCollection
 import ofscraper.managers.manager as manager
+import ofscraper.utils.text as text
+from ofscraper.managers.postcollection import PostCollection
+from ofscraper.utils.context.run_async import run
 
 
 @run

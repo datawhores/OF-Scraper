@@ -1,5 +1,4 @@
 import json
-from ofscraper.prompts.cancel import back_to_menu
 import pathlib
 from contextlib import contextmanager
 
@@ -8,6 +7,7 @@ import ofscraper.utils.config.file as config_file
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
+from ofscraper.prompts.cancel import back_to_menu
 
 
 @contextmanager

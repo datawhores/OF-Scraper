@@ -13,13 +13,13 @@ r"""
 
 import contextlib
 
-from ofscraper.utils.cache.safe_disk import SafeDisk, SafeJSONDisk
 from humanfriendly import InvalidSize, parse_size
 
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.config.utils.wrapper as wrapper
+import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.utils.cache.safe_disk import SafeDisk, SafeJSONDisk
 
 # auto_update_config rebuilds config.json from these getters and writes it
 # back, so each must return what belongs in the file. Environment fallbacks

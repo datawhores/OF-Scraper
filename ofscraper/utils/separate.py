@@ -11,8 +11,8 @@ r"""
 
 """
 
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.me as me_util
+import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.utils.cache.profile import is_profile_cached
 
 

@@ -26,6 +26,7 @@ from urllib.parse import urlsplit
 import ofscraper.classes.of.posts as posts_
 import ofscraper.data.api.messages as messages_
 import ofscraper.managers.manager as manager
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
 from ofscraper.data.api.highlights import get_highlightList
@@ -33,7 +34,6 @@ from ofscraper.sites.fansly import address
 from ofscraper.sites.fansly import api as fansly_api
 from ofscraper.sites.fansly import normalize as fansly_normalize
 from ofscraper.sites.fansly import video as fansly_video
-import ofscraper.utils.const as const
 
 log = logging.getLogger("shared")
 

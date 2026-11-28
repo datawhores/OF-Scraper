@@ -1,6 +1,6 @@
-from ofscraper.prompts.promptConvert import prompt
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.live.screens as progress_utils
+from ofscraper.prompts.promptConvert import prompt
 
 
 def press_enter_to_continue():

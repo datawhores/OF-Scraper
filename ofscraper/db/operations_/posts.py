@@ -18,30 +18,30 @@ import arrow
 from rich.console import Console
 
 import ofscraper.classes.of.posts as posts_
-import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.media as media
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.convert as convert
 import ofscraper.db.utils.rebuild as rebuild
-from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
 
 postCreate = """
 CREATE TABLE IF NOT EXISTS posts (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
+	id INTEGER NOT NULL,
+	post_id INTEGER NOT NULL,
+	text VARCHAR,
+	price INTEGER,
+	paid INTEGER,
+	archived BOOLEAN,
     pinned BOOLEAN,
     stream BOOLEAN,
     opened BOOLEAN,
-	created_at TIMESTAMP, 
-    model_id INTEGER, 
+	created_at TIMESTAMP,
+    model_id INTEGER,
     is_deleted BOOLEAN DEFAULT 0, -- NEW COLUMN
     purchase_type VARCHAR,
     mentions VARCHAR,
@@ -84,15 +84,15 @@ WHERE post_id = (?) AND model_id = (?) AND is_deleted = TRUE;
 """
 
 timelinePostInfo = """
-SELECT created_at,post_id FROM posts 
+SELECT created_at,post_id FROM posts
 WHERE archived=FALSE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 archivedPostInfo = """
-SELECT created_at,post_id FROM posts 
+SELECT created_at,post_id FROM posts
 WHERE archived=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 streamsPostInfo = """
-SELECT created_at,post_id FROM posts 
+SELECT created_at,post_id FROM posts
 WHERE stream=TRUE AND model_id=(?) AND (is_deleted = FALSE OR is_deleted IS NULL)
 """
 

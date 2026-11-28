@@ -1,13 +1,13 @@
 import cloup as click
 
+import ofscraper.utils.const as const
+from ofscraper.utils.args.callbacks.arguments.post import set_download_type_flag
 from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitNormalizeParse,
     StringSplitParse,
     StringSplitParseTitle,
     StringTupleList,
 )
-from ofscraper.utils.args.callbacks.arguments.post import set_download_type_flag
-import ofscraper.utils.const as const
 from ofscraper.utils.args.types.choice import MultiChoice, MultiChoicePost
 
 # Define individual options
@@ -260,7 +260,7 @@ mass_msg_option = click.option(
     "mass_msg",
     help="""
     \b
-    Flag for enabling/disabling mass content or promos 
+    Flag for enabling/disabling mass content or promos
     [select one --mass-only or --mass-skip]""",
     default=None,
     required=False,

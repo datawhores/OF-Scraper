@@ -52,7 +52,7 @@ modelsCreate = """
 CREATE TABLE IF NOT EXISTS models (
 	id INTEGER NOT NULL,
 	model_id INTEGER NOT NULL,
-	PRIMARY KEY (id),                     
+	PRIMARY KEY (id),
 	UNIQUE (model_id)
 )
 """

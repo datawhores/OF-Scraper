@@ -1,8 +1,8 @@
-from ofscraper.utils import settings
 from textual.widgets import Label, SelectionList
+from textual.widgets.selection_list import Selection
 
 from ofscraper.classes.table.fields.selectfield import SelectField
-from textual.widgets.selection_list import Selection
+from ofscraper.utils import settings
 
 
 class DownloadField(SelectField):

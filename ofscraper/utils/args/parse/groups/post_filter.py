@@ -1,23 +1,23 @@
 import cloup as click
 
 from ofscraper.utils.args.parse.arguments.post_content import (
-    post_id_filter_option,
-    max_post_count_option,
-    post_sort_option,
-    post_desc_option,
-    filter_option,
-    neg_filter_option,
     block_ads_option,
-    label_option,
-    mass_msg_option,
-    timed_only_option,
-    posts_option,
-    download_type_option,
-    scrape_paid_option,
     download_area_option,
+    download_type_option,
+    filter_option,
+    label_option,
     like_area_option,
-    text_option,
+    mass_msg_option,
+    max_post_count_option,
+    neg_filter_option,
+    post_desc_option,
+    post_id_filter_option,
+    post_sort_option,
+    posts_option,
+    scrape_paid_option,
     text_only_option,
+    text_option,
+    timed_only_option,
 )
 
 post_filter_options_desc = "Posts Filters Options"

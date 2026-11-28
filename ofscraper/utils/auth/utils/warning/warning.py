@@ -1,4 +1,5 @@
 from rich.console import Console
+
 from ofscraper.utils.markup import escape_text
 
 console = Console()

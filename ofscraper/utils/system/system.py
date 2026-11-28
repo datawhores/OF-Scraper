@@ -1,8 +1,8 @@
 import asyncio
-import sys
 import logging
 import os
 import platform
+import sys
 
 import psutil
 from setproctitle import setproctitle

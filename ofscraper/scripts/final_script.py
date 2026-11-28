@@ -1,14 +1,14 @@
 import json
 import logging
-import subprocess
 import os
+import subprocess
 import traceback
 
-import ofscraper.utils.settings as settings
-import ofscraper.utils.dry_run as dry_run
 import ofscraper.managers.manager as manager
-from ofscraper.utils.system.subprocess import run
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.utils.of_env.of_env as env
+import ofscraper.utils.settings as settings
+from ofscraper.utils.system.subprocess import run
 
 
 def final_script(summary=None):

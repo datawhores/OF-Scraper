@@ -1,14 +1,16 @@
 import logging
 import shutil
-import arrow
 import traceback
 
-from ofscraper.utils.markup import escape_text
+import arrow
 
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
-import ofscraper.utils.context.stdout as stdout
+from ofscraper.utils.markup import escape_text
+
+# isort: split
 import ofscraper.utils.console as console_
+import ofscraper.utils.context.stdout as stdout
 
 console=console_.get_shared_console()
 

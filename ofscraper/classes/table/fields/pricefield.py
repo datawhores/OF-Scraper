@@ -1,5 +1,6 @@
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Label
+
 from ofscraper.classes.table.inputs.intergerinput import IntegerInput
 
 

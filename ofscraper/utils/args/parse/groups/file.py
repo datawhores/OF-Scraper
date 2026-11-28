@@ -7,7 +7,6 @@ from ofscraper.utils.args.parse.arguments.file import (
     text_type_option,
 )
 
-
 file_options_help = """
 \b
 Options for controlling the output of the final filename after placeholders are replaced

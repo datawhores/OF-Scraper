@@ -1,9 +1,10 @@
-from ofscraper.commands.scraper.actions.download import stop
 import arrow
+
 import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download import stop
 
 
 def set_after_checks(model_id, api):
@@ -28,7 +29,7 @@ def set_check_mode_posts(model_id, api, all_posts, update=False):
 
     now = arrow.now().float_timestamp
     expire_time = cache.get(expire_key)
-    
+
     # If it's a fresh/forced fetch (!update), or we lost the expiration time, reset the 3-day clock
     if not update or not expire_time or now > expire_time:
         remaining = of_env.getattr("THREE_DAY_SECONDS")

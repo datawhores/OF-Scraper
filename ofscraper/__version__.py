@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import importlib.metadata
 
 # The version is now read from the installed package's metadata.

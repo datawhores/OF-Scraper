@@ -5,14 +5,13 @@ import re
 
 from humanfriendly import InvalidSize, parse_size
 
-from ofscraper.utils.markup import escape_text
-
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.schema as schema
 import ofscraper.utils.console as console_
 import ofscraper.utils.encoding as encoding
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
+from ofscraper.utils.markup import escape_text
 
 console = console_.get_shared_console()
 log = logging.getLogger("shared")

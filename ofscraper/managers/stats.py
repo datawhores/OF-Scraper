@@ -1,13 +1,13 @@
 import logging
-
 from collections import defaultdict
 from typing import Union
-from rich.markup import escape
-from humanfriendly import format_size
-from ofscraper.managers.utils.state import EActivity, string_to_activity
 
-from ofscraper.classes.of.posts import Post
+from humanfriendly import format_size
+from rich.markup import escape
+
 from ofscraper.classes.of.media import Media
+from ofscraper.classes.of.posts import Post
+from ofscraper.managers.utils.state import EActivity, string_to_activity
 
 log = logging.getLogger("shared")
 
@@ -465,7 +465,7 @@ class StatsManager:
                 stat_obj.skipped_count += 1
             elif media.metadata_succeeded is False:
                 stat_obj.failed_count += 1
-            elif media.metadata_succeeded is True: 
+            elif media.metadata_succeeded is True:
                 mtype = media.mediatype.lower()
                 if mtype == "videos":
                     stat_obj.changed_video += 1
@@ -527,7 +527,7 @@ class StatsManager:
                 )
 
         return self._stats[username][activity_enum]
-    
+
     def failed_count(self) -> int:
         """Total failed items recorded across all users and activities."""
         total = 0

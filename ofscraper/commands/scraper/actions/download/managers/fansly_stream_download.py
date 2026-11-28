@@ -35,11 +35,16 @@ import ofscraper.utils.settings as settings
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
 )
-from ofscraper.db.operations_.media import mark_media_as_downloaded
+from ofscraper.commands.scraper.actions.download.utils import silent
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_size,
+    get_chunk_timeout,
+)
 from ofscraper.commands.scraper.actions.download.utils.refresh import (
     refresh_media_link,
 )
-from ofscraper.commands.scraper.actions.download.utils import silent
+from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
+from ofscraper.db.operations_.media import mark_media_as_downloaded
 from ofscraper.managers.sessionmanager.sessionmanager import (
     HEADERS,
     is_provided_exception_number,
@@ -50,11 +55,6 @@ from ofscraper.sites.fansly import video as fansly_video
 from ofscraper.utils.cache.profile import set_profile_cache
 from ofscraper.utils.system.ffmpeg import get_ffmpeg, get_ffprobe, stop_reason
 from ofscraper.utils.system.ffprobe import get_media_duration, verify_media_integrity
-from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_size,
-    get_chunk_timeout,
-)
-from ofscraper.commands.scraper.actions.download.utils.retries import download_retry
 
 # Backstop for the whole ffmpeg run, in seconds: at least the floor, or this
 # many seconds per second of video. A connection that stops sending is caught

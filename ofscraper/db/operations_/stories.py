@@ -16,28 +16,28 @@ import logging
 
 from rich.console import Console
 
-import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.convert as convert
 import ofscraper.db.utils.rebuild as rebuild
-from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
 
 storiesCreate = """
 CREATE TABLE IF NOT EXISTS stories (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-    model_id INTEGER, 
-	highlight_id INTEGER, 
-	PRIMARY KEY (id), 
+	id INTEGER NOT NULL,
+	post_id INTEGER NOT NULL,
+	text VARCHAR,
+	price INTEGER,
+	paid INTEGER,
+	archived BOOLEAN,
+	created_at TIMESTAMP,
+    model_id INTEGER,
+	highlight_id INTEGER,
+	PRIMARY KEY (id),
 	UNIQUE (post_id,model_id)
 )
 """

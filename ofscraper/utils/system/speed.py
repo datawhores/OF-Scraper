@@ -1,8 +1,9 @@
-import os
-import psutil
-import arrow
 import logging
+import os
 import traceback
+
+import arrow
+import psutil
 
 # Global state for the single process
 _previous_stats = None

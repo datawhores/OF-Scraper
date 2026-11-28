@@ -1,13 +1,12 @@
 import json
 import logging
-import traceback
 import os
 import subprocess
+import traceback
 
-import ofscraper.utils.settings as settings
-from ofscraper.utils.system.subprocess import async_run 
 import ofscraper.utils.of_env.of_env as env
-
+import ofscraper.utils.settings as settings
+from ofscraper.utils.system.subprocess import async_run
 
 # the answer for a skip that lasts: the item is saved as done and isn't
 # asked about again. It's truthy, so it skips like True (skip this run)
@@ -62,10 +61,10 @@ async def skip_download_script(total, ele): # Made async
         # Await the new async runner
         result = await async_run(
             [script_path],
-            input=input_json_str, 
-            capture_output=True,  
-            text=True,  
-            check=True,  
+            input=input_json_str,
+            capture_output=True,
+            text=True,
+            check=True,
             level=env.getattr("SKIP_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
             name="skip download script",
         )
@@ -91,11 +90,11 @@ async def skip_download_script(total, ele): # Made async
         else:
             log.info(f"Download skip script instructed to PROCEED with download for {ele.username} (media_id: {ele.id}).")
 
-        return should_skip 
+        return should_skip
 
     except FileNotFoundError:
         log.info(f"Download skip script executable not found: '{script_path}'.")
-        return False 
+        return False
     except subprocess.CalledProcessError as e:
         log.info(f"Download skip script failed for {ele.username} with exit code {e.returncode}: '{script_path}'")
         if e.stdout and e.stdout.strip(): log.debug(f"Stdout:\n{e.stdout.strip()}")

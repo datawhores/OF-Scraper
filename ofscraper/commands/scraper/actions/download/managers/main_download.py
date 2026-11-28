@@ -5,41 +5,40 @@ from functools import partial
 
 import psutil
 
-from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.classes.placeholder as placeholder
 import ofscraper.commands.scraper.actions.utils.general as common
+
 # the managers use their DownloadContext (self.ctx); kept here for code
 # and tests that reach the current context through this module
 import ofscraper.commands.scraper.actions.utils.globals as common_globals  # noqa: F401
-import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.commands.scraper.actions.utils.log as common_logs
+import ofscraper.commands.scraper.actions.utils.paths as common_paths
 import ofscraper.utils.dates as dates
 import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.settings as settings
-from ofscraper.utils.system.ffprobe import verify_media_integrity
-from ofscraper.utils.cache.profile import set_profile_cache
-from ofscraper.utils.logs.utils.sensitive import hide_links
-
+from ofscraper.classes.of.media import Media
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.managers.downloadmanager import (
     DownloadManager,
     StartOver,
+)
+from ofscraper.commands.scraper.actions.download.utils.chunk import (
+    get_chunk_timeout,
+)
+from ofscraper.commands.scraper.actions.download.utils.refresh import (
+    refresh_media_link,
+    refused_url,
 )
 from ofscraper.commands.scraper.actions.download.utils.retries import (
     download_retry,
     get_download_retries,
 )
-from ofscraper.commands.scraper.actions.download.utils.chunk import (
-    get_chunk_timeout,
-)
 from ofscraper.commands.scraper.actions.utils.chunk import send_chunk_msg
-from ofscraper.commands.scraper.actions.download.utils.refresh import (
-    refresh_media_link,
-    refused_url,
-)
-from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
-
-from ofscraper.classes.of.media import Media
 from ofscraper.db.operations_.media import mark_media_as_downloaded
+from ofscraper.managers.sessionmanager.sessionmanager import is_signed_cdn_forbidden
+from ofscraper.utils.cache.profile import set_profile_cache
+from ofscraper.utils.logs.utils.sensitive import hide_links
+from ofscraper.utils.system.ffprobe import verify_media_integrity
 
 
 class MainDownloadManager(DownloadManager):

@@ -1,9 +1,10 @@
-from typing import Iterable
 import logging
+from typing import Iterable
+
 import ofscraper.filters.media.filters as helpers
 import ofscraper.utils.settings as settings
-from ofscraper.classes.of.posts import Post
 from ofscraper.classes.of.media import Media
+from ofscraper.classes.of.posts import Post
 
 log = logging.getLogger("shared")
 
