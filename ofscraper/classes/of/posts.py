@@ -83,8 +83,9 @@ class Post(base.base):
         self.like_attempted = False
         self.like_success = None
 
-        self.text_download_attempted = False
-        self.text_download_succeeded = None
+        # "saved", "exists" (already saved) or "failed"; None when the post
+        # has no text to save
+        self.text_status = None
 
         self.is_metadata_candidate = False
 
@@ -174,14 +175,10 @@ class Post(base.base):
         """
         self.like_attempted = True
 
-    def mark_text_downloaded(self, success: bool):
-        """Updates the status of the post after a text download attempt."""
-        self.text_download_attempted = True
-        self.text_download_succeeded = success
-
-    def mark_text_download_attempt(self):
-        """Marks that a text download has been attempted."""
-        self.text_download_attempted = True
+    def mark_text(self, status: str):
+        """Records what became of the post's text file: "saved", "exists"
+        or "failed"."""
+        self.text_status = status
 
     @property
     def missed_downloads(self):

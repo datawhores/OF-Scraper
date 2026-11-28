@@ -80,6 +80,8 @@ class TextStats:
     def __init__(self, name: str):
         self.name = name
         self.text_count = 0
+        # text files already saved by an earlier run; a post with no
+        # caption isn't counted
         self.skipped_count = 0
         self.failed_count = 0
 
@@ -90,17 +92,12 @@ class TextStats:
             if self.text_count > 0
             else f"{self.text_count} text"
         )
-        skipped_str = (
-            f"[bold yellow]{self.skipped_count} skipped[/bold yellow]"
-            if self.skipped_count > 0
-            else f"{self.skipped_count} skipped"
-        )
         failed_str = (
             f"[bold red]{self.failed_count} failed[/bold red]"
             if self.failed_count > 0
             else f"{self.failed_count} failed"
         )
-        return f"\\[{text_str}, {skipped_str}, {failed_str}]"
+        return f"\\[{text_str}, {self.skipped_count} already saved, {failed_str}]"
 
     @property
     def has_changes(self):
@@ -449,12 +446,12 @@ class StatsManager:
     def _update_text_stats_helper(self, stat_obj: TextStats, post_list: list[Post]):
         """Private helper to update text download stats."""
         for post in post_list:
-            if not post.text_download_attempted:
-                stat_obj.skipped_count += 1
-            elif not post.text_download_succeeded:
-                stat_obj.failed_count += 1
-            else:
+            if post.text_status == "saved":
                 stat_obj.text_count += 1
+            elif post.text_status == "exists":
+                stat_obj.skipped_count += 1
+            elif post.text_status == "failed":
+                stat_obj.failed_count += 1
 
     def _update_metadata_stats_helper(
         self, stat_obj: MetadataStats, media_list: list[Media]
@@ -542,7 +539,8 @@ class StatsManager:
 
         ``downloads``: videos, audios, photos, skipped, failed, stopped and
         bytes; ``metadata``: videos, audios and photos changed, unchanged and
-        failed; ``text``: saved, skipped and failed; ``creators_active``: how
+        failed; ``text``: saved, skipped (already saved by an earlier run) and
+        failed; ``creators_active``: how
         many creators had any activity. With per_creator, ``per_creator`` also
         lists each creator's downloads (username, new_files, bytes, failed),
         in name order.
@@ -646,9 +644,9 @@ class StatsManager:
 
         if any([text_count, text_skip, text_fail]):
             output_lines.append("\n--- TEXT / MESSAGES ---")
-            output_lines.append(f" ➜ SAVED:   {text_count}")
-            output_lines.append(f" ➜ SKIPPED: {text_skip}")
-            output_lines.append(f" ➜ FAILED:  {text_fail}")
+            output_lines.append(f" ➜ SAVED:         {text_count}")
+            output_lines.append(f" ➜ ALREADY SAVED: {text_skip}")
+            output_lines.append(f" ➜ FAILED:        {text_fail}")
 
         output_lines.append("\n" + "=" * 50 + "\n")
 
