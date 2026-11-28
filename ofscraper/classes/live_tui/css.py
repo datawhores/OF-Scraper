@@ -41,17 +41,17 @@ Screen {
     margin: 0 1 0 0;
 }
 
-#add_user_bar {
+#add_user_bar, #search_bar {
     height: auto;
     layout: horizontal;
     margin-top: 1;
 }
 
-#add_user_bar.-hidden {
+#add_user_bar.-hidden, #search_bar.-hidden {
     display: none;
 }
 
-#add_user_input {
+#add_user_input, #search_input {
     width: 1fr;
     margin-right: 1;
 }

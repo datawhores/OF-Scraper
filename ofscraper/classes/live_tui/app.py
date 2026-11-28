@@ -147,6 +147,8 @@ class LiveStreamApp(App):
         Binding("c", "toggle_chat", "Toggle Chat"),
         Binding("o", "open_folder", "Open Folder"),
         Binding("f", "toggle_active_only", "Filter"),
+        Binding("slash", "show_search", "Search"),
+        Binding("escape", "dismiss_bars", "Clear Search", show=False),
         Binding("x", "clear_ended", "Clear Ended"),
         Binding("q", "quit_tui", "Quit"),
         Binding("ctrl+x", "abort_tui", "Stop & Quit", priority=True),
@@ -178,6 +180,7 @@ class LiveStreamApp(App):
         self._active_chat_user: str | None = None
         self._shown_keys: set[str] = set()
         self._filter_mode = "online"
+        self._search_query: str = ""
         self._sort_key = "status"
         self._sort_reverse = False
 
@@ -256,7 +259,10 @@ class LiveStreamApp(App):
     @property
     def _is_input_open(self) -> bool:
         try:
-            return not self.query_one("#add_user_bar").has_class("-hidden")
+            return (
+                not self.query_one("#add_user_bar").has_class("-hidden")
+                or not self.query_one("#search_bar").has_class("-hidden")
+            )
         except NoMatches:
             return False
 
@@ -354,9 +360,15 @@ class LiveStreamApp(App):
         )
         if entry is None:
             return
-        if was_status != new_status and self._sort_key == "status":
+        now_matches = self._store.should_show(
+            entry, self._filter_mode, self._search_query
+        )
+        was_shown = entry.key in self._shown_keys
+        if now_matches != was_shown or (
+            now_matches and was_status != new_status and self._sort_key == "status"
+        ):
             self._rebuild_table()
-        else:
+        elif now_matches:
             self._upsert_row(entry)
         self._refresh_telemetry()
 
@@ -455,7 +467,7 @@ class LiveStreamApp(App):
         rows = [
             r
             for r in self._streams.values()
-            if self._store.should_show(r, self._filter_mode)
+            if self._store.should_show(r, self._filter_mode, self._search_query)
         ]
         rows.sort(
             key=lambda r: sort_key_for_entry(r, self._sort_key, wall),
@@ -468,7 +480,7 @@ class LiveStreamApp(App):
 
     def _upsert_row(self, entry: StreamRowState):
         table = self.query_one("#streams_table", DataTableExtended)
-        if not self._store.should_show(entry, self._filter_mode):
+        if not self._store.should_show(entry, self._filter_mode, self._search_query):
             if entry.key in self._shown_keys:
                 self._rebuild_table()
             return
@@ -609,6 +621,18 @@ class LiveStreamApp(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "add_user_input":
             self._submit_add_user()
+        elif event.input.id == "search_input":
+            self._hide_search_bar()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id != "search_input":
+            return
+        q = event.value.strip().lstrip("@").lower()
+        if q == self._search_query:
+            return
+        self._search_query = q
+        self._sync_search_button()
+        self._rebuild_table()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         dispatch = {
@@ -617,6 +641,9 @@ class LiveStreamApp(App):
             "btn_show_add_user": self.action_show_add_user,
             "btn_submit_add_user": self._submit_add_user,
             "btn_cancel_add_user": self._hide_add_user,
+            "btn_search": self.action_show_search,
+            "btn_done_search": self._hide_search_bar,
+            "btn_clear_search": self._clear_search,
             "btn_start_all": self.action_start_all,
             "btn_stop_all": self.action_stop_all,
             "btn_pause": self.action_toggle_pause,
@@ -664,6 +691,7 @@ class LiveStreamApp(App):
             self.notify(f"Included all {scope}; polling now...")
 
     def action_show_add_user(self) -> None:
+        self.query_one("#search_bar").add_class("-hidden")
         bar = self.query_one("#add_user_bar")
         bar.remove_class("-hidden")
         inp = self.query_one("#add_user_input", Input)
@@ -673,6 +701,51 @@ class LiveStreamApp(App):
     def _hide_add_user(self) -> None:
         self.query_one("#add_user_bar").add_class("-hidden")
         self.set_focus(self.query_one("#streams_table"))
+
+    def _sync_search_button(self) -> None:
+        btn = self.query_one("#btn_search", Button)
+        if self._search_query:
+            q = self._search_query
+            short = f"{q[:12]}…" if len(q) > 12 else q
+            btn.label = Text(f"Search: {short} (/)")
+            btn.variant = "warning"
+        else:
+            btn.label = "Search (/)"
+            btn.variant = "default"
+
+    def action_show_search(self) -> None:
+        if not self.query_one("#add_user_bar").has_class("-hidden"):
+            self.query_one("#add_user_bar").add_class("-hidden")
+        bar = self.query_one("#search_bar")
+        bar.remove_class("-hidden")
+        inp = self.query_one("#search_input", Input)
+        if inp.value.strip().lstrip("@").lower() != self._search_query:
+            inp.value = self._search_query
+        with contextlib.suppress(Exception):
+            inp.cursor_position = len(inp.value)
+        self.set_focus(inp)
+
+    def _hide_search_bar(self) -> None:
+        self.query_one("#search_bar").add_class("-hidden")
+        self.set_focus(self.query_one("#streams_table"))
+
+    def _clear_search(self) -> None:
+        had_query = bool(self._search_query)
+        self._search_query = ""
+        inp = self.query_one("#search_input", Input)
+        if inp.value:
+            inp.value = ""
+        self.query_one("#search_bar").add_class("-hidden")
+        self._sync_search_button()
+        if had_query:
+            self._rebuild_table()
+        self.set_focus(self.query_one("#streams_table"))
+
+    def action_dismiss_bars(self) -> None:
+        if not self.query_one("#add_user_bar").has_class("-hidden"):
+            self._hide_add_user()
+        elif not self.query_one("#search_bar").has_class("-hidden") or self._search_query:
+            self._clear_search()
 
     def _submit_add_user(self) -> None:
         inp = self.query_one("#add_user_input", Input)
@@ -915,8 +988,9 @@ class LiveStreamApp(App):
         shown = len(self._shown_keys)
         total = len(self._streams)
         if total > 0 and shown == 0:
+            search_note = f" + search '{self._search_query}'" if self._search_query else ""
             self.notify(
-                f"Showing 0 of {total} creator(s) under '{self._filter_mode}' filter (press f to cycle).",
+                f"Showing 0 of {total} creator(s) under '{self._filter_mode}' filter{search_note} (press f to cycle).",
                 severity="information",
             )
 
@@ -935,6 +1009,7 @@ class LiveStreamApp(App):
     def action_quit_tui(self) -> None:
         if self._is_input_open:
             self._hide_add_user()
+            self._hide_search_bar()
             return
         if self._live_thread is None or self._live_thread.finished.is_set():
             self.exit(self._user_aborted)
