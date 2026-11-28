@@ -1564,6 +1564,11 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
 
                 selected = select_streams(selected, active_usernames, excluded)
                 merged_targets = {str(t["accountId"]): t for t in explicit_targets}
+                skip_targets = username_keys(excluded)
+                for u in extra_names:
+                    for t in resolved_cache.get(str(u).lower(), ()):
+                        if not matches_account(t.get("username"), t.get("accountId"), skip_targets):
+                            merged_targets.setdefault(str(t["accountId"]), t)
                 for s in selected:
                     merged_targets[str(s["accountId"])] = {
                         "accountId": str(s["accountId"]),

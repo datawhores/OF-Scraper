@@ -79,6 +79,25 @@ def live_subscriptions(pages: list) -> list:
     return out
 
 
+def all_subscriptions(pages: list) -> list:
+    """All subscriptions from scraped active-subscription pages as target dicts."""
+    out = []
+    seen = set()
+    for page in pages or ():
+        for user in page or ():
+            if not isinstance(user, dict):
+                continue
+            username = user.get("username")
+            uid = user.get("id")
+            if uid is None:
+                uid = username
+            if uid is None or not username or uid in seen:
+                continue
+            seen.add(uid)
+            out.append({"accountId": uid, "username": username})
+    return out
+
+
 def stream_is_active(payload):
     """True / False if OnlyFans' streams/active response says live/ended; None if invalid."""
     if not isinstance(payload, dict):
@@ -440,7 +459,8 @@ async def get_online_streams(c, checks=None) -> list:
     if all_users and not has_filters and not extra:
         pages = [page async for page in scrape_subscriptions_active(c)]
         live = live_subscriptions(pages)
-        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=live)
+        targets = select_streams(all_subscriptions(pages), None, excluded)
+        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=targets)
         return live
 
     cache = _TARGET_CACHE.get()
@@ -468,7 +488,10 @@ async def get_online_streams(c, checks=None) -> list:
                 if str(item["accountId"]) not in seen_ids:
                     seen_ids.add(str(item["accountId"]))
                     live.append(item)
-        merged_targets = {str(x["accountId"]): x for x in live}
+        merged_targets = {
+            str(x["accountId"]): x
+            for x in select_streams(all_subscriptions(pages), None, excluded)
+        }
         for t in extra_targets.values():
             merged_targets.setdefault(str(t["accountId"]), t)
         events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(merged_targets.values()))

@@ -36,7 +36,8 @@ STATUS_ORDER = {
     "stopped": 6,
     "failed": 7,
     "ended": 8,
-    "offline": 9,
+    "monitoring": 9,
+    "offline": 10,
 }
 
 STATUS_STYLE = {
@@ -50,6 +51,7 @@ STATUS_STYLE = {
     "stopped": ("STOPPED (LIVE)", "bold violet"),
     "ended": ("ENDED", "dim white"),
     "failed": ("FAILED", "bold red"),
+    "monitoring": ("MONITORING", "bold sky_blue1"),
     "offline": ("OFFLINE", "dim white"),
 }
 
@@ -59,7 +61,7 @@ COLUMNS = (
     ("act_toggle", "Rec", 11),
     ("act_remove", "Remove", 10),
     ("act_folder", "Folder", 10),
-    ("status", "Status", 16),
+    ("status", "Status", 20),
     ("site", "Site", 10),
     ("uptime", "Uptime", 11),
     ("saved", "Saved", 12),
@@ -108,9 +110,10 @@ class StreamRowState:
     site: str
     account_id: str
     username: str
-    status: str = "offline"
+    status: str = "monitoring"
     is_online: bool = False
     user_stopped: bool = False
+    explicit: bool = False
     title: str = ""
     reason: str = ""
     started_epoch: float | None = None
@@ -174,7 +177,11 @@ class StreamRowState:
 
     def uptime_str(self, now_wall: float) -> str:
         anchor = self.started_epoch or self.first_seen
-        end = self.ended_at if self.status in {"ended", "failed"} and self.ended_at else now_wall
+        end = (
+            self.ended_at
+            if self.status in {"ended", "failed", "monitoring", "offline"} and self.ended_at
+            else now_wall
+        )
         return _fmt_hms(end - anchor)
 
 
@@ -196,6 +203,8 @@ class LiveStreamApp(App):
         Binding("c", "toggle_chat", "Toggle Chat"),
         Binding("o", "open_folder", "Open Folder"),
         Binding("f", "toggle_active_only", "Filter"),
+        Binding("slash", "show_search", "Search"),
+        Binding("escape", "dismiss_bars", "Clear Search", show=False),
         Binding("x", "clear_ended", "Clear Ended"),
         Binding("q", "quit_tui", "Quit"),
         Binding("ctrl+x", "abort_tui", "Stop & Quit", priority=True),
@@ -229,8 +238,14 @@ class LiveStreamApp(App):
         self._removed_user_ids: dict[tuple[str, str], str] = {}
         self._chat_buffers: dict[str, deque[Text]] = {}
         self._active_chat_user: str | None = None
+        self._explicit_names: set[str] = set()
         self._shown_keys: set[str] = set()
+        self._shown_order: list[str] = []
+        self._rendered_cells: dict[str, dict[str, Text]] = {}
+        self._columns_initialized: bool = False
+        self._rendered_sort: tuple[str, bool] | None = None
         self._filter_mode = "online"
+        self._search_query: str = ""
         self._sort_key = "status"
         self._sort_reverse = False
 
@@ -254,6 +269,29 @@ class LiveStreamApp(App):
         self._jitter = int(opts.get("jitter") or 0)
 
         self._init_table()
+        raw_u = opts.get("usernames")
+        init_u = [raw_u] if isinstance(raw_u, str) else list(raw_u or [])
+        site_key = "fansly" if sites.is_fansly() else "onlyfans"
+        for raw_name in init_u:
+            name = str(raw_name).strip().lstrip("@")
+            clean = name.lower()
+            if not clean or clean == "all":
+                continue
+            self._explicit_names.add(clean)
+            row_key = f"{site_key}:{clean}"
+            self._username_index[(site_key, clean)] = row_key
+            self._streams[row_key] = StreamRowState(
+                key=row_key,
+                site=self._site_label,
+                account_id=name,
+                username=name,
+                status="monitoring",
+                is_online=False,
+                explicit=True,
+                reason="Monitoring (checking...)",
+            )
+        if self._streams:
+            self._rebuild_table()
         self._sync_following_button()
         self._sync_chat_button()
         self._sync_filter_button()
@@ -281,7 +319,10 @@ class LiveStreamApp(App):
     @property
     def _is_input_open(self) -> bool:
         try:
-            return not self.query_one("#add_user_bar").has_class("-hidden")
+            return (
+                not self.query_one("#add_user_bar").has_class("-hidden")
+                or not self.query_one("#search_bar").has_class("-hidden")
+            )
         except Exception:
             return False
 
@@ -328,7 +369,9 @@ class LiveStreamApp(App):
             self._max_concurrent = int(kw.get("max_concurrent") or self._max_concurrent)
             self._interval = int(kw.get("interval") or self._interval)
             if self._watcher is not None:
-                self._include_following = bool(getattr(self._watcher, "include_following", self._include_following))
+                w_inc = getattr(self._watcher, "include_following", None)
+                if w_inc is not None:
+                    self._include_following = bool(w_inc)
             self._sync_following_button()
             self._sync_chat_button()
         elif state == "stopped":
@@ -338,6 +381,38 @@ class LiveStreamApp(App):
             self._next_poll_deadline = None
         self._refresh_telemetry()
 
+    def _resolve_row_target(self, site: str, item: dict) -> tuple[str | None, str, bool]:
+        raw_id = item.get("accountId")
+        uname = str(item.get("username") or raw_id or "unknown")
+        aliases = [str(a).strip().lower() for a in (item.get("looked_up_as") or ()) if str(a).strip()]
+        row_key = f"{site}:{raw_id}" if raw_id is not None else f"{site}:{uname.lower()}"
+        tokens = {uname.lower(), *aliases} | ({str(raw_id).lower()} if raw_id is not None else set())
+        if row_key in self._removed_keys or any(f"{site}:{tok}" in self._removed_keys for tok in tokens):
+            self._removed_keys.add(row_key)
+            return None, uname, False
+        existing = self._streams.get(row_key)
+        is_explicit = bool(tokens & self._explicit_names) or bool(existing and existing.explicit)
+        for tok in tokens:
+            pk = f"{site}:{tok}"
+            if pk != row_key and pk in self._streams:
+                is_explicit = is_explicit or self._streams[pk].explicit
+        if not self._include_following and not is_explicit:
+            if not (existing and existing.status in RECORDING_STATUSES):
+                return None, uname, False
+        for tok in tokens:
+            pk = f"{site}:{tok}"
+            if pk != row_key:
+                popped = self._streams.pop(pk, None)
+                if popped is not None and row_key not in self._streams:
+                    popped.key = row_key
+                    popped.account_id = str(raw_id if raw_id is not None else uname)
+                    popped.username = uname
+                    popped.explicit = is_explicit
+                    self._streams[row_key] = popped
+        for tok in {uname.lower(), *aliases}:
+            self._username_index[(site, tok)] = row_key
+        return row_key, uname, is_explicit
+
     def _handle_poll(self, kw: dict):
         state = kw.get("state")
         if state == "polling":
@@ -346,22 +421,27 @@ class LiveStreamApp(App):
         elif state == "targets":
             site = str(kw.get("site") or self._site_label).lower()
             for t in kw.get("targets") or ():
-                raw_id = t.get("accountId")
-                uname = str(t.get("username") or raw_id or "unknown")
-                row_key = f"{site}:{raw_id}" if raw_id is not None else f"{site}:{uname.lower()}"
-                if row_key in self._removed_keys:
+                row_key, uname, is_explicit = self._resolve_row_target(site, t)
+                if row_key is None:
                     continue
-                self._username_index[(site, uname.lower())] = row_key
-                if row_key not in self._streams:
+                raw_id = t.get("accountId")
+                entry = self._streams.get(row_key)
+                if entry is None:
                     self._streams[row_key] = StreamRowState(
                         key=row_key,
                         site="Fansly" if site == "fansly" else "OnlyFans",
                         account_id=str(raw_id if raw_id is not None else uname),
                         username=uname,
-                        status="offline",
+                        status="monitoring",
                         is_online=False,
-                        reason="Watched (offline)",
+                        explicit=is_explicit,
+                        reason="Monitoring (offline)",
                     )
+                else:
+                    if is_explicit:
+                        entry.explicit = True
+                    if entry.status == "monitoring" and entry.reason == "Monitoring (checking...)":
+                        entry.reason = "Monitoring (offline)"
             self._rebuild_table()
         elif state == "ok":
             self._poll_count += 1
@@ -371,12 +451,10 @@ class LiveStreamApp(App):
             online_list = kw.get("online") or []
             online_keys = set()
             for s in online_list:
-                raw_id = s.get("accountId")
-                uname = str(s.get("username") or raw_id or "unknown")
-                row_key = f"{site}:{raw_id}" if raw_id is not None else f"{site}:{uname.lower()}"
-                if row_key in self._removed_keys:
+                row_key, uname, is_explicit = self._resolve_row_target(site, s)
+                if row_key is None:
                     continue
-                self._username_index[(site, uname.lower())] = row_key
+                raw_id = s.get("accountId")
                 online_keys.add(row_key)
                 entry = self._streams.get(row_key)
                 if entry is None:
@@ -387,28 +465,50 @@ class LiveStreamApp(App):
                         username=uname,
                         status="online",
                         is_online=True,
+                        explicit=is_explicit,
                         title=str(s.get("title") or ""),
                         started_epoch=_epoch_seconds(s.get("startedAt")),
                         reason="Live now",
                     )
                     self._streams[row_key] = entry
                 else:
+                    if is_explicit:
+                        entry.explicit = True
                     entry.is_online = True
                     if s.get("title"):
                         entry.title = str(s["title"])
                     if entry.user_stopped:
                         entry.status = "stopped"
                         entry.reason = "Stopped by user (click [Resume] or press r)"
-                    elif entry.status in {"offline", "ended", "failed"}:
+                    elif entry.status in {"monitoring", "offline", "ended", "failed"}:
                         entry.status = "online"
                         entry.reason = "Live now"
-            for row_key, entry in self._streams.items():
+                        entry.first_seen = time.time()
+                        entry.ended_at = None
+                        entry.started_epoch = _epoch_seconds(s.get("startedAt"))
+            dropped = False
+            for row_key, entry in list(self._streams.items()):
                 if row_key.startswith(f"{site}:") and row_key not in online_keys:
+                    if entry.status in RECORDING_STATUSES:
+                        continue
+                    if not self._include_following and not entry.explicit:
+                        if entry.status not in {"ended", "failed"}:
+                            self._streams.pop(row_key, None)
+                            dropped = True
+                        continue
                     entry.is_online = False
                     entry.user_stopped = False
                     if entry.status in {"online", "queued", "stopped"}:
-                        entry.status = "offline"
-                        entry.reason = "Offline"
+                        entry.status = "monitoring"
+                        entry.reason = "Monitoring (offline)"
+                        if entry.total_bytes > 0 and entry.ended_at is None:
+                            entry.ended_at = time.time()
+                    elif entry.status == "monitoring" and entry.reason == "Monitoring (checking...)":
+                        entry.reason = "Not found / offline (retrying...)"
+            if dropped:
+                self._username_index = {
+                    uk: rk for uk, rk in self._username_index.items() if rk in self._streams
+                }
             self._rebuild_table()
         elif state == "error":
             self._poll_count += 1
@@ -430,6 +530,13 @@ class LiveStreamApp(App):
 
         if raw_id is not None:
             row_key = f"{site}:{raw_id}"
+            placeholder_key = f"{site}:{username.lower()}"
+            if placeholder_key != row_key:
+                popped = self._streams.pop(placeholder_key, None)
+                if popped is not None and row_key not in self._streams:
+                    popped.key = row_key
+                    popped.account_id = str(raw_id)
+                    self._streams[row_key] = popped
             self._username_index[lookup] = row_key
         else:
             row_key = self._username_index.get(lookup) or f"{site}:{username.lower()}"
@@ -457,14 +564,14 @@ class LiveStreamApp(App):
             return
         if entry.user_stopped and new_status == "ended":
             new_status = "stopped"
-        if was_status in {"ended", "failed", "offline", "stopped"} and new_status in {"queued", "joining", "recording", "online"}:
+        if was_status in {"ended", "failed", "monitoring", "offline", "stopped"} and new_status in {"queued", "joining", "recording", "online"}:
             entry.ended_at = None
             entry.first_seen = time.time()
 
         entry.status = new_status
         if new_status in ONLINE_STATUSES:
             entry.is_online = True
-        elif new_status in {"ended", "failed", "offline"}:
+        elif new_status in {"ended", "failed", "monitoring", "offline"}:
             entry.is_online = False
 
         if kw.get("title"):
@@ -483,7 +590,7 @@ class LiveStreamApp(App):
             if new_status in {"ended", "failed"} and entry.ended_at is None:
                 entry.ended_at = time.time()
 
-        if was_status != new_status and self._sort_key == "status":
+        if was_status != new_status or entry.key not in self._shown_keys:
             self._rebuild_table()
         else:
             self._upsert_row(entry)
@@ -571,17 +678,28 @@ class LiveStreamApp(App):
                 arrow = " ▼" if self._sort_reverse else " ▲"
             table.add_column(f"{title}{arrow}", key=col_key, width=width)
         self._shown_keys.clear()
+        self._shown_order.clear()
+        self._rendered_cells.clear()
+        self._columns_initialized = True
+        self._rendered_sort = (self._sort_key, self._sort_reverse)
+
+    def _matches_filters(self, entry: StreamRowState) -> bool:
+        if self._filter_mode == "online" and not (entry.is_online or entry.status in ONLINE_STATUSES):
+            return False
+        if self._filter_mode == "recording" and entry.status not in RECORDING_STATUSES:
+            return False
+        if self._search_query:
+            q = self._search_query
+            if q not in entry.username.lower() and q not in str(entry.account_id).lower():
+                return False
+        return True
 
     def _visible_entries(self) -> list[StreamRowState]:
-        rows = list(self._streams.values())
-        if self._filter_mode == "online":
-            rows = [r for r in rows if r.is_online or r.status in ONLINE_STATUSES]
-        elif self._filter_mode == "recording":
-            rows = [r for r in rows if r.status in RECORDING_STATUSES]
+        rows = [r for r in self._streams.values() if self._matches_filters(r)]
 
         def sort_fn(r: StreamRowState):
             if self._sort_key == "status":
-                return (STATUS_ORDER.get(r.status, 99), -r.updated_at, r.username.lower())
+                return (STATUS_ORDER.get(r.status, 99), r.username.lower())
             if self._sort_key == "username":
                 return r.username.lower()
             if self._sort_key == "site":
@@ -605,6 +723,10 @@ class LiveStreamApp(App):
     def _format_cells(self, entry: StreamRowState, now_wall: float) -> dict[str, Text]:
         badge, badge_style = STATUS_STYLE.get(entry.status, (entry.status.upper(), "bold white"))
         speed_txt = f"{_fmt_bytes(entry.speed_bps)}/s" if entry.status == "recording" and entry.speed_bps > 0 else "—"
+        is_live = entry.is_online or entry.status in ONLINE_STATUSES
+        status_cell = Text()
+        status_cell.append("● ", style="bold bright_green" if is_live else "bold red")
+        status_cell.append(f"[{badge}]", style=badge_style)
 
         if entry.status in {"recording", "joining", "retrying", "queued", "online"}:
             toggle_cell = Text("[Stop]", style="bold bright_yellow")
@@ -634,7 +756,7 @@ class LiveStreamApp(App):
             "act_toggle": toggle_cell,
             "act_remove": Text("[Remove]", style="bold red"),
             "act_folder": Text("[Folder]", style="bold cyan"),
-            "status": Text(f"[{badge}]", style=badge_style),
+            "status": status_cell,
             "username": Text(entry.username, style="bold medium_spring_green"),
             "site": Text(entry.site, style="bold deep_sky_blue1"),
             "uptime": Text(entry.uptime_str(now_wall) if entry.is_online or entry.total_bytes > 0 else "—", style="bold bright_white"),
@@ -645,41 +767,70 @@ class LiveStreamApp(App):
             "detail": Text(detail_txt, style="dark_sea_green1"),
         }
 
+    def _update_row_cells(self, table: DataTableExtended, entry: StreamRowState, now_wall: float):
+        cells = self._format_cells(entry, now_wall)
+        prev = self._rendered_cells.get(entry.key)
+        for col, _, _ in COLUMNS:
+            if prev is None or prev.get(col) != cells[col]:
+                table.update_cell_at_key(entry.key, col, cells[col])
+        self._rendered_cells[entry.key] = cells
+
     def _upsert_row(self, entry: StreamRowState):
-        table = self.query_one("#streams_table", DataTableExtended)
-        should_show = (
-            self._filter_mode == "all"
-            or (self._filter_mode == "online" and (entry.is_online or entry.status in ONLINE_STATUSES))
-            or (self._filter_mode == "recording" and entry.status in RECORDING_STATUSES)
-        )
-        if not should_show:
+        if not self._matches_filters(entry):
             if entry.key in self._shown_keys:
                 self._rebuild_table()
             return
-        cells = self._format_cells(entry, time.time())
         if entry.key not in self._shown_keys:
-            table.add_row(*(cells[col] for col, _, _ in COLUMNS), key=entry.key)
-            self._shown_keys.add(entry.key)
-        else:
-            for col, _, _ in COLUMNS:
-                table.update_cell_at_key(entry.key, col, cells[col])
+            self._rebuild_table()
+            return
+        table = self.query_one("#streams_table", DataTableExtended)
+        self._update_row_cells(table, entry, time.time())
 
     def _rebuild_table(self):
-        selected_key = self._selected_row_key()
         table = self.query_one("#streams_table", DataTableExtended)
-        prev_col = table.cursor_column
-        self._init_table()
+        visible = self._visible_entries()
+        new_order = [e.key for e in visible]
         now_wall = time.time()
-        restore_idx = None
-        for idx, entry in enumerate(self._visible_entries()):
-            cells = self._format_cells(entry, now_wall)
-            table.add_row(*(cells[col] for col, _, _ in COLUMNS), key=entry.key)
-            self._shown_keys.add(entry.key)
-            if entry.key == selected_key:
-                restore_idx = idx
-        if restore_idx is not None:
-            with contextlib.suppress(Exception):
-                table.move_cursor(row=restore_idx, column=prev_col)
+        need_col_reset = (
+            not self._columns_initialized
+            or self._rendered_sort != (self._sort_key, self._sort_reverse)
+        )
+        if not need_col_reset and new_order == self._shown_order:
+            for entry in visible:
+                self._update_row_cells(table, entry, now_wall)
+            self._sync_chat_pane()
+            return
+
+        selected_key = self._selected_row_key()
+        prev_col = table.cursor_column
+        saved_x = getattr(table, "scroll_x", 0)
+        saved_y = getattr(table, "scroll_y", 0)
+        batch = self.batch_update() if hasattr(self, "batch_update") else contextlib.nullcontext()
+        with batch:
+            if need_col_reset:
+                self._init_table()
+            else:
+                table.clear(False)
+                self._shown_keys.clear()
+                self._shown_order.clear()
+                self._rendered_cells.clear()
+            restore_idx = None
+            for idx, entry in enumerate(visible):
+                cells = self._format_cells(entry, now_wall)
+                table.add_row(*(cells[col] for col, _, _ in COLUMNS), key=entry.key)
+                self._shown_keys.add(entry.key)
+                self._shown_order.append(entry.key)
+                self._rendered_cells[entry.key] = cells
+                if entry.key == selected_key:
+                    restore_idx = idx
+            if restore_idx is not None:
+                try:
+                    table.move_cursor(row=restore_idx, column=prev_col, animate=False, scroll=False)
+                except Exception:
+                    with contextlib.suppress(Exception):
+                        table.move_cursor(row=restore_idx, column=prev_col)
+                with contextlib.suppress(Exception):
+                    table.scroll_to(x=saved_x, y=saved_y, animate=False)
         self._sync_chat_pane()
 
     def _on_tick(self):
@@ -688,12 +839,10 @@ class LiveStreamApp(App):
         table = self.query_one("#streams_table", DataTableExtended)
 
         for entry in self._streams.values():
-            if entry.status in {"recording", "joining", "retrying", "remuxing", "queued", "stopped"}:
+            if entry.is_online or entry.status in ONLINE_STATUSES:
                 entry.refresh_disk_metrics(now_mono)
                 if entry.key in self._shown_keys:
-                    cells = self._format_cells(entry, now_wall)
-                    for col in ("uptime", "saved", "speed", "parts", "chat"):
-                        table.update_cell_at_key(entry.key, col, cells[col])
+                    self._update_row_cells(table, entry, now_wall)
 
         if self._live_thread and self._live_thread.finished.is_set() and self._poll_state != "finished":
             self._poll_state = "finished"
@@ -704,6 +853,7 @@ class LiveStreamApp(App):
         recording = sum(1 for e in self._streams.values() if e.status in RECORDING_STATUSES)
         online_cnt = sum(1 for e in self._streams.values() if e.is_online or e.status in ONLINE_STATUSES)
         queued = sum(1 for e in self._streams.values() if e.status == "queued")
+        monitored = len(self._streams)
         total_bytes = sum(e.total_bytes for e in self._streams.values())
         total_speed = sum(e.speed_bps for e in self._streams.values() if e.status == "recording")
 
@@ -721,10 +871,12 @@ class LiveStreamApp(App):
         elif self._next_poll_deadline is not None:
             rem = max(0, int(round(self._next_poll_deadline - time.monotonic())))
             poll_badge = f"Next check in [bold bright_cyan]{rem}s[/bold bright_cyan]"
+        elif self._poll_state == "error" and self._last_error:
+            poll_badge = f"[bold red]Error: {rich_escape(self._last_error[:38])}[/bold red]"
         else:
             poll_badge = f"[dim]{self._poll_state}[/dim]"
-
-        err_line = f"\n[bold red]Last Error:[/bold red] {rich_escape(self._last_error[:45])}" if self._last_error else ""
+        if self._last_error and self._poll_state != "error":
+            poll_badge += f"  [bold red](Last err: {rich_escape(self._last_error[:24])})[/bold red]"
 
         self.query_one("#telemetry_left", Static).update(
             f"[bold ansi_blue]Site:[/bold ansi_blue] {self._site_label}   "
@@ -734,8 +886,8 @@ class LiveStreamApp(App):
         )
         self.query_one("#telemetry_mid", Static).update(
             f"[bold ansi_blue]Slots:[/bold ansi_blue] [bold bright_green]{recording}[/bold bright_green] / {self._max_concurrent} active  "
-            f"| Online: [bold medium_spring_green]{online_cnt}[/bold medium_spring_green]  | Queued: {queued}\n"
-            f"[bold ansi_blue]Poll:[/bold ansi_blue]  {poll_badge}{err_line}"
+            f"| Online: [bold medium_spring_green]{online_cnt}[/bold medium_spring_green]  | Queued: {queued}  | Monitored: [bold sky_blue1]{monitored}[/bold sky_blue1]\n"
+            f"[bold ansi_blue]Poll:[/bold ansi_blue]  {poll_badge}"
         )
         self.query_one("#telemetry_right", Static).update(
             f"[bold ansi_blue]Saved:[/bold ansi_blue] [bold bright_green]{_fmt_bytes(total_bytes)}[/bold bright_green]\n"
@@ -797,6 +949,18 @@ class LiveStreamApp(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "add_user_input":
             self._submit_add_user()
+        elif event.input.id == "search_input":
+            self._hide_search_bar()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id != "search_input":
+            return
+        q = event.value.strip().lstrip("@").lower()
+        if q == self._search_query:
+            return
+        self._search_query = q
+        self._sync_search_button()
+        self._rebuild_table()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         dispatch = {
@@ -805,6 +969,9 @@ class LiveStreamApp(App):
             "btn_show_add_user": self.action_show_add_user,
             "btn_submit_add_user": self._submit_add_user,
             "btn_cancel_add_user": self._hide_add_user,
+            "btn_search": self.action_show_search,
+            "btn_done_search": self._hide_search_bar,
+            "btn_clear_search": self._clear_search,
             "btn_start_all": self.action_start_all,
             "btn_stop_all": self.action_stop_all,
             "btn_pause": self.action_toggle_pause,
@@ -840,10 +1007,13 @@ class LiveStreamApp(App):
         self._sync_following_button()
         scope = "followed creators" if self._site_label == "Fansly" else "active subscriptions"
         if not self._include_following:
-            extra = set(getattr(self._watcher, "extra_usernames", None) or ())
+            extra = set(getattr(self._watcher, "extra_usernames", None) or ()) | self._explicit_names
             to_drop = [
                 k for k, v in self._streams.items()
-                if v.status == "offline" and v.username.lower() not in extra
+                if not v.explicit
+                and v.username.lower() not in extra
+                and v.status not in RECORDING_STATUSES
+                and v.status not in {"ended", "failed"}
             ]
             for k in to_drop:
                 self._streams.pop(k, None)
@@ -852,11 +1022,13 @@ class LiveStreamApp(App):
                     uk: rk for uk, rk in self._username_index.items() if rk in self._streams
                 }
             self._rebuild_table()
+            self._refresh_telemetry()
             self.notify(f"Excluded {scope}; tracking explicit usernames only.")
         else:
             self.notify(f"Included all {scope}; polling now...")
 
     def action_show_add_user(self) -> None:
+        self.query_one("#search_bar").add_class("-hidden")
         bar = self.query_one("#add_user_bar")
         bar.remove_class("-hidden")
         inp = self.query_one("#add_user_input", Input)
@@ -866,6 +1038,51 @@ class LiveStreamApp(App):
     def _hide_add_user(self) -> None:
         self.query_one("#add_user_bar").add_class("-hidden")
         self.set_focus(self.query_one("#streams_table"))
+
+    def _sync_search_button(self) -> None:
+        btn = self.query_one("#btn_search", Button)
+        if self._search_query:
+            q = self._search_query
+            short = f"{q[:12]}…" if len(q) > 12 else q
+            btn.label = Text(f"Search: {short} (/)")
+            btn.variant = "warning"
+        else:
+            btn.label = "Search (/)"
+            btn.variant = "default"
+
+    def action_show_search(self) -> None:
+        if not self.query_one("#add_user_bar").has_class("-hidden"):
+            self.query_one("#add_user_bar").add_class("-hidden")
+        bar = self.query_one("#search_bar")
+        bar.remove_class("-hidden")
+        inp = self.query_one("#search_input", Input)
+        if inp.value.strip().lstrip("@").lower() != self._search_query:
+            inp.value = self._search_query
+        with contextlib.suppress(Exception):
+            inp.cursor_position = len(inp.value)
+        self.set_focus(inp)
+
+    def _hide_search_bar(self) -> None:
+        self.query_one("#search_bar").add_class("-hidden")
+        self.set_focus(self.query_one("#streams_table"))
+
+    def _clear_search(self) -> None:
+        had_query = bool(self._search_query)
+        self._search_query = ""
+        inp = self.query_one("#search_input", Input)
+        if inp.value:
+            inp.value = ""
+        self.query_one("#search_bar").add_class("-hidden")
+        self._sync_search_button()
+        if had_query:
+            self._rebuild_table()
+        self.set_focus(self.query_one("#streams_table"))
+
+    def action_dismiss_bars(self) -> None:
+        if not self.query_one("#add_user_bar").has_class("-hidden"):
+            self._hide_add_user()
+        elif not self.query_one("#search_bar").has_class("-hidden") or self._search_query:
+            self._clear_search()
 
     def _submit_add_user(self) -> None:
         inp = self.query_one("#add_user_input", Input)
@@ -895,7 +1112,25 @@ class LiveStreamApp(App):
                 if k[0] == site and str(v).lower() == clean
             ]:
                 del self._removed_user_ids[removed_as]
+            self._explicit_names.add(clean)
+            row_key = self._username_index.get((site, clean)) or f"{site}:{clean}"
+            if row_key not in self._streams:
+                self._username_index[(site, clean)] = row_key
+                self._streams[row_key] = StreamRowState(
+                    key=row_key,
+                    site="Fansly" if site == "fansly" else "OnlyFans",
+                    account_id=n,
+                    username=n,
+                    status="monitoring",
+                    is_online=False,
+                    explicit=True,
+                    reason="Monitoring (checking...)",
+                )
+            else:
+                self._streams[row_key].explicit = True
         self._call_watcher(self._watcher.add_usernames, names)
+        self._rebuild_table()
+        self._refresh_telemetry()
         self.notify(f"Added {', '.join(names)} to live watchlist; checking now...", markup=False)
 
     def _remove_entry(self, entry: StreamRowState) -> None:
@@ -905,6 +1140,8 @@ class LiveStreamApp(App):
         site = entry.key.split(":", 1)[0] if ":" in entry.key else entry.site.lower()
         self._removed_keys.add(entry.key)
         self._removed_user_ids[(site, entry.username.lower())] = entry.account_id
+        self._explicit_names.discard(entry.username.lower())
+        self._explicit_names.discard(str(entry.account_id).lower())
         self._call_watcher(self._watcher.remove_username, entry.username, entry.account_id)
         self._streams.pop(entry.key, None)
         self._username_index = {
@@ -940,7 +1177,8 @@ class LiveStreamApp(App):
             was_rec = entry.status in {"recording", "joining", "retrying"}
             entry.status = "stopping" if was_rec else "stopped"
             entry.reason = "Finalizing MP4 cleanly..." if was_rec else "Stopped by user (click [Resume] or press r)"
-            self._upsert_row(entry)
+            self._rebuild_table()
+            self._refresh_telemetry()
             self._call_watcher(self._watcher.stop_creator, entry.account_id)
             self.notify(f"Stopping {entry.username}...", markup=False)
         else:
@@ -954,7 +1192,8 @@ class LiveStreamApp(App):
             entry.user_stopped = False
             entry.status = "queued"
             entry.reason = "Resuming stream..."
-            self._upsert_row(entry)
+            self._rebuild_table()
+            self._refresh_telemetry()
             self._call_watcher(self._watcher.resume_creator, entry.account_id)
             self.notify(f"Resuming {entry.username}...", markup=False)
         else:
@@ -1200,8 +1439,9 @@ class LiveStreamApp(App):
         shown = len(self._shown_keys)
         total = len(self._streams)
         if total > 0 and shown == 0:
+            search_note = f" + search '{self._search_query}'" if self._search_query else ""
             self.notify(
-                f"Showing 0 of {total} creator(s) under '{self._filter_mode}' filter (press f to cycle).",
+                f"Showing 0 of {total} creator(s) under '{self._filter_mode}' filter{search_note} (press f to cycle).",
                 severity="information",
             )
 
@@ -1226,6 +1466,7 @@ class LiveStreamApp(App):
     def action_quit_tui(self) -> None:
         if self._is_input_open:
             self._hide_add_user()
+            self._hide_search_bar()
             return
         if self._live_thread is None or self._live_thread.finished.is_set():
             self.exit(self._user_aborted)
