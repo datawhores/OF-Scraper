@@ -91,7 +91,10 @@ def read_auth(path=None) -> dict:
         return empty()
     if _cache["path"] == path and _cache["mtime"] == mtime:
         return dict(_cache["auth"])
-    auth = normalize(json.loads(encoding.read_text_file(path)))
+    raw = json.loads(encoding.read_text_file(path))
+    if raw is not None and not isinstance(raw, dict):
+        raise ValueError(f"{path.name} doesn't hold an object of settings")
+    auth = normalize(raw)
     hide_token(auth.get("authorization_token"))
     _cache.update(path=path, mtime=mtime, auth=dict(auth))
     return auth
@@ -154,8 +157,10 @@ def make_auth(auth=None) -> dict:
     from rich.console import Console
 
     if settings.get_settings().auth_fail:
+        import ofscraper.main.close.exit_status as exit_status
+
         log.info("auth failed quitting on error")
-        quit()
+        raise SystemExit(exit_status.AUTH)
     auth = normalize(auth or read_auth())
     console = Console()
     console.print(
@@ -224,7 +229,16 @@ def token_prompt(current):
 
 def load() -> dict:
     """Auth for this run; prompts when it is missing or unusable."""
-    auth = read_auth()
+    try:
+        auth = read_auth()
+    except (ValueError, OSError) as e:  # not JSON (JSONDecodeError), or not an object
+        import ofscraper.main.close.exit_status as exit_status
+
+        log.error(
+            f"{auth_path().name} can't be read ({e}). Fix the file, or delete it"
+            " to enter the auth again."
+        )
+        raise SystemExit(exit_status.AUTH)
     if problems(auth):
         log.info("Fansly auth is missing or incomplete")
         auth = make_auth(auth)

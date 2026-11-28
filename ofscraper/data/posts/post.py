@@ -54,6 +54,7 @@ from ofscraper.utils.args.accessors.areas import (
 )
 from ofscraper.utils.context.run_async import run
 import ofscraper.utils.settings as settings
+import ofscraper.main.close.exit_status as exit_status
 from ofscraper.managers.postcollection import PostCollection
 
 log = logging.getLogger("shared")
@@ -63,9 +64,16 @@ def log_area_failure(username, area, error):
     """Say at normal output that one area of a creator failed (#379); the
     area then comes back empty, as before. The traceback stays at traceback
     level. Call it from an except block."""
+    from ofscraper.utils.checkers import LoginRejected, check_login_after_failure
+
+    if isinstance(error, LoginRejected):
+        raise error  # said already; it ends the pass, not just this area
     log.warning(f"[{username}] {area} failed: {type(error).__name__}: {error}")
     log.traceback_(error)
     log.traceback_(traceback.format_exc())
+    exit_status.record(exit_status.PARTIAL)
+    # a 401 or 403 may mean the login was rejected: that stops the pass
+    check_login_after_failure(error)
 
 
 @run
@@ -556,6 +564,21 @@ def log_skipped_labels(username):
     )
 
 
+def log_inactive_subscription(ele, username):
+    """Say before a creator's scan that its subscription isn't active, so a
+    run that finds only part of the creator's posts says why (#767)."""
+    if ele.active:
+        return
+    if sites.is_fansly():
+        found = "public posts, follower posts, messages and purchases can be downloaded"
+    elif skip_wall(ele):
+        # process_tasks skips the wall: messages and purchases are left
+        found = "messages and purchases are scanned (skip_unavailable_content)"
+    else:
+        found = "free posts, messages and purchases can be downloaded"
+    log.info(f"[{username}] subscription not active: only {found}")
+
+
 def log_skipped_wall(username):
     log.info(
         f"Skipping wall/story APIs for {username} (Account is inactive and past grace period)"
@@ -564,6 +587,7 @@ def log_skipped_wall(username):
 
 async def process_tasks(model_id, username, ele, c=None):
     tasks = []
+    log_inactive_subscription(ele, username)
 
     # Fansly walls are visible without a subscription (wall_visible)
     skip_wall_ = skip_wall(ele)

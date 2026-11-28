@@ -7,6 +7,7 @@ are kept only once committed.
 
 import hashlib
 import os
+import re
 import shutil
 import sqlite3
 import stat
@@ -575,7 +576,7 @@ def test_the_files_can_be_checked_without_a_server(tmp_path):
 
     assert code == 0
     assert "onlyfans: 1 file, 1 creator" in said
-    assert "OFSC_DATABASE_URL isn't set: the files were checked" in said
+    assert "OFSC_DATABASE_URL isn't set: the file was checked" in said
 
 
 def test_apply_needs_a_database(tmp_path):
@@ -1194,3 +1195,173 @@ def test_the_command_reads_its_own_arguments(tmp_path, monkeypatch):
         (tmp_path, dict(apply=False, skip_bad=False, staging=None)),
         (tmp_path, dict(apply=True, skip_bad=True, staging=None)),
     ]
+
+
+# --- ofscraper --migrate-sqlite-to-postgres ---
+
+
+def merged_file(tmp_path):
+    """Two creators' files merged into one with the menu's Merge Databases."""
+    import asyncio
+
+    import ofscraper.db.merge as merge
+
+    old = tmp_path / "old"
+    current_file(old / "111" / "user_data.db", 111, name="creator_a")
+    current_file(old / "222" / "user_data.db", 222, name="creator_b")
+    merged = tmp_path / "merged" / "user_data.db"
+    failed, completed, skipped = asyncio.run(merge.MergeDatabase()(old, merged))
+    assert not failed and len(completed) == 2
+    return merged
+
+
+def test_a_merged_file_is_brought_in_by_its_path(tmp_path):
+    merged = merged_file(tmp_path)
+    before = snapshot(merged.parent)
+    target = Target()
+
+    code, said = run(merged, target, apply=True)
+
+    assert code == 0, said
+    assert "onlyfans: 1 file, 2 creators" in said
+    assert {row["model_id"] for row in target.rows("onlyfans", "posts")} == {111, 222}
+    assert snapshot(merged.parent) == before
+
+
+def test_one_file_is_spoken_of_as_one(tmp_path, monkeypatch):
+    monkeypatch.delenv(postgres.URL_KEY, raising=False)
+    merged = merged_file(tmp_path)
+
+    code, said = run(merged, Target(), apply=True)
+    assert code == 0, said
+    assert "Copying the file and checking the copy (the file isn't opened)..." in said
+    assert "Done. The user_data.db file is unchanged and is no longer used." in said
+    assert not re.search(r"\bfiles\b", said)
+
+    code, said = run(merged)
+    assert code == 0, said
+    assert "isn't set: the file was checked, and PostgreSQL wasn't." in said
+    assert not re.search(r"\bfiles\b", said)
+
+    code, said = run(merged, apply=True)
+    assert code == 2
+    assert said.endswith("database to bring the file into. See POSTGRESQL.md.")
+
+
+def test_a_path_that_isnt_there_is_said_so(tmp_path):
+    code, said = run(tmp_path / "missing.db", Target(), apply=True)
+    assert code == 2
+    assert said == f"There is no file or folder at {tmp_path / 'missing.db'}."
+
+
+def test_the_option_brings_the_file_in_and_exits_with_the_commands_code(tmp_path, monkeypatch, capsys):
+    calls = []
+
+    def fake_run(path, apply=False, **kwargs):
+        calls.append((Path(path), apply))
+        kwargs.get("out", print)("Done.")
+        return 1
+
+    monkeypatch.setattr(importer, "run", fake_run)
+    with pytest.raises(SystemExit) as exit_info:
+        importer.migrate(tmp_path / "user_data.db")
+    assert exit_info.value.code == 1
+    assert calls == [(tmp_path / "user_data.db", True)]
+    assert "Done." in capsys.readouterr().out
+
+
+def test_a_migration_that_worked_returns(tmp_path, monkeypatch):
+    monkeypatch.setattr(importer, "run", lambda path, apply=False, **kwargs: 0)
+    assert importer.migrate(tmp_path) is None
+
+
+def test_the_option_is_on_the_main_command(monkeypatch, tmp_path):
+    import sys
+
+    import ofscraper.utils.args.main as args_main
+
+    monkeypatch.setattr(sys, "argv", ["OF-Scraper", "--migrate-sqlite-to-postgres", str(tmp_path)])
+    monkeypatch.setattr(args_main.main.program, "add_command", lambda *a, **k: None)
+    args = args_main.parse_args()
+    assert Path(args.migrate_sqlite_to_postgres) == tmp_path
+
+
+def test_the_option_with_a_subcommand_is_refused(monkeypatch, tmp_path, capsys):
+    """Given before a subcommand, the option would be dropped silently and the
+    subcommand run instead: it is refused with a message."""
+    import sys
+
+    import ofscraper.utils.args.main as args_main
+
+    monkeypatch.setattr(
+        sys, "argv",
+        ["OF-Scraper", "--migrate-sqlite-to-postgres", str(tmp_path), "manual", "--url", "https://onlyfans.com/1/a"],
+    )
+    # another test in this process may have added the subcommands already
+    program = args_main.main.program
+    add = program.add_command
+    monkeypatch.setattr(
+        program, "add_command",
+        lambda cmd, name=None, *a, **k: None if name in program.commands else add(cmd, name, *a, **k),
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        args_main.parse_args()
+    assert exit_info.value.code == 2
+    err = capsys.readouterr().err
+    assert "--migrate-sqlite-to-postgres" in err
+    assert "manual" in err
+
+
+def test_the_app_runs_the_migration_instead_of_scraping(monkeypatch, tmp_path):
+    import ofscraper.managers.manager as manager
+
+    calls = []
+    monkeypatch.setattr(
+        settings, "get_settings",
+        lambda: SimpleNamespace(command=None, migrate_sqlite_to_postgres=str(tmp_path)),
+    )
+    monkeypatch.setattr(importer, "migrate", lambda path: calls.append(("migrate", Path(path))))
+    monkeypatch.setattr(manager.actions, "main", lambda: calls.append(("scrape",)))
+    manager.mainManager().pick()
+    assert calls == [("migrate", tmp_path)]
+
+
+def test_a_migration_that_failed_still_shuts_down(monkeypatch, tmp_path):
+    """The exit code goes out, after the logs and the cache are closed as
+    on every other way out of a run."""
+    import ofscraper.managers.manager as manager
+
+    calls = []
+    monkeypatch.setattr(
+        settings, "get_settings",
+        lambda: SimpleNamespace(command=None, migrate_sqlite_to_postgres=str(tmp_path / "missing.db")),
+    )
+    monkeypatch.setattr(manager.exit_manager, "shutdown", lambda: calls.append("shutdown"))
+    with pytest.raises(SystemExit) as exit_info:
+        manager.mainManager().pick()
+    assert exit_info.value.code == 2
+    assert calls == ["shutdown"]
+
+
+@pytest.mark.parametrize(
+    "command", ["manual", "msg_check", "story_check", "paid_check", "post_check", "metadata"]
+)
+def test_the_option_is_not_on_the_subcommands(command):
+    """It migrates and exits, so after a subcommand it would skip what the
+    subcommand was asked to do: click refuses it there instead."""
+    import ofscraper.utils.args.parse.commands.manual as manual
+    import ofscraper.utils.args.parse.commands.message as message
+    import ofscraper.utils.args.parse.commands.metadata as metadata
+    import ofscraper.utils.args.parse.commands.paid as paid
+    import ofscraper.utils.args.parse.commands.post as post
+    import ofscraper.utils.args.parse.commands.story as story
+
+    commands = {
+        "manual": manual.manual,
+        "msg_check": message.message_check,
+        "story_check": story.story_check,
+        "paid_check": paid.paid_check,
+        "post_check": post.post_check,
+        "metadata": metadata.metadata,
+    }
+    assert "migrate_sqlite_to_postgres" not in {p.name for p in commands[command].params}

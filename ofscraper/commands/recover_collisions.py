@@ -482,20 +482,9 @@ def on_postgres(database_url, creator, site=None, undo_file=None, apply=False, p
         ) from None
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("database", type=Path, nargs="?", help="One model's user_data.db")
-    parser.add_argument("--apply", action="store_true", help="Apply the previewed recovery or undo operation")
-    parser.add_argument("--undo", help="Preview restoring flags from a recovery undo file")
-    parser.add_argument("--path-root", type=Path, help="Original working directory for relative recorded paths")
-    parser.add_argument("--postgres", action="store_true", help=f"Work on the PostgreSQL database ${postgres.URL_KEY} names instead of a user_data.db; give --creator and no database with it")
-    parser.add_argument("--site", choices=list(sites.SITES), help="With --postgres, the creator's site (default: the site that has the creator)")
-    parser.add_argument("--creator", metavar="NAME", help="With --postgres, the one creator to work on, by a username or id that no other creator has")
-    parser.add_argument("--undo-dir", metavar="DIR", help="With --postgres, the folder --apply writes the undo file to: needed with --apply, and it must be a folder that is kept (in Docker, a mounted one)")
-    args = parser.parse_args(argv)
-    # as a path, as before: an empty one is the current folder
-    undo_file = None if args.undo is None else Path(args.undo)
-
+def validate_db_args(parser, args, files_notice, *, extra_postgres_only=None):
+    """Validate --postgres / --creator / database arguments and return database_url."""
+    extra = extra_postgres_only or {}
     # Only this command's own environment says where PostgreSQL is: the
     # scraper's settings and env files aren't read
     database_url = os.environ.get(postgres.URL_KEY, "").strip()
@@ -509,6 +498,44 @@ def main(argv=None):
             )
         if not args.creator:
             parser.error("--postgres needs --creator: the one creator to work on, by username or id")
+    elif (
+        args.site is not None
+        or args.creator is not None
+        or any(v is not None for v in extra.values())
+    ):
+        names = ["--site", "--creator", *extra]
+        pg_only_label = f"{', '.join(names[:-1])} and {names[-1]}"
+        parser.error(
+            f"{pg_only_label} go with --postgres; with a file, give that creator's user_data.db"
+        )
+    elif not args.database:
+        parser.error("the following arguments are required: database, or --postgres")
+    elif database_url:
+        print(f"warning: {files_notice}", file=sys.stderr)
+    return database_url
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__)
+    parser.add_argument("database", type=Path, nargs="?", help="One model's user_data.db")
+    parser.add_argument("--apply", action="store_true", help="Apply the previewed recovery or undo operation")
+    parser.add_argument("--undo", help="Preview restoring flags from a recovery undo file")
+    parser.add_argument("--path-root", type=Path, help="Original working directory for relative recorded paths")
+    parser.add_argument("--postgres", action="store_true", help=f"Work on the PostgreSQL database ${postgres.URL_KEY} names instead of a user_data.db; give --creator and no database with it")
+    parser.add_argument("--site", choices=list(sites.SITES), help="With --postgres, the creator's site (default: the site that has the creator)")
+    parser.add_argument("--creator", metavar="NAME", help="With --postgres, the one creator to work on, by a username or id that no other creator has")
+    parser.add_argument("--undo-dir", metavar="DIR", help="With --postgres, the folder --apply writes the undo file to: needed with --apply, and it must be a folder that is kept (in Docker, a mounted one)")
+    args = parser.parse_args(argv)
+    # as a path, as before: an empty one is the current folder
+    undo_file = None if args.undo is None else Path(args.undo)
+
+    database_url = validate_db_args(
+        parser,
+        args,
+        FILES_NOTICE,
+        extra_postgres_only={"--undo-dir": args.undo_dir},
+    )
+    if args.postgres:
         # a path that is empty (a shell variable that isn't set) would be
         # the current folder
         if args.undo is not None and not args.undo.strip():
@@ -523,12 +550,6 @@ def main(argv=None):
                 " the only way back. Give a folder that is kept (in Docker a mounted one,"
                 " not one inside the container)"
             )
-    elif args.site is not None or args.creator is not None or args.undo_dir is not None:
-        parser.error("--site, --creator and --undo-dir go with --postgres; with a file, give that creator's user_data.db")
-    elif not args.database:
-        parser.error("the following arguments are required: database, or --postgres")
-    elif database_url:
-        print(f"warning: {FILES_NOTICE}", file=sys.stderr)
 
     # What the driver and the server say reaches here with the address's
     # password hidden already (see postgres.py). The command's own sentences

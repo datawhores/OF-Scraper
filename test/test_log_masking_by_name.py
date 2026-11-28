@@ -24,6 +24,8 @@ CF_SIG = "MadeUpSignature0123~abc"
 CF_KEY = "KMADEUPKEYPAIR0"
 DEVICE_ID = "987654321012345678"
 SESSION_ID = "876543210123456789"
+PROXY_USER = "proxyuser42"
+PROXY_PASS = "Pr0xy:Passw0rd"
 
 
 def _simple_cookie():
@@ -132,6 +134,19 @@ LEAKS = [
         [DEVICE_ID, SESSION_ID],
         ["Fansly-Client-Id: {hidden}", "fansly-session-id: {hidden}", "fansly-client-id={hidden}&x=1"],
     ),
+    # a proxy's login, as OFSC_PROXY and errors that name the proxy have it
+    (
+        f"proxy http://{PROXY_USER}:{PROXY_PASS}@proxy.example.invalid:3128 refused: 407 "
+        f"proxy='https://{PROXY_USER}@proxy.example.invalid'",
+        [PROXY_USER, PROXY_PASS],
+        ["http://{hidden}@proxy.example.invalid:3128", "'https://{hidden}@proxy.example.invalid'"],
+    ),
+    # a raw "@" in the password: the login ends at the last "@" before the host
+    (
+        "proxy http://user:p@ss@host:8080 refused",
+        ["user", "p@ss", "ss@"],
+        ["http://{hidden}@host:8080"],
+    ),
 ]
 
 
@@ -155,6 +170,7 @@ def test_auth_values_are_masked_by_name(formatter, line, secrets, labels):
         "posted by a creator: 'subscribers': 12",
         "first=1, test=2, fps=30, list='st'",
         "no fansly-client-id header yet, the fansly-session-id is unknown",
+        "mail a creator at someone@example.invalid, see https://example.invalid/a@b",
     ],
 )
 def test_ordinary_text_is_left_alone(line):

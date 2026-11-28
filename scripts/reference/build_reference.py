@@ -225,6 +225,7 @@ def config_getter_map():
 # lookup helper in config/data.py -> whether its first string argument is the
 # environment default's key
 CONFIG_LOOKUP_HELPERS = {
+    "_lookup": False,
     "_first": False,
     "_first_set": False,
     "_value": True,
@@ -247,7 +248,7 @@ def getter_details(getter, module_file, key_path):
             continue
         # data.py's lookup helpers: _value(config, ENV_KEY, *paths) and
         # _truthy_value likewise, _first(config, *paths) and _first_set
-        # likewise; a path is "key" or "section.key"
+        # likewise, _lookup(config, path); a path is "key" or "section.key"
         helper = getattr(node.func, "id", "")
         if helper in CONFIG_LOOKUP_HELPERS:
             if len(args) != len(node.args) - 1:
@@ -508,6 +509,18 @@ def render_cli(notes):
 
 # argparse tools under ofscraper/commands that aren't part of the CLI: module -> (usage, summary)
 SEPARATE_COMMANDS = {
+    "creator_names": (
+        "[--all | --find NAME | --add MODEL_ID NAME [--seen DATE] [--force] | --csv FILE] [--data-dir DIR | --postgres [--site SITE]]",
+        "List and record the usernames each creator account has had.",
+    ),
+    "doctor": (
+        "[--config PATH] [--profile NAME] [--site SITE] [--json] [--online]",
+        "Check the setup without running a scrape.",
+    ),
+    "health": (
+        "[STATUS_FILE] [--max-quiet MINUTES]",
+        "Check whether an unattended daemon is healthy from its status file.",
+    ),
     "move_creator_files": (
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Move a creator's downloaded files to match new path settings and update recorded paths.",
@@ -524,9 +537,17 @@ SEPARATE_COMMANDS = {
         "(DATABASE | --postgres --creator NAME) [OPTIONS]",
         "Find recorded paths shared by different media and reset downloaded flags to re-download.",
     ),
+    "rename_to_format": (
+        "(DATABASE | --undo FILE) [OPTIONS]",
+        "Rename a creator's downloaded files to the current file_format and dir_format, offline.",
+    ),
     "stash_sync": (
         "(PATH... | --postgres) [OPTIONS]",
         "Sync downloaded media metadata from OF-Scraper databases into Stash.",
+    ),
+    "verify": (
+        "(PATH... | --postgres --creator NAME) [OPTIONS]",
+        "Check downloaded files against the database, offline.",
     ),
 }
 
@@ -550,7 +571,10 @@ def render_argparse(module, usage):
     finally:
         argparse.ArgumentParser.parse_args = original
     parser = captured["parser"]
-    out = [f"Run `python -m ofscraper.commands.{module} {usage}`.\n\n"]
+    out = [
+        f"Run `ofscraper {module} {usage}`"
+        f" (or `python -m ofscraper.commands.{module} {usage}`).\n\n"
+    ]
     for action in parser._actions:
         if isinstance(action, argparse._HelpAction):
             continue
@@ -566,7 +590,8 @@ def render_argparse(module, usage):
 
 def flatten(d, prefix=""):
     for key, value in d.items():
-        if isinstance(value, dict) and key != "main_profile":
+        # an empty dict (type_options) is a key of its own, not an empty section
+        if isinstance(value, dict) and value and key != "main_profile":
             yield from flatten(value, f"{prefix}{key}.")
         else:
             yield f"{prefix}{key}", value
@@ -1021,42 +1046,51 @@ def render_env_pages(notes):
 
 
 def placeholder_keys():
-    """(class, method) -> dict keys the method adds to self._variables"""
+    """(class, method) -> placeholder keys; an empty class names a shared helper."""
     tree = ast.parse((ROOT / "ofscraper/classes/placeholder.py").read_text(encoding="utf-8"))
     result = {}
-    for cls in [n for n in tree.body if isinstance(n, ast.ClassDef)]:
-        for fn in [n for n in cls.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+    groups = [(n.name, n.body) for n in tree.body if isinstance(n, ast.ClassDef)]
+    groups.append(("", tree.body))
+    for class_name, body in groups:
+        for fn in [n for n in body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
             keys = []
             for node in ast.walk(fn):
                 if isinstance(node, ast.Dict) and node.keys:
                     parent_ok = True
                     keys.extend(k.value for k in node.keys if isinstance(k, ast.Constant) and parent_ok)
             if keys:
-                result[(cls.name, fn.name)] = list(dict.fromkeys(keys))
+                result[(class_name, fn.name)] = list(dict.fromkeys(keys))
     return result
 
 
 PLACEHOLDER_KINDS = {
-    "metadata": ("Database path (`metadata`)", [("basePlaceholder", "create_variables_base"), ("databasePlaceholder", "databasePathHelper")]),
+    "metadata": ("Database path (`metadata`)", [("", "_base_path_variables"), ("databasePlaceholder", "databasePathHelper")]),
     "dir": (
         "Media folders (`dir_format`)",
-        [("basePlaceholder", "create_variables_base"), ("Placeholders", "add_main_variables"), ("Placeholders", "add_price_variables")],
+        [
+            ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
+            ("Placeholders", "add_main_variables"),
+        ],
     ),
     "file": (
         "Media file names (`file_format`)",
         [
-            ("basePlaceholder", "create_variables_base"),
+            ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Placeholders", "add_main_variables"),
-            ("Placeholders", "add_price_variables"),
             ("Placeholders", "createfilename"),
         ],
     ),
     "text": (
         "Text files (`--text`)",
         [
-            ("basePlaceholder", "create_variables_base"),
+            ("", "_base_path_variables"),
+            ("_ContentPlaceholder", "_add_shared_variables"),
+            ("_ContentPlaceholder", "add_price_variables"),
             ("Textholders", "add_main_variables"),
-            ("Textholders", "add_price_variables"),
             ("Textholders", "createfilename"),
         ],
     ),

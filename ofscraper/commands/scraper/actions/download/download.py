@@ -37,6 +37,7 @@ from ofscraper.commands.scraper.actions.download.utils.refresh import (
 )
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
 import ofscraper.utils.settings as settings
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.managers.manager as manager
 
 
@@ -62,7 +63,16 @@ def save_path_str(username=None, model_id=None):
         site_name=sites.site_name(),
         sitename=sites.site_name(),
     )
-    return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]"
+    # a type_options entry sends some files elsewhere; the line says so
+    # instead of listing each template
+    from ofscraper.utils.config.naming_check import LIVE_TYPE_KEYS, type_name
+
+    others = ", ".join(sorted(
+        name for name, entry in config_data.get_type_options().items()
+        if entry and type_name(name) not in LIVE_TYPE_KEYS
+    ))
+    also = f" ({escape_text(others)}: as type_options sets)" if others else ""
+    return f"\nSaving files to [deep_sky_blue2]{escape_text(path)}[/deep_sky_blue2]{also}"
 
 
 async def downloader(username=None, model_id=None, posts=None, media=None, **kwargs):
@@ -76,6 +86,8 @@ async def downloader(username=None, model_id=None, posts=None, media=None, **kwa
             download_activity_str.format(username=username)
         )
         values = await download_process(username, model_id, media, posts=posts)
+        if dry_run.active():
+            return values
         if sites.is_fansly() and not stop.requested.is_set():
             await recheck_silent(username, model_id, kwargs.get("all_media") or media)
         return values
@@ -144,6 +156,10 @@ async def recheck_silent(username, model_id, all_media):
 
 @run_async
 async def download_process(username, model_id, medialist, posts):
+    if dry_run.active():
+        # no text files, no downloads, no duplicate removal: count only
+        await dry_run.record(username, [] if settings.get_settings().text_only else medialist)
+        return (0, 0, 0, 0, 0)
     values = await process_dicts(username, model_id, medialist, posts)
     # off the event loop: it hashes the files it is about to delete
     await asyncio.to_thread(remove_downloads_with_hashes, username, model_id)

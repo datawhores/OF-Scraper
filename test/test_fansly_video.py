@@ -226,7 +226,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(stream_mod, "set_profile_cache", noop)
     monkeypatch.setattr(dm, "after_download_script", noop)
     monkeypatch.setattr(dm, "skip_download_script", no_skip)
-    monkeypatch.setattr(dm.system, "check_free_size", lambda: True)
+    monkeypatch.setattr(dm.system, "check_free_size", lambda *a: True)
     ffmpeg_runs, ffmpeg_procs, ffmpeg_cwds, ffmpeg_timeouts = [], [], [], []
     if FFMPEG:
         monkeypatch.setattr(stream_mod, "get_ffmpeg", lambda: FFMPEG)
@@ -3096,3 +3096,49 @@ def test_dash_refreshed_signatures_do_not_invalidate_resume(resume_env, monkeypa
     refreshed = video.local_dash(mpd.replace('sig=old', 'sig=new'), 'https://cdn.example/m.mpd')
     parallel_run(e, refreshed)
     assert e.calls == [url for url, _ in refreshed[0].files[2:]]
+
+
+import sys as _sys
+
+# a child process that really crashes: Python turns a bad memory read into an
+# exception on Windows, so fail fast there
+CRASH = (
+    "import ctypes; ctypes.windll.kernel32.RaiseFailFastException(None, None, 0)"
+    if _sys.platform == "win32"
+    else "import faulthandler; faulthandler._sigsegv()"
+)
+
+
+@pytest.mark.parametrize(
+    "code,said",
+    [
+        # a crash (as a static ffmpeg does on some newer Linux systems)
+        (CRASH, "crashed ("),
+        ("import sys; sys.exit(3)", "exited with code 3 without a message"),
+        ("pass", "finished, but its output file is missing or empty"),
+    ],
+)
+def test_a_silent_ffmpeg_failure_says_how_it_ended(env, code, said):
+    import sys
+
+    temp = env.temp / "x.part"
+    cmd = [sys.executable, "-I", "-c", code]
+    with pytest.raises(Exception) as caught:
+        asyncio.run(stream_mod.FanslyStreamDownloadManager()._run_cmd(
+            cmd, temp, 60, "join the stream's segments"))
+    message = str(caught.value)
+    assert message.startswith(f"ffmpeg could not join the stream's segments: {sys.executable} ")
+    assert said in message
+
+
+def test_a_crash_after_a_message_says_both(env):
+    import sys
+
+    temp = env.temp / "x.part"
+    code = "import sys; sys.stderr.write('some last words\\n'); sys.stderr.flush(); " + CRASH
+    with pytest.raises(Exception) as caught:
+        asyncio.run(stream_mod.FanslyStreamDownloadManager()._run_cmd(
+            [sys.executable, "-I", "-c", code], temp, 60, "join the stream's segments"))
+    message = str(caught.value)
+    assert "crashed (" in message
+    assert "some last words" in message

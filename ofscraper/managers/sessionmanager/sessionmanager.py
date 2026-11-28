@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import sys
 import threading
 from contextlib import contextmanager
 import time
@@ -17,6 +18,7 @@ import tenacity
 import aiohttp
 from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_exception_type
 
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
 import ofscraper.managers.sessionmanager.refusing as refusing
@@ -880,7 +882,8 @@ class sessionManager:
                                 log.warning(
                                     "🚨 OnlyFans is currently undergoing maintenance! Aborting to prevent IP ban."
                                 )
-                                raise SystemExit("OnlyFans Maintenance detected.")
+                                print("OnlyFans Maintenance detected.", file=sys.stderr)
+                                raise SystemExit(exit_status.UNAVAILABLE)
 
                             r.raise_for_status()
 
@@ -1006,7 +1009,8 @@ class sessionManager:
                             self._log.warning(
                                 "🚨 OnlyFans is currently undergoing maintenance! Aborting to prevent IP ban."
                             )
-                            raise SystemExit("OnlyFans Maintenance detected.")
+                            print("OnlyFans Maintenance detected.", file=sys.stderr)
+                            raise SystemExit(exit_status.UNAVAILABLE)
                         r.raise_for_status()
                 except Exception as E:
                     if r is not None:

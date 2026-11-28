@@ -357,7 +357,8 @@ def install_session(monkeypatch, client, model_manager=None):
     )
 
 
-def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path):
+@pytest.mark.parametrize("use_model_id", [False, True])
+def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_settings, tmp_path, use_model_id):
     onlyfans_settings(live=True, usernames=["creator_a", "creator_d"])
     install_session(monkeypatch, Client(Response(200, {"isActive": False})))
 
@@ -367,6 +368,11 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
             {"id": 2, "username": "creator_b", "hasStream": True},
             {"id": 4, "username": "creator_d", "hasStream": True},
         ]])
+
+    if use_model_id:
+        import ofscraper.utils.config.file as config_file
+        monkeypatch.setattr(config_file, "open_config", lambda: {
+            "live_options": {"dir_format": "{sitename}/{model_id}/Livestreams"}})
 
     recorded = []
     reads = []
@@ -384,8 +390,8 @@ def test_live_records_each_selected_live_creator_once(monkeypatch, onlyfans_sett
     asyncio.run(live.run(False, asyncio.Event()))
     folder = tmp_path / "OnlyFans"
     assert sorted(recorded) == [
-        ("creator_a", folder / "creator_a" / "Livestreams", "s" * 30, "ffmpeg", False),
-        ("creator_d", folder / "creator_d" / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_a", folder / ("1" if use_model_id else "creator_a") / "Livestreams", "s" * 30, "ffmpeg", False),
+        ("creator_d", folder / ("4" if use_model_id else "creator_d") / "Livestreams", "s" * 30, "ffmpeg", False),
     ]
     assert len(reads) == 2  # auth.json is read for each recording
 
@@ -451,7 +457,7 @@ def test_a_missing_chromium_says_how_to_install_it(monkeypatch, onlyfans_setting
         return [{"accountId": 1, "username": "creator_a"}, {"accountId": 2, "username": "creator_b"}]
 
     def capture(**kwargs):
-        raise live_capture.BrowserMissing(live_capture.INSTALL_HINT)
+        raise live_capture.BrowserMissing(live_capture.install_hint())
 
     monkeypatch.setattr(live, "get_online_streams", online)
     monkeypatch.setattr(live_capture, "playwright_ready", lambda: True)
@@ -463,9 +469,14 @@ def test_a_missing_chromium_says_how_to_install_it(monkeypatch, onlyfans_setting
     assert len(warnings) == 1
 
 
-def test_without_playwright_it_says_how_to_install_and_records_nothing(monkeypatch, onlyfans_settings, caplog):
+@pytest.mark.parametrize("dist", ["ofscraper-community", "ofscraper"])
+def test_without_playwright_it_says_how_to_install_and_records_nothing(monkeypatch, onlyfans_settings, caplog, dist):
     import builtins
 
+    import ofscraper.__version__ as version
+
+    # the hint names the package that is installed: datawhores publishes "ofscraper"
+    monkeypatch.setattr(version, "__dist_name__", dist)
     onlyfans_settings(live=True)
     real_import = builtins.__import__
 
@@ -478,8 +489,77 @@ def test_without_playwright_it_says_how_to_install_and_records_nothing(monkeypat
     monkeypatch.setattr(manager, "Manager", None)  # never reached
     with caplog.at_level("WARNING", logger="shared"):
         asyncio.run(live.run(False, asyncio.Event()))
-    assert 'pip install "ofscraper-community[live]"' in caplog.text
+    assert f'pip install "{dist}[live]"' in caplog.text
     assert "playwright install chromium" in caplog.text
+
+
+@pytest.fixture
+def first_use(monkeypatch):
+    """Playwright and Chromium missing; installing them makes them present."""
+    from ofscraper.utils.system import extras
+
+    state = SimpleNamespace(playwright=False, chromium=False, calls=[], works=True)
+
+    def install(extra):
+        state.calls.append(extra)
+        state.playwright = state.works
+        return state.works
+
+    def install_chromium():
+        state.calls.append("chromium")
+        state.chromium = state.works
+        return state.works
+
+    monkeypatch.setattr(live_capture, "has_playwright", lambda: state.playwright)
+    monkeypatch.setattr(live_capture, "chromium_installed", lambda: state.chromium)
+    monkeypatch.setattr(extras, "install", install)
+    monkeypatch.setattr(extras, "install_chromium", install_chromium)
+    return state
+
+
+def test_the_first_run_installs_playwright_and_chromium(first_use):
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == ["live", "chromium"]
+
+
+def test_nothing_is_installed_when_both_are_there(first_use):
+    first_use.playwright = first_use.chromium = True
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == []
+
+
+def test_only_chromium_is_downloaded_when_playwright_is_there(first_use):
+    first_use.playwright = True
+    assert live_capture.playwright_ready() is True
+    assert first_use.calls == ["chromium"]
+
+
+def test_a_failed_install_says_how_to_install_and_records_nothing(first_use, caplog):
+    first_use.works = False
+    with caplog.at_level("WARNING", logger="shared"):
+        assert live_capture.playwright_ready() is False
+    assert "playwright install chromium" in caplog.text
+
+
+def test_the_standalone_download_is_not_told_to_pip_install(monkeypatch, onlyfans_settings, caplog):
+    import builtins
+    import sys
+
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    onlyfans_settings(live=True)
+    real_import = builtins.__import__
+
+    def no_playwright(name, *args, **kwargs):
+        if name.startswith("playwright"):
+            raise ImportError(name)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", no_playwright)
+    monkeypatch.setattr(manager, "Manager", None)  # never reached
+    with caplog.at_level("WARNING", logger="shared"):
+        asyncio.run(live.run(False, asyncio.Event()))
+    assert "standalone download" in caplog.text
+    assert "pip install" not in caplog.text
 
 
 def test_live_chat_is_fansly_only(monkeypatch, onlyfans_settings, caplog):
@@ -1573,3 +1653,33 @@ def test_failed_polls_warn_once_per_failure_streak(monkeypatch, onlyfans_setting
         "OnlyFans livestream check failed: network down",
         "OnlyFans livestream check failed: network down again",
     ]
+
+
+
+
+def test_live_options_and_type_options_override_onlyfans_path(monkeypatch, tmp_path):
+    import ofscraper.utils.config.file as config_file
+
+    when = datetime.datetime(2026, 11, 23, 8, 5, 9, tzinfo=datetime.timezone.utc)
+    cfg = {
+        "live_options": {
+            "save_location": str(tmp_path / "live_root"),
+            "dir_format": "{sitename}/streams/{model_username}",
+            "file_format": "rec_{model_username}_{date}",
+        },
+        "type_options": {},
+    }
+    monkeypatch.setattr(config_file, "open_config", lambda: cfg)
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "live_root" / "OnlyFans" / "streams" / "creator_a" / "rec_creator_a_20261123_080509.webm"
+    )
+
+    cfg["type_options"] = {
+        "livestreams": {
+            "save_location": str(tmp_path / "type_live"),
+            "dir_format": "{model_username}/VODs",
+        }
+    }
+    assert live.recording_path(tmp_path, "creator_a", when) == (
+        tmp_path / "type_live" / "creator_a" / "VODs" / "rec_creator_a_20261123_080509.webm"
+    )

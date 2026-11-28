@@ -380,7 +380,7 @@ def _main_download(
     monkeypatch.setattr(md.placeholder, "Placeholders", _Placeholder)
     seen, if_ranges, cached = [], [], []
     mgr = _manager(md.MainDownloadManager, cached)
-    mgr._downloadspace = lambda: None
+    mgr._downloadspace = lambda *a: None
 
     async def _get_data(ele):
         return saved
@@ -503,7 +503,7 @@ def test_drm_changed_file_same_size_starts_over(tmp_path, monkeypatch, mode, req
     monkeypatch.setattr(ad.placeholder, "tempFilePlaceholder", _Placeholder)
     seen, if_ranges, cached = [], [], []
     mgr = _manager(ad.AltDownloadManager, cached)
-    mgr._downloadspace = lambda: None
+    mgr._downloadspace = lambda *a: None
 
     async def _get_data(ele, item):
         return {"content-total": T, "content-type": "video/mp4", "validator": '"v1"'}

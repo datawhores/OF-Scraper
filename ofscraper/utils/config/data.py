@@ -11,11 +11,14 @@ r"""
 
 """
 
+import contextlib
+
 from ofscraper.utils.cache.safe_disk import SafeDisk, SafeJSONDisk
 from humanfriendly import InvalidSize, parse_size
 
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.config.utils.wrapper as wrapper
 
 # auto_update_config rebuilds config.json from these getters and writes it
@@ -37,9 +40,26 @@ def strip_path_quotes(val):
     return val
 
 
+# the paths _lookup() is asked for while this is a set: auto_update_config
+# uses it to tell an older name the getters read from a key nothing reads
+_reads = None
+
+
+@contextlib.contextmanager
+def _recording_reads():
+    global _reads
+    _reads = set()
+    try:
+        yield _reads
+    finally:
+        _reads = None
+
+
 def _lookup(config, path):
     """the value at a "key" or "section.key" path; a section that isn't a
     dict, e.g. a hand-edited null, counts as empty"""
+    if _reads is not None:
+        _reads.add(path)
     section, _, key = path.rpartition(".")
     if not section:
         return config.get(key)
@@ -97,7 +117,7 @@ def _truthy_value(config, env_key, *paths):
 def get_main_profile(config=None):
     if config is False:
         return of_env.getattr("PROFILE_DEFAULT")
-    value = config.get(of_env.getattr("mainProfile"))
+    value = _lookup(config, of_env.getattr("mainProfile"))
     return value or of_env.getattr("PROFILE_DEFAULT")
 
 
@@ -302,6 +322,16 @@ def get_post_script(config=None):
 
 
 @wrapper.config_reader
+def get_alert_script(config=None):
+    return _value(
+        config,
+        "ALERT_SCRIPT_DEFAULT",
+        "alert_script",
+        "script_options.alert_script",
+    )
+
+
+@wrapper.config_reader
 def get_naming_script(config=None):
     return _value(
         config,
@@ -371,7 +401,9 @@ def get_database_url_note(config=None):
 def get_metadata(config=None):
     if config is False:
         return of_env.getattr("METADATA_DEFAULT")
-    return config.get("metadata", of_env.getattr("METADATA_DEFAULT"))
+    if "metadata" not in config:
+        return of_env.getattr("METADATA_DEFAULT")
+    return _lookup(config, "metadata")
 
 
 @wrapper.config_reader
@@ -591,7 +623,7 @@ def get_part_file_clean(config=None):
     val = _first_set(config, "auto_resume", "download_options.auto_resume")
     if val is not None:
         return val
-    legacy_val = config.get("partfileclean")
+    legacy_val = _lookup(config, "partfileclean")
     if legacy_val is not None:
         return legacy_val is False
     return of_env.getattr("RESUME_DEFAULT")
@@ -673,11 +705,9 @@ def get_textType(config=None):
         "text_type_default",
         "file_options.text_type_default",
     )
-    return (
-        final_value
-        if isinstance(final_value, str) and final_value in {"letter", "word"}
-        else of_env.getattr("TEXT_TYPE_DEFAULT")
-    )
+    # "Word" is word; anything else falls back, and the startup rewrite of
+    # config.json then replaces it
+    return naming_check.text_type(final_value) or of_env.getattr("TEXT_TYPE_DEFAULT")
 
 
 @wrapper.config_reader
@@ -760,3 +790,56 @@ def get_verify_all_integrity(config=None):
         "verify_all_integrity",
         "download_options.verify_all_integrity",
     )
+
+
+@wrapper.config_reader
+def get_live_save_location(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.save_location")
+    return strip_path_quotes(val) if isinstance(val, str) else ""
+
+
+@wrapper.config_reader
+def get_live_dirformat(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.dir_format")
+    return val if isinstance(val, str) else ""
+
+
+@wrapper.config_reader
+def get_live_fileformat(config=None):
+    if not config:
+        return ""
+    val = _lookup(config, "live_options.file_format")
+    return val if isinstance(val, str) else ""
+
+
+TYPE_OPTION_FIELDS = ("save_location", "dir_format", "file_format")
+
+
+@wrapper.config_reader
+def get_type_options(config=None):
+    """{type: {field: value}} with only the fields an entry takes; an entry
+    that isn't an object is left out. What it reads is recorded, as
+    _lookup records, for the notes on what the rewrite of config.json drops."""
+    if not config:
+        return {}
+    raw = config.get("type_options")
+    if not isinstance(raw, dict):
+        return {}
+    cleaned = {}
+    for name, section in raw.items():
+        if not isinstance(section, dict):
+            continue
+        entry = {field: section[field] for field in TYPE_OPTION_FIELDS if isinstance(section.get(field), str)}
+        if "save_location" in entry:
+            entry["save_location"] = strip_path_quotes(entry["save_location"])
+        if _reads is not None:
+            # a field it takes is read even when it holds something else,
+            # which the rewrite then names as such
+            _reads.add(f"type_options.{name}")
+            _reads.update(f"type_options.{name}.{field}" for field in TYPE_OPTION_FIELDS if field in section)
+        cleaned[str(name)] = entry
+    return cleaned

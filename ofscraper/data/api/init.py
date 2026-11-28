@@ -157,7 +157,8 @@ def getstatus():
 def auth_status():
     """
     Returns (status, message). status is UP, DOWN (the auth was rejected) or
-    UNAVAILABLE (the auth couldn't be checked). message says why it couldn't
+    UNAVAILABLE (the auth couldn't be checked, including a 4xx other than 400
+    or 401, which is usually a block). message says why it couldn't
     be checked, for callers with no log to point to (a GUI dialog); it's None
     for UP and DOWN.
     """
@@ -179,8 +180,23 @@ def auth_status():
     except Exception as e:
         log.traceback_(e)
         log.traceback_(traceback.format_exc())
-        message = unavailable_message(e)
+        message = unavailable_message(e) or _refused_message(e)
         if message:
             log.error(message)
             return "UNAVAILABLE", message
         return "DOWN", None
+
+
+def _refused_message(e: Exception) -> str | None:
+    """Only 400 and 401 (the statuses the session treats as auth errors) say
+    the login is bad. Another 4xx on /me, such as a 403 from a firewall or a
+    ban, isn't fixed by new auth."""
+    from ofscraper.utils.checkers import http_status
+
+    status = http_status(e)
+    if status is None or not 400 <= status < 500 or status in (400, 401):
+        return None
+    return (
+        f"{_host(e)} refused the login check with {status}. That's usually a "
+        "block (a firewall, VPN or ban), not a rejected login."
+    )

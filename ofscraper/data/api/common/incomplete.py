@@ -15,6 +15,7 @@ import logging
 
 import arrow
 
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
@@ -60,6 +61,7 @@ def mark_incomplete(model_id, api, reason):
     """A page of this scan wasn't fetched."""
     _scans[_state_key(model_id, api)] = INCOMPLETE
     log.warning(f"{api}: scan stopped early: {reason}")
+    exit_status.record(exit_status.PARTIAL)
 
 
 def save_scan(model_id, api, after, username=None):

@@ -105,7 +105,7 @@ def _manager(cls):
     mgr._add_download_job_task = _noop
     mgr._remove_download_job_task = _noop
     mgr._total_change_helper = _noop
-    mgr._downloadspace = lambda: None
+    mgr._downloadspace = lambda *a: None
     mgr._get_data = _noop
     mgr._set_data = _noop
     return mgr

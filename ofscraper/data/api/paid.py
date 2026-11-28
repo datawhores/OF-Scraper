@@ -14,6 +14,7 @@ import logging
 import traceback
 
 import ofscraper.data.api.common.logs.strings as common_logs
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.managers.manager as manager
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
@@ -78,6 +79,7 @@ async def scrape_paid(c, username, offset=0):
                         f"Purchased scan for {username} stopped at offset {current_offset}: "
                         f"HTTP {r.status}. Purchases may be incomplete."
                     )
+                    exit_status.record(exit_status.PARTIAL)
                     break
 
                 data = await r.json_()
@@ -86,6 +88,7 @@ async def scrape_paid(c, username, offset=0):
                         f"Purchased scan for {username} stopped at offset {current_offset}: "
                         f"unexpected response format. Purchases may be incomplete."
                     )
+                    exit_status.record(exit_status.PARTIAL)
                     break
 
                 trace_progress_log(f"{API} individual requests", data)
@@ -117,6 +120,7 @@ async def scrape_paid(c, username, offset=0):
             )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+            exit_status.record(exit_status.PARTIAL)
             break
         finally:
             if task:
@@ -191,6 +195,7 @@ async def scrape_all_paid(c, offset=0, required=None):
                         f"Purchased scan (all models) stopped at offset {current_offset}: "
                         f"HTTP {r.status}. Purchases may be incomplete."
                     )
+                    exit_status.record(exit_status.PARTIAL)
                     break
 
                 data = await r.json_()
@@ -199,6 +204,7 @@ async def scrape_all_paid(c, offset=0, required=None):
                         f"Purchased scan (all models) stopped at offset {current_offset}: "
                         f"unexpected response format. Purchases may be incomplete."
                     )
+                    exit_status.record(exit_status.PARTIAL)
                     break
 
                 trace_progress_log(f"{API} all users requests", data)
@@ -234,6 +240,7 @@ async def scrape_all_paid(c, offset=0, required=None):
             )
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
+            exit_status.record(exit_status.PARTIAL)
             break
         finally:
             if task:

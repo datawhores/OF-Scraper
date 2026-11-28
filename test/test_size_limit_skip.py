@@ -142,7 +142,7 @@ def env(monkeypatch, tmp_path):
     for module in (md, stream_mod):
         monkeypatch.setattr(module, "set_profile_cache", _noop)
     monkeypatch.setattr(dm, "after_download_script", _noop)
-    monkeypatch.setattr(dm.system, "check_free_size", lambda: True)
+    monkeypatch.setattr(dm.system, "check_free_size", lambda *a: True)
     monkeypatch.setattr(filters.separate, "seperate_avatars", lambda m: m)
     yield SimpleNamespace(stub=stub, db=db, out=out_dir, temp=temp_dir)
     pool.shutdown(wait=True)
@@ -568,6 +568,7 @@ def action_script(env, monkeypatch, tmp_path):
     """The real after_download_action_script, with the script's run replaced:
     returns the media the script would get on stdin (#332)."""
     import ofscraper.managers.manager as manager
+    import ofscraper.scripts.after_action_script as action_runner
     import ofscraper.scripts.after_download_action_script as script_mod
 
     script = tmp_path / "script"
@@ -576,7 +577,7 @@ def action_script(env, monkeypatch, tmp_path):
     monkeypatch.setattr(manager, "Manager", SimpleNamespace(current_model_manager=SimpleNamespace(
         get_model=lambda username: {"username": username, "id": MODEL_ID})))
     sent = []
-    monkeypatch.setattr(script_mod, "run", lambda cmd, input=None, **k: sent.append(input))
+    monkeypatch.setattr(action_runner, "run", lambda cmd, input=None, **k: sent.append(input))
 
     def media(items):
         script_mod.after_download_action_script(USERNAME, items)

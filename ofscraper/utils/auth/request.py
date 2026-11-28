@@ -31,6 +31,9 @@ import ofscraper.managers.manager as manager
 
 curr_auth = None
 last_check = None
+# the last fetch: the source that gave the rule (None if none did), and
+# (source, reason) for each that didn't, for `ofscraper doctor --online`
+last_attempt = {"used": None, "failed": []}
 
 # tried in order when the chosen source fails or gives an unusable rule:
 # all three gave a rule OnlyFans accepted in a live check on 2026-11-19,
@@ -169,6 +172,8 @@ def get_request_auth():
                 + ")"
             )
         break
+    last_attempt["used"] = name if auth is not None else None
+    last_attempt["failed"] = [(s, failure_reason(err)) for s, err in failures]
     if auth is None:
         # not cached, so the next request tries again. The last error is
         # chained for the debug log's traceback
@@ -198,66 +203,34 @@ def get_request_auth_dynamic_rule_manual():
     return request_auth_helper_picker(content)
 
 
-def get_request_auth_generic():
-    logging.getLogger("shared").debug("getting new signature with generic")
+def _fetch_dynamic_rule(url_key, name):
+    logging.getLogger("shared").debug(f"getting new signature with {name}")
     with manager.Manager.session.get_session(
         retries=of_env.getattr("GIT_NUM_TRIES"),
         wait_min=of_env.getattr("GIT_MIN_WAIT"),
         wait_max=of_env.getattr("GIT_MAX_WAIT"),
     ) as c:
-
         with c.requests(
-            of_env.getattr("DYNAMIC_GENERIC_URL"),
+            of_env.getattr(url_key),
         ) as r:
             content = r.json_()
             return request_auth_helper_picker(content)
+
+
+def get_request_auth_generic():
+    return _fetch_dynamic_rule("DYNAMIC_GENERIC_URL", "generic")
 
 
 def get_request_auth_xagler():
-    logging.getLogger("shared").debug("getting new signature with xagler")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-
-        with c.requests(
-            of_env.getattr("XAGLER_URL"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
+    return _fetch_dynamic_rule("XAGLER_URL", "xagler")
 
 
 def get_request_auth_rafa():
-    logging.getLogger("shared").debug("getting new signature with rafa")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-
-        with c.requests(
-            of_env.getattr("RAFA_URL"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
+    return _fetch_dynamic_rule("RAFA_URL", "rafa")
 
 
 def get_request_auth_digitalcriminals():
-    logging.getLogger("shared").debug("getting new signature with digitalcriminals")
-
-    with manager.Manager.session.get_session(
-        retries=of_env.getattr("GIT_NUM_TRIES"),
-        wait_min=of_env.getattr("GIT_MIN_WAIT"),
-        wait_max=of_env.getattr("GIT_MAX_WAIT"),
-    ) as c:
-        with c.requests(
-            of_env.getattr("DIGITALCRIMINALS"),
-        ) as r:
-            content = r.json_()
-            return request_auth_helper_picker(content)
+    return _fetch_dynamic_rule("DIGITALCRIMINALS", "digitalcriminals")
 
 
 class UnusableDynamicRule(Exception):

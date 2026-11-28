@@ -141,10 +141,13 @@ def test_db_table_shows_filenames_and_paths_with_brackets(monkeypatch):
 def test_saving_files_to_line(monkeypatch, save, dirformat, filled):
     import ofscraper.commands.scraper.actions.download.download as download
     import ofscraper.utils.paths.common as common_paths
+    import ofscraper.utils.settings as settings
 
-    monkeypatch.setattr(common_paths, "get_save_location", lambda: save)
-    monkeypatch.setattr(download.config_data, "get_dirformat", lambda: dirformat)
-    monkeypatch.setattr(download.config_data, "get_fileformat", lambda: "{filename}.{ext}")
+    monkeypatch.setattr(settings, "get_settings", lambda: SimpleNamespace(site="onlyfans"))
+    monkeypatch.setattr(common_paths, "get_save_location", lambda *a, **k: save)
+    monkeypatch.setattr(download.config_data, "get_dirformat", lambda *a, **k: dirformat)
+    monkeypatch.setattr(download.config_data, "get_fileformat", lambda *a, **k: "{filename}.{ext}")
+    monkeypatch.setattr(download.config_data, "get_type_options", lambda *a, **k: {})
     con, buf = _console()
     con.print(download.save_path_str(username="alice", model_id=1))
     want = str(Path(save, filled, "{filename}.{ext}"))

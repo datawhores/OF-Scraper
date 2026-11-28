@@ -35,6 +35,10 @@ import ofscraper.utils.paths.common as common_paths
 # getter -> the config paths it reads ("section.key" for a nested key)
 GETTER_PATHS = {
     "get_main_profile": ["main_profile"],
+    "get_live_save_location": ["live_options.save_location"],
+    "get_live_dirformat": ["live_options.dir_format"],
+    "get_live_fileformat": ["live_options.file_format"],
+    "get_type_options": ["type_options"],
     "get_filesize_max": [
         "file_size_max",
         "download_options.file_size_max",
@@ -87,6 +91,10 @@ GETTER_PATHS = {
         "advanced_options.post_script",
         "scripts.post_script",
         "script_options.post_script",
+    ],
+    "get_alert_script": [
+        "alert_script",
+        "script_options.alert_script",
     ],
     "get_naming_script": [
         "naming_script",
@@ -319,6 +327,11 @@ EXPECTED_GETTERS = {
     "get_main_profile": (25, "13e26f74f27d2d82"),
     # a note, not a setting: the same text whatever the file holds
     "get_database_url_note": (166, "547aefc30f48fa7d"),
+    # added with live_options and type_options (#850)
+    "get_live_save_location": (31, "9f4c03d1961c2578"),
+    "get_live_dirformat": (31, "3a8ad22d76cefd20"),
+    "get_live_fileformat": (31, "ed12a60e2493a1df"),
+    "get_type_options": (25, "fd67cb0746bdf8e6"),
     "get_filesize_max": (712, "b813936078f849ae"),
     "get_filesize_min": (403, "fba4568c65171252"),
     "get_min_length": (403, "b6017c91205f6c89"),
@@ -336,6 +349,7 @@ EXPECTED_GETTERS = {
     "get_ssl_verify": (166, "eb0d01bd3b25af97"),
     "get_after_action_script": (403, "ad7fdaf7391c96f9"),
     "get_post_script": (736, "a9b5f1c70ee0e89b"),
+    "get_alert_script": (166, "477d11d9ed6f3c87"),
     "get_naming_script": (736, "81bb95241465f41a"),
     "get_skip_download_script": (736, "c11cf8e1d3e2c615"),
     "get_after_download_script": (736, "e3f2a5ce42744547"),
@@ -548,17 +562,19 @@ def _schema_results(path):
     return results
 
 
-# flat_legacy sets its key mode; the others take the default, now manual
+# flat_legacy sets its key mode; the others take the default, now manual;
+# every file gains script_options.alert_script (null) and empty live_options
+# and type_options sections (#850)
 EXPECTED_SCHEMA = {
-    "false": "25df51e4abe3c47b",
-    "empty": "25df51e4abe3c47b",
-    "empty:written": "25df51e4abe3c47b",
-    "flat_legacy": "384d63ec957bf2ed",
-    "flat_legacy:written": "384d63ec957bf2ed",
-    "nested_legacy": "757f497b89ca2989",
-    "nested_legacy:written": "757f497b89ca2989",
-    "explicit_falsy": "13578dd7de7e4174",
-    "explicit_falsy:written": "13578dd7de7e4174",
+    "false": "35bd9ee1a3fa4f7b",
+    "empty": "35bd9ee1a3fa4f7b",
+    "empty:written": "35bd9ee1a3fa4f7b",
+    "flat_legacy": "b6da9608989e30e0",
+    "flat_legacy:written": "b6da9608989e30e0",
+    "nested_legacy": "81b78ac7702b2dcd",
+    "nested_legacy:written": "81b78ac7702b2dcd",
+    "explicit_falsy": "31bc1335c206cae0",
+    "explicit_falsy:written": "31bc1335c206cae0",
 }
 
 

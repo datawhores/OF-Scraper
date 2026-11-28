@@ -27,6 +27,9 @@ class _Live:
     def update(self, layout, refresh=False):
         self.renderable = layout
 
+    def get_renderable(self):
+        return self.renderable
+
 
 @pytest.fixture
 def run(monkeypatch):

@@ -13,6 +13,7 @@ from ofscraper.commands.utils.strings import (
     data_str,
     progress_str,
 )
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
 
@@ -22,8 +23,15 @@ log = logging.getLogger("shared")
 def log_user_failure(username, error, what=None):
     """Say at normal output that a creator failed (#379); the full traceback
     stays at traceback level."""
+    from ofscraper.utils.checkers import LoginRejected, check_login_after_failure
+
+    if isinstance(error, LoginRejected):
+        raise error  # said already; it ends the pass, not just this creator
     what = f" {what}" if what else ""
     log.warning(f"[{username}]{what} failed: {type(error).__name__}: {error}")
+    exit_status.record(exit_status.PARTIAL)
+    # a 401 or 403 may mean the login was rejected: that stops the pass
+    check_login_after_failure(error)
 
 
 class CommandManager:
@@ -111,6 +119,9 @@ class CommandManager:
         progress_updater.activity.update_overall(advance=1, visible=True)
 
     def _data_helper(self, user):
+        import ofscraper.main.close.status_file as status_file
+
+        status_file.touch_heartbeat()
         avatar = user.avatar
         username = user.name
         active = user.active

@@ -67,71 +67,39 @@ async def get_all_expired_subscriptions(subscribe_count):
         return await process_task([scrape_subscriptions_disabled(c)])
 
 
-async def activeHelper(subscribe_count, c, *, strict=False):
-    # Blacklist/Reserved list logic check
-    if any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) or any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
-        ]
+async def _subscription_helper(c, list_keys, scrape_fn, *, strict=False):
+    reserved = [
+        of_env.getattr("OFSCRAPER_RESERVED_LIST"),
+        of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
+    ]
+    scoped = [of_env.getattr(key) for key in list_keys]
+    black_list = common.get_black_list_helper()
+    if any(x in black_list for x in reserved) or any(x in black_list for x in scoped):
+        return []
+    user_list = common.get_user_list_helper()
+    if all(x not in user_list for x in reserved) and all(
+        x not in user_list for x in scoped
     ):
         return []
-    if all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) and all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST"),
-            of_env.getattr("OFSCRAPER_ACTIVE_LIST_ALT"),
-        ]
-    ):
-        return []
+    return await process_task([scrape_fn(c, strict=strict)], strict=strict)
 
-    return await process_task([scrape_subscriptions_active(c, strict=strict)], strict=strict)
+
+async def activeHelper(subscribe_count, c, *, strict=False):
+    return await _subscription_helper(
+        c,
+        ("OFSCRAPER_ACTIVE_LIST", "OFSCRAPER_ACTIVE_LIST_ALT"),
+        scrape_subscriptions_active,
+        strict=strict,
+    )
 
 
 async def expiredHelper(subscribe_count, c, *, strict=False):
-    if any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) or any(
-        x in common.get_black_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
-        ]
-    ):
-        return []
-    if all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_RESERVED_LIST"),
-            of_env.getattr("OFSCRAPER_RESERVED_LIST_ALT"),
-        ]
-    ) and all(
-        x not in common.get_user_list_helper()
-        for x in [
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST"),
-            of_env.getattr("OFSCRAPER_EXPIRED_LIST_ALT"),
-        ]
-    ):
-        return []
-
-    return await process_task([scrape_subscriptions_disabled(c, strict=strict)], strict=strict)
+    return await _subscription_helper(
+        c,
+        ("OFSCRAPER_EXPIRED_LIST", "OFSCRAPER_EXPIRED_LIST_ALT"),
+        scrape_subscriptions_disabled,
+        strict=strict,
+    )
 
 
 async def process_task(generators, *, strict=False):

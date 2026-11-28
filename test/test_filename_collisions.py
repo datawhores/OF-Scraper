@@ -17,8 +17,9 @@ def _media(media_id):
 @pytest.fixture(autouse=True)
 def collision_mode(monkeypatch):
     mode = {"value": "media_id"}
+    # the real getter takes config= when settings build the default config
     monkeypatch.setattr(
-        action_paths.config_data, "get_filename_collision", lambda: mode["value"]
+        action_paths.config_data, "get_filename_collision", lambda *a, **k: mode["value"]
     )
     return mode
 
@@ -181,7 +182,7 @@ temp, target, media_id, gate = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.a
 sys.argv = sys.argv[:1]
 import ofscraper.main.open.load  # import order, as in conftest
 import ofscraper.commands.scraper.actions.utils.paths as ap
-ap.config_data.get_filename_collision = lambda: "media_id"
+ap.config_data.get_filename_collision = lambda *a, **k: "media_id"
 open(gate + f".ready{media_id}", "w").close()
 while not os.path.exists(gate):  # released together
     pass

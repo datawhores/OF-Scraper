@@ -112,6 +112,8 @@ def applies() -> bool:
         reason = "--users-first"
     elif getattr(s, "text_only", False):
         reason = "--text-only"
+    elif getattr(s, "dry_run", False):
+        reason = "--dry-run"
     else:
         reason = None
     if reason:
@@ -134,6 +136,7 @@ def ordered() -> bool:
 
 def areas_for(ele, username):
     """The areas to scan, in ``ORDER``, decided as the scan-first path does."""
+    post_area.log_inactive_subscription(ele, username)
     areas = post_area.site_post_areas()
     if post_area.skip_wall(ele):
         if any(a in areas for a in ("Timeline", "Labels")):
@@ -155,9 +158,43 @@ class Selector:
 
     def __init__(self, model_id, username):
         self.seen = set()
+        self.already_downloaded = 0  # media left out as already downloaded
         self.downloaded = filters.downloaded_media_ids(
             username=username, model_id=model_id
         )
+        # --skip-purchased-dupes, as filters.skip_purchased_copies: media
+        # ids with a non-Purchased copy this run, with any copy downloaded,
+        # and with a Purchased copy downloaded or chosen
+        self.skip_purchased = settings.skip_purchased_dupes()
+        self.elsewhere = set()
+        self.saved = set()
+        self.purchase_saved = set()
+        if self.skip_purchased and self.downloaded is not None:
+            self.saved = {media_id for media_id, _ in self.downloaded}
+            self.purchase_saved = {
+                media_id
+                for media_id, _ in filters.downloaded_purchased_pairs(
+                    username=username, model_id=model_id
+                )
+            }
+        self.purchase_chosen = set()
+        self.held = 0  # copies left out for a Purchased copy downloaded before
+
+    def _purchase_covers(self, item):
+        """Whether --skip-purchased-dupes leaves this copy out. Purchased is
+        scanned last, so the other copies of its media are already seen."""
+        if filters.is_purchased_copy(item):
+            if item.id in self.elsewhere | self.saved | self.purchase_chosen:
+                return True
+            self.purchase_chosen.add(item.id)
+            return False
+        first = item.id not in self.elsewhere
+        self.elsewhere.add(item.id)
+        # a Purchased copy downloaded before stands in for the first other copy
+        if first and item.id in self.purchase_saved:
+            self.held += filters.media_key(item) not in self.downloaded
+            return True
+        return False
 
     def select(self, posts):
         media = [m for post in posts for m in post.prepare_media_for_download()]
@@ -168,7 +205,10 @@ class Selector:
             if key in self.seen:
                 continue
             self.seen.add(key)
+            if self.skip_purchased and self._purchase_covers(item):
+                continue
             if self.downloaded is not None and key in self.downloaded:
+                self.already_downloaded += 1
                 continue
             out.append(item)
         if self.downloaded is not None:
@@ -465,6 +505,12 @@ async def _produce(run):
             except Exception as E:
                 # pages already queued still download; the next area runs
                 post_area.log_area_failure(run.username, area, E)
+        # only areas downloaded from reach the selector
+        filters.log_held_back(
+            run.username,
+            run.selector.held,
+            [area for area in areas if area in download_area],
+        )
     finally:
         await _write_locked_rows(run)
 
@@ -745,6 +791,10 @@ async def run(ele, c, collection=None):
             if (not ended or stop.requested.is_set()) and collection is None:
                 # a scan that was interrupted or failed isn't recorded as finished
                 labels_api.discard_finished_labels(model_id)
+        # pages are picked one at a time; say once what was left out
+        if run_.selector is not None:
+            run_.collection.left_out["already downloaded"] = run_.selector.already_downloaded
+        run_.collection.log_left_out()
         if not stopped:
             # videos saved without sound: check their audio again (silent.py)
             await recheck_silent(username, model_id, run_.collection.all_media)

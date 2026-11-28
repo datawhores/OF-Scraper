@@ -675,7 +675,12 @@ def test_logging_after_the_table_closes(monkeypatch):
                 app.query_one("#send_downloads_main").press()
                 await pilot.pause()
                 shared.info("while the table is open")
-                await pilot.pause()
+                # The log holds writes back until it has been laid out, which
+                # a busy machine can take more than one pause to do.
+                for _ in range(50):
+                    await pilot.pause()
+                    if console_log.lines:
+                        break
                 assert console_log.lines  # written, not just queued
             return console_log
 
@@ -767,6 +772,7 @@ def _media(media_id, post_id, date):
         mediatype="images",
         numeric_duration="N/A",
         responsetype="timeline",
+        modified_responsetype="Posts",
     )
 
 

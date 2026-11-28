@@ -66,6 +66,8 @@ Defined in `ofscraper/utils/of_env/values/` for compatibility, but not currently
 | <a id="databasefile"></a>`OFSC_DATABASE_FILE_NAME`<br>Key: `databaseFile` | **Default:** `'models.db'` · **Defined in:** `ofscraper/utils/of_env/values/path/files.py` |
 | <a id="requestauth"></a>`OFSC_REQUEST_AUTH_FILE_NAME`<br>Key: `requestAuth` | **Default:** `'request_auth.json'` · **Defined in:** `ofscraper/utils/of_env/values/path/files.py` |
 | <a id="max_text_worker"></a>`OFSC_MAX_TEXT_WORKER`<br>Key: `MAX_TEXT_WORKER` | **Default:** `30` · **Defined in:** `ofscraper/utils/of_env/values/path/length.py` |
+| <a id="normal_char_size_windows"></a>`NORMAL_CHAR_SIZE_WINDOWS` | **Default:** `2` · **Defined in:** `ofscraper/utils/of_env/values/path/bytes.py`<br>Windows path length is counted in UTF-16 units, 2 bytes each. |
+| <a id="special_char_size_windows"></a>`SPECIAL_CHAR_SIZE_WINDOWS` | **Default:** `4` · **Defined in:** `ofscraper/utils/of_env/values/path/bytes.py`<br>Windows path length is counted in UTF-16 units, 2 bytes each. |
 | <a id="initep"></a>`OFSC_API_INIT_EP`<br>Key: `initEP` | **Default:** `'https://onlyfans.com/api2/v2/init'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Initial API endpoint for session initialisation. |
 | <a id="subscriptionsep"></a>`OFSC_API_SUBSCRIPTIONS_EP`<br>Key: `subscriptionsEP` | **Default:** `'https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={}&limit=10&type=all&format=infinite'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Endpoint for all subscriptions. |
 | <a id="posturl"></a>`OFSC_POST_URL`<br>Key: `postURL` | **Default:** `'https://onlyfans.com/{}/{}'` · **Defined in:** `ofscraper/utils/of_env/values/url/url.py`<br>Base URL for a post on OnlyFans. |

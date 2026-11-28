@@ -28,6 +28,9 @@ class PostCollection:
         self.mode = mode
         # Internal dictionary to store posts, using post_id as the key for de-duplication
         self._posts_map = {}
+        self._left_out_logged = False
+        # reason -> media the final filters left out ("already downloaded")
+        self.left_out = {}
         log.info(f"Initialized PostCollection for {username}")
 
     @property
@@ -121,13 +124,17 @@ class PostCollection:
         log.info("Applying final 'download' mode filters to media list...")
         all_media = helpers.seperate_self(all_media)
         all_media = helpers.dupefiltermedia(all_media)
-        all_media = helpers.previous_download_filter(
+        all_media = helpers.skip_purchased_copies(
             all_media, username=self.username, model_id=self.model_id
         )
-        all_media = helpers.ele_count_filter(all_media)
+        all_media = helpers.previous_download_filter(
+            all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
+        )
+        all_media = helpers.ele_count_filter(all_media, username=self.username)
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for download.")
+        self.log_left_out()
         return all_media
 
     def get_media_for_metadata(self) -> list:
@@ -139,13 +146,41 @@ class PostCollection:
         log.info("Applying final 'metadata' mode filters to media list...")
         all_media = helpers.seperate_self(all_media)
         all_media = helpers.previous_download_filter(
-            all_media, username=self.username, model_id=self.model_id
+            all_media, username=self.username, model_id=self.model_id, left_out=self.left_out
         )
-        all_media = helpers.ele_count_filter(all_media)
+        all_media = helpers.ele_count_filter(all_media, username=self.username)
         all_media = helpers.final_media_sort(all_media)
 
         log.info(f"Returning {len(all_media)} final media items for metadata.")
+        self.log_left_out()
         return all_media
+
+    def log_left_out(self):
+        """Say once how many media were left out as already downloaded or by
+        the per-post filters (by setting), so a run that downloads less than
+        expected says why."""
+        if self._left_out_logged:
+            return
+        totals = {}
+        for post in self.posts:
+            for setting, count in (post.left_out or {}).items():
+                totals[setting] = totals.get(setting, 0) + count
+        downloaded = self.left_out.get("already downloaded", 0)
+        if not totals and not downloaded:
+            return
+        self._left_out_logged = True
+        reasons = [f"{count} by {setting}" for setting, count in totals.items()]
+        hint = ""
+        if downloaded:
+            reasons.insert(0, f"{downloaded} already downloaded")
+            if settings.get_settings().command == "metadata":
+                hint = " (--force-all updates their metadata too)"
+            else:
+                hint = " (--force-all downloads them again, or manual --url for one post)"
+        total = downloaded + sum(totals.values())
+        log.info(
+            f"[{self.username}] {total} media left out: {', '.join(reasons)}{hint}"
+        )
 
     def get_media_for_processing(self):
         if settings.get_settings().command == "metadata":
@@ -317,6 +352,15 @@ class PostCollection:
             self._posts_map[post_id] = post_object
 
         existing_post = self._posts_map[post_id]
+        # a post found in Purchased and in another area is that post, not a
+        # Purchased copy, whichever area was added first
+        # (--skip-purchased-dupes, filters.is_purchased_copy)
+        if (
+            isinstance(post_to_process, Post)
+            and post_to_process is not existing_post
+            and str(post_to_process.responsetype).lower() != "paid"
+        ):
+            existing_post.found_outside_purchased = True
 
         # Set eligibility flags
         if "like" in actions:

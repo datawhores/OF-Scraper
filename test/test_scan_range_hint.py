@@ -13,6 +13,7 @@ import ofscraper.data.api.messages as messages
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
 import ofscraper.prompts.promptConvert as prompt_convert
+import ofscraper.prompts.prompt_groups.actions as action_prompts
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.menu as menu
@@ -44,8 +45,12 @@ class Recorder:
         return [
             line
             for line in self.lines
-            if any(word in line.lower() for word in ("hint", "rescan", "--after"))
+            if not line.startswith("Setting ")
+            and any(word in line.lower() for word in ("hint", "rescan", "--after"))
         ]
+
+    def ranges(self):
+        return [line for line in self.lines if line.startswith("Setting ")]
 
 
 @pytest.fixture
@@ -68,6 +73,8 @@ def run(monkeypatch):
     # a fresh process: no prompt has chosen the actions yet
     monkeypatch.setattr(scan_range, "_menu", False)
     monkeypatch.setattr(scan_range, "_hint_shown", False)
+    monkeypatch.setattr(action_prompts, "_session_values", None)
+    monkeypatch.setattr(action_prompts, "_redownload_answered", False)
     monkeypatch.setattr(settings, "get_settings", lambda: state.settings)
     monkeypatch.setattr(settings, "get_args", lambda copy=False: state.settings)
     monkeypatch.setattr(settings, "update_args", lambda args: None)
@@ -132,7 +139,7 @@ def test_full_scan_shows_no_hint(run):
         module.time_log("user", 0)
 
     assert run.log.hints() == []
-    assert not any("--after" in line for line in run.log.lines)
+    assert not any("--after" in line for line in run.log.hints())
 
 
 @pytest.mark.parametrize("module", [archive, streams, messages])
@@ -227,7 +234,7 @@ def test_range_ends_now_without_before(run, module, area):
 
     start = arrow.get(YEAR_2000).format(of_env.getattr("API_DATE_FORMAT"))
     assert run.log.lines[0] == (
-        f"Setting {area} scan range for user from {start} to now"
+        f"Setting {area} scan range for user from {start} to now (full scan)"
     )
 
 
@@ -240,4 +247,85 @@ def test_range_ends_at_the_given_before(run, module):
     module.time_log("user", YEAR_2000)
 
     end = before.format(of_env.getattr("API_DATE_FORMAT"))
-    assert run.log.lines[0].endswith(f" to {end}")
+    assert run.log.lines[0].endswith(f" to {end} (full scan)")
+
+
+
+def test_range_says_a_partial_scan_starts_where_the_last_scan_left_off(run):
+    timeline.time_log("user", PARTIAL)
+
+    assert run.log.ranges() == [
+        "Setting timeline scan range for user from 2024-03-01 00:00:00 to now"
+        " (where the last scan left off)"
+    ]
+
+
+def test_range_says_the_start_came_from_after(run):
+    run.settings.after = arrow.get("2023-05-01")
+
+    for module in AREAS:
+        module.time_log("user", run.settings.after.float_timestamp)
+
+    assert [line.split(" from ")[1] for line in run.log.ranges()] == [
+        "2023-05-01 00:00:00 to now (--after)"
+    ] * 4
+
+
+def test_range_says_the_start_came_from_redownload(run):
+    # --redownload sets --after 2000 for the run
+    run.settings.redownload = True
+    run.settings.after = arrow.get("2000")
+
+    messages.time_log("user", YEAR_2000)
+
+    assert run.log.ranges()[0].endswith(" to now (--redownload)")
+
+
+def test_range_says_the_start_came_from_the_redownload_question(run, monkeypatch):
+    def checklist(message="", **kwargs):
+        if message.startswith("Action Menu"):
+            return "Download content from a user"
+        return True  # Yes to "Would you like to redownload all files"
+
+    monkeypatch.setattr(prompt_convert, "getChecklistSelection", checklist)
+    choices = iter(["action", "quit"])
+    monkeypatch.setattr(prompts, "main_prompt", lambda: next(choices, "quit"))
+
+    menu.main_menu_action()
+
+    assert run.log.ranges() == [
+        "Setting timeline scan range for user from 2024-03-01 00:00:00 to now"
+        " (the redownload question)"
+    ]
+
+
+def test_after_from_the_command_line_is_named_in_a_menu_run(run, monkeypatch):
+    # --after on the command line, then No to the redownload question
+    run.settings.after = arrow.get("2024-03-01")
+    choices = iter(["action", "quit"])
+    monkeypatch.setattr(prompts, "main_prompt", lambda: next(choices, "quit"))
+
+    menu.main_menu_action()
+
+    assert run.log.ranges()[0].endswith(" to now (--after)")
+
+
+def test_a_check_command_scan_is_a_full_scan(run):
+    # post_check and msg_check set after=0 themselves: no --after was given
+    import ofscraper.commands.check as check
+
+    check.set_after_check_mode()
+    timeline.time_log("user", 0)
+
+    assert run.log.ranges()[0].endswith(" to now (full scan)")
+
+
+def test_the_menu_check_table_is_a_full_scan(run):
+    # "Browse and pick media" never asks the redownload question
+    import ofscraper.commands.check as check
+
+    action_prompts._apply_action("Browse and pick media (check table)")
+    check.set_after_check_mode()
+    messages.time_log("user", 0)
+
+    assert run.log.ranges()[0].endswith(" to now (full scan)")

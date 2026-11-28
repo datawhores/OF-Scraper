@@ -72,6 +72,40 @@ def test_file_name_drops_strike_and_link_syntax(site):
     assert text_placeholder(post) == "was here"
 
 
+def test_file_name_keeps_a_fansly_entity_as_written(site):
+    # Fansly captions are plain text, not HTML: "&amp;" is what was typed.
+    # Only what a file name can't hold (";") comes off.
+    site("fansly")
+    post = fansly_post("Tom &amp; Jerry &lt;3 &#039;")
+    assert post.file_sanitized_text == "Tom &amp Jerry &lt3 &#039"
+    assert text_placeholder(post) == "Tom &amp Jerry &lt3 &#039"
+
+
+@pytest.mark.parametrize(
+    "caption,expected",
+    [
+        # Fansly captions aren't HTML: text between "<" and ">" is what was
+        # typed, so only the characters a file name can't hold (< > /) come off
+        ("I <3 you > me", "I 3 you me"),
+        ("a <b>bold</b> claim", "a bboldb claim"),
+        ("first<br>second", "firstbrsecond"),
+    ],
+)
+def test_file_name_keeps_fansly_text_between_angle_brackets(site, caption, expected):
+    site("fansly")
+    post = fansly_post(caption)
+    assert post.file_sanitized_text == expected
+    assert text_placeholder(post) == expected
+
+
+def test_file_name_still_reads_onlyfans_markup(site):
+    # OnlyFans captions are HTML: tags come off and a <br> separates words
+    site("onlyfans")
+    post = posts_.Post({"id": 3, "text": "I <b>love</b> it<br>so much"}, 1, "a creator", "timeline")
+    assert post.file_sanitized_text == "I love it so much"
+    assert text_placeholder(post) == "I love it so much"
+
+
 @pytest.mark.parametrize(
     "caption,expected",
     [
@@ -108,4 +142,6 @@ def test_onlyfans_text_is_unchanged(site):
     raw = r"\[c:blue\] \*hi\* ~~y~~"
     post = posts_.Post({"id": 3, "text": raw}, 1, "a creator", "timeline")
     assert post.text == raw
-    assert post.file_sanitized_text == r"\[cblue\] \hi\ ~~y~~"
+    # the codes stay; only what can't be in a file name goes, backslashes
+    # included (#739)
+    assert post.file_sanitized_text == "[cblue] hi ~~y~~"

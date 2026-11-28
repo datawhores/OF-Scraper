@@ -42,6 +42,10 @@ dependencies = [
   "win32-setctime~=1.2.1",
   "xxhash~=4.1.0",
   "pyyaml>=6.0.2",
+  # PostgreSQL (OFSC_DATABASE_URL), where psycopg has prebuilt wheels. Elsewhere
+  # (Windows on ARM, Android) the first run with the variable set installs it,
+  # or it's the `postgres` extra
+  "psycopg[binary,pool]>=3.3.9; sys_platform == 'darwin' or (sys_platform == 'win32' and platform_machine == 'AMD64') or (sys_platform == 'linux' and (platform_machine == 'x86_64' or platform_machine == 'aarch64' or platform_machine == 'ppc64le' or platform_machine == 'riscv64'))",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +64,7 @@ test = [
 docs = ["sphinx-argparse>=0.5.2,<0.7.0"]
 ffmpeg = ["pyffmpeg>=2.5.2.3.1"]
 # the optional PostgreSQL database (OFSC_DATABASE_URL)
-postgres = ["psycopg[binary,pool]>=3.3.9,<3.4"]
+postgres = ["psycopg[binary,pool]>=3.3.9"]
 # recording OnlyFans livestreams (a Chromium browser; then run: playwright install chromium)
 live = ["playwright>=1.40,<2"]
 
@@ -97,6 +101,7 @@ minversion = "6.0"
 addopts = "-ra -q"
 # a warning is a bug to fix or a filter to justify here
 filterwarnings = ["error"]
+pythonpath = [".", "test"]
 testpaths = ["test"]
 # test/legacy targets the pre-3.12 module layout and no longer imports
 norecursedirs = ["legacy"]

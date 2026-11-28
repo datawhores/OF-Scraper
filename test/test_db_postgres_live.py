@@ -324,6 +324,23 @@ def test_tables_with_one_of_the_columns_get_the_other(pg):
     assert set(others.get_schema_changes(**CREATOR)) == set(ALL_FLAGS)
 
 
+def test_a_stories_table_made_before_the_highlight_column_gets_it(pg):
+    # #728: the highlight a story came from
+    start()
+    run_sql("INSERT INTO stories (post_id, text, model_id) VALUES (7, 'old', ?)", (ONE,))
+    run_sql("ALTER TABLE stories DROP COLUMN highlight_id")
+    run_sql("DELETE FROM schema_flags WHERE flag_name = 'stories_highlight_id'")
+    postgres.POSTGRES.shutdown()
+
+    start()
+
+    assert set(others.get_schema_changes(**CREATOR)) == set(ALL_FLAGS)
+    with psycopg.connect(URL) as conn:
+        assert conn.execute(
+            f"SELECT post_id, text, highlight_id FROM {pg}.stories"
+        ).fetchall() == [(7, "old", None)]
+
+
 def test_two_programs_bringing_the_tables_up_to_date_at_once_both_succeed(pg, no_wait):
     import concurrent.futures
 

@@ -346,7 +346,7 @@ def on_postgres(database_url, creator, site=None, apply=False, to=None, path_roo
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__.split("\n\n")[0])
     parser.add_argument("database", type=Path, nargs="?", help="One creator's user_data.db")
     parser.add_argument("--apply", action="store_true", help="Move the files and change the rows; without it, only report")
     parser.add_argument("--to", metavar="NAME", help="The recorded name whose folder the files go to (default: the name seen last)")
@@ -356,25 +356,7 @@ def main(argv=None):
     parser.add_argument("--creator", metavar="NAME", help="With --postgres, the one creator to work on, by a username or id that no other creator has")
     args = parser.parse_args(argv)
 
-    # Only this command's own environment says where PostgreSQL is: the
-    # scraper's settings and env files aren't read
-    database_url = os.environ.get(postgres.URL_KEY, "").strip()
-    if args.postgres:
-        if args.database:
-            parser.error("give a user_data.db or --postgres, not both")
-        if not database_url:
-            parser.error(
-                f"--postgres needs {postgres.URL_KEY} set in the environment this is run in"
-                " (an env file of the scraper's isn't read); see POSTGRESQL.md"
-            )
-        if not args.creator:
-            parser.error("--postgres needs --creator: the one creator to work on, by username or id")
-    elif args.site is not None or args.creator is not None:
-        parser.error("--site and --creator go with --postgres; with a file, give that creator's user_data.db")
-    elif not args.database:
-        parser.error("the following arguments are required: database, or --postgres")
-    elif database_url:
-        print(f"warning: {FILES_NOTICE}", file=sys.stderr)
+    database_url = sibling.validate_db_args(parser, args, FILES_NOTICE)
 
     try:
         if args.postgres:

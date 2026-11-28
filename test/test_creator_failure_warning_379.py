@@ -389,7 +389,7 @@ def scrape_areas(monkeypatch, failing, free_min=0):
     )
     monkeypatch.setattr(post.settings, "get_settings", lambda: run_settings)
     monkeypatch.setattr(post.free.settings, "get_settings", lambda: run_settings)
-    monkeypatch.setattr(post.free, "get_free", lambda: 10)
+    monkeypatch.setattr(post.free, "get_free", lambda *a: 10)
     ele = SimpleNamespace(name="first", active=True)
     return asyncio.run(post.process_tasks(1, "first", ele))
 
@@ -423,9 +423,10 @@ def test_every_failed_area_is_named(logs, monkeypatch):
 def test_free_space_stop_is_shown_for_each_area(logs, monkeypatch):
     # the free-space check runs before an area's own error handling
     scrape_areas(monkeypatch, failing=set(), free_min=100)
+    # and the alert that someone needs to free space, once for the run
     assert warning_messages(logs) == sorted(
-        f"[first] {area} failed: Exception: Space min has been reached"
-        for area in AREAS
+        [f"[first] {area} failed: Exception: Space min has been reached" for area in AREAS]
+        + ["Alert: The free-space limit was reached; downloads stopped"]
     )
 
 

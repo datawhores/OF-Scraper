@@ -434,17 +434,20 @@ def get_media_post_ids_downloaded(
     conn=None,
     model_only=False,
     without_permanent_skips=False,
+    purchased_only=False,
     **kwargs,
 ) -> list:
     """Every creator's rows in the database (the list for "unique media
     across all models"), or with model_only the rows of model_id;
     without_permanent_skips leaves out the permanent skip_download_script
-    skips (#354)."""
+    skips (#354); purchased_only keeps the rows saved from Purchased."""
     query, params = allPostIDDLCheck, []
     if model_only:
         query, params = query + " and model_id=(?)", [model_id]
     if without_permanent_skips:
         query += " and (skip_permanent IS NULL OR skip_permanent <> TRUE)"
+    if purchased_only:
+        query += " and LOWER(api_type)='paid'"
     with contextlib.closing(conn.cursor()) as cur:
         cur.execute(query, params)
         return [(dict(row)["media_id"], dict(row)["post_id"]) for row in cur.fetchall()]

@@ -43,6 +43,7 @@ from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
 from ofscraper.filters.media.filters import undated_first
 from ofscraper.classes.table.utils.post_metrics import build_post_centric_rows
+from ofscraper.classes.placeholder import media_type_keys
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_files_downloaded,
@@ -524,9 +525,7 @@ def post_checker():
     start_helper()
 
 
-@run
-@stop.fetching
-async def post_check_runner():
+async def _run_check(retriever):
     with (
         progress_utils.setup_live("api"),
         progress_utils.TemporaryTaskState(progress_updater.activity),
@@ -536,7 +535,7 @@ async def post_check_runner():
             model_id,
             final_post_array,
             skip_update,
-        ) in post_check_retriver():
+        ) in retriever():
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array,
@@ -545,6 +544,12 @@ async def post_check_runner():
                 skip_update=skip_update,
             )
             await row_gather(user_name, model_id)
+
+
+@run
+@stop.fetching
+async def post_check_runner():
+    await _run_check(post_check_retriver)
 
 
 @run
@@ -859,24 +864,7 @@ def message_checker():
 @run
 @stop.fetching
 async def message_checker_runner():
-    with (
-        progress_utils.setup_live("api"),
-        progress_utils.TemporaryTaskState(progress_updater.activity),
-    ):
-        async for (
-            user_name,
-            model_id,
-            final_post_array,
-            skip_update,
-        ) in message_check_retriver():
-            await process_post_media(user_name, model_id, final_post_array)
-            await make_changes_to_content_tables(
-                final_post_array,
-                model_id=model_id,
-                username=user_name,
-                skip_update=skip_update,
-            )
-            await row_gather(user_name, model_id)
+    await _run_check(message_check_retriver)
 
 
 async def message_check_retriver(forced=False, only_model_id=None):
@@ -984,24 +972,7 @@ def purchase_checker():
 @run
 @stop.fetching
 async def purchase_checker_runner():
-    with (
-        progress_utils.setup_live("api"),
-        progress_utils.TemporaryTaskState(progress_updater.activity),
-    ):
-        async for (
-            user_name,
-            model_id,
-            final_post_array,
-            skip_update,
-        ) in purchase_check_retriver():
-            await process_post_media(user_name, model_id, final_post_array)
-            await make_changes_to_content_tables(
-                final_post_array,
-                model_id=model_id,
-                username=user_name,
-                skip_update=skip_update,
-            )
-            await row_gather(user_name, model_id)
+    await _run_check(purchase_check_retriver)
 
 
 @run
@@ -1327,6 +1298,8 @@ async def row_gather(username, model_id):
                 # not columns; where the file went, if it was downloaded
                 "directory": directory,
                 "filename": filename,
+                # what its type_options entry is looked up by, as a download does
+                "type_keys": media_type_keys(ele),
             }
         )
 

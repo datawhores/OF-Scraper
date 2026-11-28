@@ -310,77 +310,40 @@ class Media(base.base):
             self._media.get("files", {}).get("drm", {}).get("manifest", {}).get("hls")
         )
 
-    @property
-    def policy(self):
+    def _drm_signature(self, kind, field):
         if self.url:
             return None
         return (
             self._media.get("files", {})
             .get("drm", {})
             .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Policy")
+            .get(kind, {})
+            .get(field)
         )
+
+    @property
+    def policy(self):
+        return self._drm_signature("dash", "CloudFront-Policy")
 
     @property
     def hls_policy(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Policy")
-        )
+        return self._drm_signature("hls", "CloudFront-Policy")
 
     @property
     def keypair(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Key-Pair-Id")
-        )
+        return self._drm_signature("dash", "CloudFront-Key-Pair-Id")
 
     @property
     def hls_keypair(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Key-Pair-Id")
-        )
+        return self._drm_signature("hls", "CloudFront-Key-Pair-Id")
 
     @property
     def signature(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("dash", {})
-            .get("CloudFront-Signature")
-        )
+        return self._drm_signature("dash", "CloudFront-Signature")
 
     @property
     def hls_signature(self):
-        if self.url:
-            return None
-        return (
-            self._media.get("files", {})
-            .get("drm", {})
-            .get("signature", {})
-            .get("hls", {})
-            .get("CloudFront-Signature")
-        )
+        return self._drm_signature("hls", "CloudFront-Signature")
 
     @property
     def hls_header(self):
@@ -399,9 +362,7 @@ class Media(base.base):
 
     @property
     def file_text(self):
-        text = self.get_text()
-        text = self.file_cleanup(text)
-        text = self.text_trunicate(text)
+        text = self.text_trunicate(self.get_text())
         if not text:
             return str(self.id)
         return text
@@ -446,8 +407,8 @@ class Media(base.base):
             filename = re.sub("_[a-z0-9]+$", "", filename)
 
         try:
+            # file_cleanup puts in space_replacer
             filename = self.file_cleanup(filename)
-            filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
             log.debug(f"Error cleaning filename: {e}")
         return filename
@@ -603,14 +564,25 @@ class Media(base.base):
         self._log = val
 
     def get_text(self):
+        """The text for a file name, cleaned once. Cleaning the post's
+        cleaned caption a second time turned a "-" space_replacer into "_",
+        so the caption was no longer cut at textlength words."""
         # an undated item falls back to 0 (1970), as its file name does
         if self.responsetype != "Profile":
             date_str = arrow.get(self.date or 0).format(data.get_date())
-            text = self._post.file_sanitized_text or self.filename or date_str
-        else:
-            date_str = arrow.get(self.date or 0).format()
-            text = f"{date_str} {self.text or self.filename}"
-        return text
+            post = self._post
+            if not post.text:
+                # no caption: the post id, as before
+                return post.file_sanitized_text
+            caption = post.file_cleanup(post.text)
+            # a caption that cleans to nothing, or only to spaces (or the
+            # space_replacer that stands for them), names nothing
+            sep = base.settings.get_settings().space_replacer or " "
+            if caption.replace(sep, "").strip():
+                return caption
+            return self.file_cleanup(self.filename or date_str)
+        date_str = arrow.get(self.date or 0).format()
+        return self.file_cleanup(f"{date_str} {self.text or self.filename}")
 
     @async_cached_property
     async def _video_adaptation_set(self):
@@ -758,8 +730,8 @@ class Media(base.base):
             filename = f"{filename}_{quality_placeholder}"
 
         try:
+            # file_cleanup puts in space_replacer
             filename = self.file_cleanup(filename)
-            filename = re.sub(" ", data.get_spacereplacer(), filename)
         except Exception as e:
             log.debug(f"Error creating final filename: {e}")
 

@@ -175,8 +175,12 @@ def with_media_id(path, media_id, n=1):
 def _candidates(path, media_id):
     yield path
     for n in range(1, MAX_CANDIDATES):
+        candidate = with_media_id(path, media_id, n)
+        if not getattr(settings.get_settings(), "trunicate", True):
+            yield candidate  # --original: left whole, like the name it clashed with
+            continue
         # a trailing _<digits> survives truncation, but check the result anyway
-        yield pathlib.Path(path_utils.truncate(with_media_id(path, media_id, n)))
+        yield pathlib.Path(path_utils.truncate(candidate))
 
 
 def _same_content(a, b):
@@ -251,12 +255,18 @@ def setDirectoriesDate(log=None):
     output = set()
     # resolved the same way as dirSet so is_relative_to compares like with like
     # (resolve() can turn a mapped drive letter into a UNC path)
-    rootDir = _resolve(common_paths.get_save_location())
+    # every save location: save_location and the live_options and
+    # type_options ones; a folder is dated up to the one it's under
+    roots = [_resolve(root) for root in common_paths.get_save_locations().values()]
     log.debug(f"Original DirSet {list(common_globals.dirSet)}")
-    log.debug(f"rootDir {rootDir}")
+    log.debug(f"roots {roots}")
 
     for ele in common_globals.dirSet:
         output.add(ele)
+        under = [root for root in roots if pathlib.PurePath(ele).is_relative_to(root)]
+        if not under:
+            continue
+        rootDir = max(under, key=lambda root: len(root.parts))
         try:
             while not os.path.samefile(ele, rootDir) and not os.path.samefile(
                 ele.parent, rootDir

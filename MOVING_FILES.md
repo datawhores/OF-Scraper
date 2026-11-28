@@ -9,12 +9,14 @@ The command is offline: it does not contact OnlyFans or Fansly, and it does not 
 1. Close the scraper.
 2. Preview what would move (nothing is changed without `--apply`):
    ```sh
-   python -m ofscraper.commands.move_creator_files "<profile>/.data/<model_id>/user_data.db"
+   ofscraper move_creator_files "<profile>/.data/<model_id>/user_data.db"
    ```
 3. Apply the move:
    ```sh
-   python -m ofscraper.commands.move_creator_files "<profile>/.data/<model_id>/user_data.db" --apply
+   ofscraper move_creator_files "<profile>/.data/<model_id>/user_data.db" --apply
    ```
+
+`python -m ofscraper.commands.move_creator_files` also works.
 
 The JSON report includes:
 
@@ -26,7 +28,7 @@ The JSON report includes:
 
 ## How it decides what to move
 
-- **Target name:** Uses the name the scraper saw last (`scripts/creator_names.py --all` lists the names and their dates). If the names have no dates and there is more than one, the command asks for `--to NAME`. `--to` must be a name the database records for the creator.
+- **Target name:** Uses the name the scraper saw last (`ofscraper creator_names --all` lists the names and their dates). If the names have no dates and there is more than one, the command asks for `--to NAME`. `--to` must be a name the database records for the creator.
 - **Matching folders:** A recorded folder is moved when exactly one part of its path is one of the creator's other names (in small letters, as the scraper writes it), followed by one or two of the scraper's own folders (`Posts`, `Images`). That part becomes the new name.
   - A library laid out by ID has no name in its paths, so there is nothing to do.
   - A folder above the library that only has the same name (your own user folder, say) is not followed by those folders, so its files are left and listed.

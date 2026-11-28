@@ -102,7 +102,7 @@ def test_network_and_server_errors_do_not_ask_for_auth(
     assert message in str(raised.value)
 
 
-@pytest.mark.parametrize("status", [400, 401, 403])
+@pytest.mark.parametrize("status", [400, 401])
 def test_rejected_auth_still_asks_for_auth(fail_auth_check, caplog, status):
     fail_auth_check(_status_error(status))
     with caplog.at_level(logging.INFO, logger="shared"):
@@ -112,6 +112,14 @@ def test_rejected_auth_still_asks_for_auth(fail_auth_check, caplog, status):
     assert "Auth Failed" in caplog.text
     assert "Couldn't reach" not in caplog.text
     assert "the server had an error" not in caplog.text
+
+
+def test_blocked_auth_check_doesnt_ask_for_auth(fail_auth_check):
+    # a 403 on /me is usually a firewall or ban; new auth doesn't fix it
+    fail_auth_check(_status_error(403))
+    with pytest.raises(checkers.AuthCheckUnavailable) as raised:
+        checkers.check_auth()
+    assert "refused the login check with 403" in str(raised.value)
 
 
 class InterruptWhenIdle(queue.Queue):

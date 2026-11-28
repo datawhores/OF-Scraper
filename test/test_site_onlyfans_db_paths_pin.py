@@ -79,8 +79,8 @@ FLAGS = [
     "others_model_id_constraint_added", "posts_is_deleted", "posts_mentions", "posts_model_id",
     "posts_model_id_constraint_added", "posts_opened", "posts_pinned", "posts_purchase_type",
     "posts_stream", "products_model_id", "products_model_id_constraint_added",
-    "profile_username_constraint_modified", "profiles_seen_at", "stories_model_id",
-    "stories_model_id_constraint_added",
+    "profile_username_constraint_modified", "profiles_seen_at", "stories_highlight_id",
+    "stories_model_id", "stories_model_id_constraint_added",
 ]
 # when the run starts on the creator: the name is seen then (#643)
 STARTED = "2024-07-01T12:00:00+00:00"
@@ -122,7 +122,7 @@ EXPECTED_ROWS = {
         [(1, 12345, "pinmodel", STARTED, STARTED)],
     ),
     "schema_flags": (["flag_name", "flag_value"], [(f, "1") for f in FLAGS]),
-    "stories": (POST_COLS, []),
+    "stories": (POST_COLS + ["highlight_id"], []),
 }
 
 
@@ -209,7 +209,8 @@ def path_env(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize("cls", ["Placeholders", "Textholders"])
 def test_onlyfans_media_dir_is_unchanged(path_env, cls):
-    ele = SimpleNamespace(username=USERNAME, model_id=MODEL_ID)
+    ele = SimpleNamespace(username=USERNAME, model_id=MODEL_ID,
+                          responsetype="Timeline", modified_responsetype="Timeline", mediatype="Videos")
     holder = getattr(placeholder, cls)(ele, "mp4")
     path = asyncio.run(holder.getmediadir(create=False))
     assert pathlib.Path(path) == path_env / "data" / USERNAME / "Timeline" / "Videos"
@@ -330,3 +331,11 @@ def test_onlyfans_run_keeps_every_area(onlyfans, monkeypatch):
     monkeypatch.setattr(post.progress_utils, "setup_live", lambda *a, **k: contextlib.nullcontext())
     asyncio.run(post.process_tasks(MODEL_ID, USERNAME, SimpleNamespace(active=True)))
     assert sorted(called) == sorted(names + ["profile"])
+
+
+def test_saving_files_message_names_the_type_options_entries(path_env, monkeypatch):
+    monkeypatch.setattr(download.config_data, "get_type_options", lambda *a, **k: {
+        "videos": {"save_location": "elsewhere"}, "livestreams": {"dir_format": "x"}, "text": {}})
+    shown = download.save_path_str(USERNAME, MODEL_ID)
+    # only entries that change where downloads go
+    assert shown.endswith("(videos: as type_options sets)")

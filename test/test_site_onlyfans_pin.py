@@ -119,10 +119,15 @@ SECTION_KEYS = {
                          "infinite_loop_action_mode", "logs_expire_time", "remove_hash_match",
                          "rotate_logs", "sanitize_text", "skip_unavailable_content", "ssl_verify",
                          "temp_dir"],
-    "script_options": ["after_action_script", "after_download_script", "naming_script",
-                       "post_script", "skip_download_script"],
+    # alert_script was added on purpose (plan 15): runs when something needs a person
+    "script_options": ["after_action_script", "after_download_script", "alert_script",
+                       "naming_script", "post_script", "skip_download_script"],
     "responsetype": ["archived", "highlights", "message", "paid", "pinned", "profile", "stories",
                      "streams", "timeline"],
+    # live_options and type_options were added on purpose (#850): path
+    # overrides for livestream recordings and for each media type
+    "live_options": ["dir_format", "file_format", "save_location"],
+    "type_options": [],
 }
 
 
@@ -142,4 +147,5 @@ def test_existing_config_is_written_back_unchanged():
         "main_profile", "metadata", "discord", "file_options", "download_options",
         "binary_options", "cdm_options", "performance_options",
         "content_filter_options", "advanced_options", "script_options", "responsetype",
+        "live_options", "type_options",
     }

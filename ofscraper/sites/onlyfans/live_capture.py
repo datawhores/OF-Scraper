@@ -28,6 +28,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -35,9 +36,25 @@ log = logging.getLogger("shared")
 
 INSTALL_HINT = (
     'OnlyFans livestreams are recorded with a Chromium browser. Install it with: '
-    'pip install "ofscraper-community[live]" (or uv/pipx the same way), then '
+    'pip install "{dist}[live]" (or uv/pipx the same way), then '
     "playwright install chromium"
 )
+
+
+FROZEN_HINT = (
+    "OnlyFans livestreams are recorded with a Chromium browser, which the "
+    "standalone download doesn't include: use the pip, uv or pipx install to "
+    "record them."
+)
+
+
+def install_hint() -> str:
+    """INSTALL_HINT for the installed package (datawhores publishes it as ``ofscraper``)."""
+    if getattr(sys, "frozen", False):
+        return FROZEN_HINT  # pip can't add a package to the standalone download
+    from ofscraper.__version__ import __dist_name__
+
+    return INSTALL_HINT.format(dist=__dist_name__)
 
 DRAIN_SECONDS = 5
 LIVE_CHECK_SECONDS = 60
@@ -306,12 +323,40 @@ def browser_proxy(proxy: str) -> dict:
     return {"server": server, "username": unquote(u.username), "password": unquote(u.password or "")}
 
 
-def playwright_ready() -> bool:
-    """Whether Playwright is installed; logs how to install it when it isn't."""
+def has_playwright() -> bool:
     try:
         import playwright.sync_api  # noqa: F401
     except ImportError:
-        log.warning(INSTALL_HINT)
+        return False
+    return True
+
+
+def chromium_installed() -> bool:
+    """Whether Playwright's Chromium has been downloaded. Not inside an asyncio loop."""
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            return os.path.exists(p.chromium.executable_path)
+    except Exception as e:
+        log.debug(f"couldn't find Playwright's Chromium: {e}")
+        return False
+
+
+def playwright_ready() -> bool:
+    """Whether Playwright and its Chromium are installed.
+
+    On first use, installs whichever is missing (``OFSC_INSTALL_EXTRAS``);
+    otherwise logs how to install them. Not inside an asyncio loop: Playwright's
+    sync API refuses to start there.
+    """
+    from ofscraper.utils.system import extras
+
+    if not (has_playwright() or (extras.install("live") and has_playwright())):
+        log.warning(install_hint())
+        return False
+    if not (chromium_installed() or (extras.install_chromium() and chromium_installed())):
+        log.warning(install_hint())
         return False
     return True
 
@@ -510,7 +555,7 @@ def launch(p, profile: str, auth: dict, proxy=None):
         ctx = p.chromium.launch_persistent_context(**kwargs)
     except Exception as e:
         if "executable doesn't exist" in str(e).lower() or "playwright install" in str(e).lower():
-            raise BrowserMissing(INSTALL_HINT) from e
+            raise BrowserMissing(install_hint()) from e
         raise
     ctx.add_cookies(login_cookies(auth))
     script = xbc_script(auth)

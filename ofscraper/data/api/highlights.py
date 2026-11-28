@@ -15,6 +15,7 @@ from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
+import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.logs.strings as common_logs
 
 import ofscraper.utils.of_env.of_env as of_env
@@ -50,6 +51,7 @@ async def scrape_stories(c, user_id):
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
                 log.debug(f"Stories API Error: {r.status} for {url}")
+                incomplete.mark_incomplete(user_id, API_S, f"HTTP {r.status}")
                 return
             stories = await r.json_()
             stories = stories if isinstance(stories, list) else []
@@ -58,6 +60,7 @@ async def scrape_stories(c, user_id):
     except Exception as E:
         log.traceback_(E)
         log.traceback_(traceback.format_exc())
+        incomplete.mark_incomplete(user_id, API_S, f"{type(E).__name__}: {E}")
     finally:
         if task:
             progress_utils.api.remove_job_task(task)
@@ -144,7 +147,7 @@ async def scrape_highlight_list(c, user_id, offset=0):
             async with c.requests_async(url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Highlights List API Error: {r.status} for {url}")
-
+                    incomplete.mark_incomplete(user_id, API_H, f"HTTP {r.status}")
                     break
                 resp_data = await r.json_()
                 data = get_highlightList(resp_data)
@@ -156,6 +159,7 @@ async def scrape_highlight_list(c, user_id, offset=0):
                 current_offset += len(data)
         except Exception as E:
             log.traceback_(E)
+            incomplete.mark_incomplete(user_id, API_H, f"{type(E).__name__}: {E}")
             break
         finally:
             if task:
@@ -170,15 +174,22 @@ async def scrape_highlights_from_list(c, id):
         async with c.requests_async(url=url) as r:
             if not (200 <= r.status < 300):
                 log.debug(f"Highlights API Error: {r.status} for {url}")
+                incomplete.mark_incomplete(None, API_H, f"highlight {id}: HTTP {r.status}")
                 return
             resp_data = await r.json_()
             stories = (
                 resp_data.get("stories", []) if isinstance(resp_data, dict) else []
             )
+            # a story doesn't name its highlight: keep the one it was asked
+            # for under, for the stories table (#728)
+            stories = [
+                dict(story, highlightId=id) for story in stories if isinstance(story, dict)
+            ]
             if stories:
                 yield stories
     except Exception as E:
         log.traceback_(E)
+        incomplete.mark_incomplete(None, API_H, f"highlight {id}: {type(E).__name__}: {E}")
     finally:
         if task:
             progress_utils.api.remove_job_task(task)

@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import csv
 import datetime
-import importlib.util
 import os
 import pathlib
 import sqlite3
@@ -16,18 +15,12 @@ import pytest
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
 import ofscraper.classes.placeholder as placeholder
+import ofscraper.commands.creator_names as creator_names
 import ofscraper.db.operations_.profile as profile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 URL_KEY = "OFSC_DATABASE_URL"
 URL = "postgresql://user:password@localhost/db"
-
-_spec = importlib.util.spec_from_file_location(
-    "creator_names",
-    ROOT / "scripts" / "creator_names.py",
-)
-creator_names = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(creator_names)
 
 # The table as OF-Scraper makes it today, and as it made it before it kept the dates a
 # name was seen at (#643)

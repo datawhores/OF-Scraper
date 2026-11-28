@@ -28,8 +28,11 @@ import ofscraper.db.creator_rows as creator_rows
 import ofscraper.db.postgres as postgres
 from ofscraper.sites.fansly.constants import ORIGIN as FANSLY_ORIGIN
 from ofscraper.sites.fansly.normalize import hashtags
+from ofscraper.utils.string import html_lines
 
 DEFAULT_URL = "http://localhost:9999/graphql"
+# the environment variables main() reads (doctor --online reads them too)
+URL_ENV, API_KEY_ENV = "STASH_URL", "STASH_API_KEY"
 ONLYFANS, FANSLY = "onlyfans", "fansly"
 # per site: default studio and tag prefix, and the studio's and a creator's links
 SITES = {
@@ -111,10 +114,9 @@ def clean_text(text):
     """OnlyFans captions are HTML; return plain text with line breaks kept."""
     if not text:
         return ""
-    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
-    text = re.sub(r"</p\s*>", "\n", text, flags=re.I)
-    text = re.sub(r"<[^>]+>", "", text)
-    text = html.unescape(text)
+    # a <br> or the start or end of a paragraph, div, list item or heading
+    # ends a line, as a post's --text file reads it (utils/text.py file_text)
+    text = html.unescape(html_lines(text))
     lines = [line.strip() for line in text.splitlines()]
     return "\n".join(lines).strip()
 
@@ -702,7 +704,7 @@ def sync(
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]), description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="*", help="user_data.db files, or folders to search for them (e.g. <profile>/.data)")
     parser.add_argument("--postgres", action="store_true", help=f"read the PostgreSQL database ${postgres.URL_KEY} names instead of user_data.db files; give no paths with it")
     parser.add_argument("--site", choices=list(SITES), help="with --postgres, only this site's creators (default: both sites)")
