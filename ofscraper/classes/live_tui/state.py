@@ -120,14 +120,28 @@ class LiveStore:
             uk: rk for uk, rk in self.username_index.items() if rk in self.streams
         }
 
-    def should_show(self, entry: StreamRowState, filter_mode: str) -> bool:
+    def should_show(
+        self, entry: StreamRowState, filter_mode: str, search_query: str = ""
+    ) -> bool:
         if filter_mode == "all":
-            return True
-        if filter_mode == "online":
-            return entry.is_online or entry.status in ONLINE_STATUSES
-        if filter_mode == "recording":
-            return entry.status in RECORDING_STATUSES
-        return False
+            matches_mode = True
+        elif filter_mode == "online":
+            matches_mode = entry.is_online or entry.status in ONLINE_STATUSES
+        elif filter_mode == "recording":
+            matches_mode = entry.status in RECORDING_STATUSES
+        else:
+            return False
+        if not matches_mode:
+            return False
+        if search_query:
+            q = search_query.strip().lstrip("@").lower()
+            if (
+                q
+                and q not in entry.username.lower()
+                and q not in str(entry.account_id).lower()
+            ):
+                return False
+        return True
 
     def recording_count(self) -> int:
         return sum(1 for e in self.streams.values() if e.status in RECORDING_STATUSES)

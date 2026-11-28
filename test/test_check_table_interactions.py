@@ -1077,13 +1077,22 @@ def _count_page_builds_hf(monkeypatch):
     return counts
 
 
+async def _wait_per_page_hf(app, pilot):
+    await pilot.pause()
+    for _ in range(100):
+        if not app._per_page_timers:
+            break
+        await pilot.pause(0.05)
+    await pilot.pause()
+
+
 def test_per_page_builds_each_table_once_at_startup(stub_env_hf, monkeypatch):
     counts = _count_page_builds_hf(monkeypatch)
 
     async def drive():
         app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
         async with app.run_test(size=(250, 60)) as pilot:
-            await pilot.pause(0.6)
+            await _wait_per_page_hf(app, pilot)
             assert counts["main"] == 1
             assert counts["post"] == 1
             assert counts["cart"] <= 1
@@ -1099,14 +1108,14 @@ def test_typing_a_per_page_value_builds_the_table_once(stub_env_hf, monkeypatch)
     async def drive():
         app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
         async with app.run_test(size=(250, 60)) as pilot:
-            await pilot.pause(0.6)
+            await _wait_per_page_hf(app, pilot)
             box = app.query_one("#main_per_page_input")
             box.focus()
             box.value = ""
             await pilot.pause()
             counts["main"] = 0
             await pilot.press("5", "0", "0", "0")
-            await pilot.pause(1.5)
+            await _wait_per_page_hf(app, pilot)
             assert counts["main"] == 1
             assert app.table.row_count == 3
 
@@ -1117,13 +1126,13 @@ def test_clearing_per_page_restores_the_default(stub_env_hf):
     async def drive():
         app = _app_hf([_media_row_hf(n) for n in range(1, 4)], [])
         async with app.run_test(size=(250, 60)) as pilot:
-            await pilot.pause()
+            await _wait_per_page_hf(app, pilot)
             box = app.query_one("#main_per_page_input")
             box.value = "1"
-            await pilot.pause(0.5)
+            await _wait_per_page_hf(app, pilot)
             assert app.table.row_count == 1
             box.value = ""
-            await pilot.pause(0.5)
+            await _wait_per_page_hf(app, pilot)
             assert app.table.row_count == 3
 
     asyncio.run(drive())
@@ -1144,7 +1153,7 @@ def test_a_per_page_of_zero_draws_the_default_page_size(stub_env_hf):
             await pilot.pause()
             for prefix in ("main", "post", "cart"):
                 app.query_one(f"#{prefix}_per_page_input").value = "0"
-            await pilot.pause(0.5)
+            await _wait_per_page_hf(app, pilot)
             app.filter_table()
             app.filter_post_table()
             app.update_cart_table()
@@ -1175,7 +1184,7 @@ def test_page_cart_actions_use_the_default_page_size_for_zero(stub_env_hf):
             await pilot.pause()
             for prefix in ("main", "post", "cart"):
                 app.query_one(f"#{prefix}_per_page_input").value = "0"
-            await pilot.pause(0.5)
+            await _wait_per_page_hf(app, pilot)
 
             for add in (
                 app.action_select_current_page,
@@ -1227,7 +1236,7 @@ def test_page_cart_actions_act_on_the_page_as_drawn(stub_env_hf):
                 app.main_page = 2
                 app.set_page()
                 box.value = "0"
-                await pilot.pause(0.5)
+                await _wait_per_page_hf(app, pilot)
 
             for add in (
                 app.action_select_current_page,

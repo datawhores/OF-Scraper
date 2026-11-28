@@ -56,6 +56,7 @@ def compose_live_tui():
             yield Button("+ Add User (u)", id="btn_show_add_user", compact=True, variant="primary")
             yield Button("Chat: OFF (c)", id="btn_toggle_chat", compact=True)
             yield Button("Filter: Online (f)", id="btn_filter_active", compact=True, variant="success")
+            yield Button("Search (/)", id="btn_search", compact=True)
             yield Button("Clear Ended (x)", id="btn_clear_ended", compact=True)
             yield Button("Stop & Quit (q)", id="btn_quit", compact=True, variant="error")
         with Horizontal(id="add_user_bar", classes="-hidden"):
@@ -65,6 +66,13 @@ def compose_live_tui():
             )
             yield Button("Track", id="btn_submit_add_user", compact=True, variant="success")
             yield Button("Cancel", id="btn_cancel_add_user", compact=True)
+        with Horizontal(id="search_bar", classes="-hidden"):
+            yield Input(
+                placeholder="Filter by creator name within current filter (Enter to focus table, Esc to clear)...",
+                id="search_input",
+            )
+            yield Button("Done", id="btn_done_search", compact=True, variant="primary")
+            yield Button("Clear (Esc)", id="btn_clear_search", compact=True)
 
     with Vertical(id="streams_container"):
         yield LiveStreamTable(id="streams_table")
@@ -82,6 +90,7 @@ def compose_live_tui():
         "[bold cyan]p[/bold cyan] Poll  "
         "[bold cyan]w[/bold cyan] Following  "
         "[bold cyan]u[/bold cyan] Add User  "
+        "[bold cyan]/[/bold cyan] Search  "
         "[bold cyan]a / S[/bold cyan] Start/Stop All  "
         "[bold cyan]s / r / d / o[/bold cyan] Row Actions  "
         "[bold cyan]c[/bold cyan] Chat  "
