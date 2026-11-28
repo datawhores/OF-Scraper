@@ -16,7 +16,6 @@ import pytest
 import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
 import ofscraper.utils.args.globals as global_args
 import ofscraper.utils.console as console
-from ofscraper.utils.args.parse.commands.main import program
 
 MODES = ["LOW", "PROMPT"]
 
@@ -26,9 +25,6 @@ def screen(monkeypatch, request):
     """Parse --output <mode> for real and send both consoles to one buffer."""
     monkeypatch.setattr(sys, "argv", ["ofscraper", "--output", request.param])
     monkeypatch.setattr(global_args, "args", None)
-    # parse_args registers the subcommands, which can only happen once a process
-    if "manual" in program.commands:
-        monkeypatch.setattr(program, "add_command", lambda *a, **k: None)
     monkeypatch.setattr(console, "shared_console", None)
     monkeypatch.setattr(console, "other_console", None)
     buf = io.StringIO()

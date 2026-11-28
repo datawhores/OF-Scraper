@@ -367,8 +367,9 @@ def _skip_when_empty(prompt, func):
 
 
 @wrapper
-def input_prompt(*args, **kwargs):
-    prompt = inquirer.text(
+def input_prompt(*args, secret=False, **kwargs):
+    factory = inquirer.secret if secret else inquirer.text
+    prompt = factory(
         *args, mandatory=False, keybindings=keybindings.input, **kwargs
     )
     return prompt

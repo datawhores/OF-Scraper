@@ -17,6 +17,7 @@ from prompt_toolkit.shortcuts import prompt as prompt
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
+import ofscraper.sites as sites
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.const as const
 import ofscraper.utils.settings as settings
@@ -35,6 +36,15 @@ _ALL_AREAS = (
 )
 _LIKE_AREAS = const.TIMELINE_POST_AREAS
 _ANON_AREAS = ("Profile", *const.TIMELINE_POST_AREAS)
+_FANSLY_AREAS = ("Timeline", "Messages", "Purchased")
+
+
+def _area_choices(include_extra: bool = True) -> tuple:
+    """The areas the current site has: all of them, or without
+    ``include_extra`` only the ones whose posts can be liked."""
+    if sites.is_fansly():
+        return _FANSLY_AREAS if include_extra else ("Timeline",)
+    return _ALL_AREAS if include_extra else _LIKE_AREAS
 
 
 def _areas_prompt(
@@ -82,7 +92,7 @@ def areas_prompt() -> list:
     )
     return _areas_prompt(
         message,
-        _ALL_AREAS,
+        _area_choices(),
         name="value",
         validate=prompt_validators.MultiValidator(
             prompt_validators.emptyListValidator(),
@@ -95,28 +105,28 @@ def areas_prompt() -> list:
 def like_areas_prompt(like=True) -> list:
     return _areas_prompt(
         f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
-        _LIKE_AREAS,
+        _area_choices(include_extra=False),
     )
 
 
 def download_areas_prompt() -> list:
     return _areas_prompt(
         "Which area(s) would you to perform download actions on",
-        _ALL_AREAS,
+        _area_choices(),
     )
 
 
 def metadata_areas_prompt() -> list:
     return _areas_prompt(
         "Which area(s) would you to perform metadata actions on",
-        _ALL_AREAS,
+        _area_choices(),
     )
 
 
 def db_areas_prompt() -> list:
     return _areas_prompt(
         "Which area(s) would you to database  information from",
-        _ALL_AREAS,
+        (*_area_choices(), *(("Labels",) if sites.is_fansly() else ())),
         with_labels=False,
     )
 
@@ -124,7 +134,7 @@ def db_areas_prompt() -> list:
 def metadata_anon_areas_prompt() -> list:
     return _areas_prompt(
         "Which area(s) would you to perform metadata actions on anonymously",
-        _ANON_AREAS,
+        _area_choices(include_extra=False) if sites.is_fansly() else _ANON_AREAS,
     )
 
 
@@ -147,6 +157,8 @@ def scrape_labels_prompt():
 
 
 def scrape_paid_prompt():
+    if sites.is_fansly():
+        return False
     name = "value"
     answer = promptClasses.batchConverter(
         *[

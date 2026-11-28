@@ -175,6 +175,110 @@ def test_auth_file_round_trip_and_validation(tmp_path):
     assert fansly_auth.problems({**auth, "authorization_token": "ReplaceMe"})
 
 
+def test_auth_editor_masks_the_stored_token(monkeypatch, fansly_profile):
+    from contextlib import nullcontext
+    from io import StringIO
+
+    from prompt_toolkit.application import create_app_session
+    from prompt_toolkit.data_structures import Size
+    from prompt_toolkit.input import create_pipe_input
+    from prompt_toolkit.output.vt100 import Vt100_Output
+
+    import ofscraper.prompts.promptConvert as prompt_classes
+    import ofscraper.prompts.prompts as prompts
+    import ofscraper.utils.auth.file as auth_file
+
+    drawn = StringIO()
+    output = Vt100_Output(drawn, lambda: Size(rows=24, columns=160), term="xterm")
+    new_user_agent = f"{UA} edited"
+    monkeypatch.setenv("TERM", "xterm")
+    monkeypatch.setattr(prompt_classes.interactive, "require_console", lambda *_: None)
+    monkeypatch.setattr(prompt_classes, "prompt_live", nullcontext)
+    monkeypatch.setattr(prompts, "user_agent_prompt", lambda current: new_user_agent)
+    with create_pipe_input() as pipe, create_app_session(input=pipe, output=output):
+        pipe.send_text("\r")
+        auth_file.edit_auth()
+
+    rendered = drawn.getvalue()
+    assert "Enter the Fansly authorization token" in rendered
+    assert TOKEN not in rendered
+    assert fansly_auth.read_auth()["authorization_token"] == TOKEN
+    assert fansly_auth.read_auth()["user_agent"] == new_user_agent
+
+
+def test_token_prompt_replaces_without_appending_and_blank_keeps_current(monkeypatch):
+    from contextlib import nullcontext
+    from io import StringIO
+
+    from prompt_toolkit.application import create_app_session
+    from prompt_toolkit.data_structures import Size
+    from prompt_toolkit.input import create_pipe_input
+    from prompt_toolkit.output.vt100 import Vt100_Output
+
+    import ofscraper.prompts.promptConvert as prompt_classes
+
+    new_token = base64.b64encode(f"100000000000000888:1:2:{'cd34' * 16}".encode()).decode()
+    monkeypatch.setenv("TERM", "xterm")
+    monkeypatch.setattr(prompt_classes.interactive, "require_console", lambda *_: None)
+    monkeypatch.setattr(prompt_classes, "prompt_live", nullcontext)
+
+    # Pasting a new token when a current token exists must replace it, not append to it.
+    drawn = StringIO()
+    output = Vt100_Output(drawn, lambda: Size(rows=24, columns=160), term="xterm")
+    with create_pipe_input() as pipe, create_app_session(input=pipe, output=output):
+        pipe.send_text(f"{new_token}\r")
+        result = fansly_auth.token_prompt(TOKEN)
+    assert result == new_token
+    assert "(leave blank to keep current)" in drawn.getvalue()
+
+    # Submitting blank when a current token exists must keep current.
+    drawn_blank = StringIO()
+    output_blank = Vt100_Output(drawn_blank, lambda: Size(rows=24, columns=160), term="xterm")
+    with create_pipe_input() as pipe, create_app_session(input=pipe, output=output_blank):
+        pipe.send_text("\r")
+        kept = fansly_auth.token_prompt(TOKEN)
+    assert kept == TOKEN
+
+
+def _ask_token(monkeypatch, current, typed):
+    """token_prompt with ``typed`` sent to it: (answer, what was drawn)."""
+    from contextlib import nullcontext
+    from io import StringIO
+
+    from prompt_toolkit.application import create_app_session
+    from prompt_toolkit.data_structures import Size
+    from prompt_toolkit.input import create_pipe_input
+    from prompt_toolkit.output.vt100 import Vt100_Output
+
+    import ofscraper.prompts.promptConvert as prompt_classes
+
+    monkeypatch.setenv("TERM", "xterm")
+    monkeypatch.setattr(prompt_classes.interactive, "require_console", lambda *_: None)
+    monkeypatch.setattr(prompt_classes, "prompt_live", nullcontext)
+    drawn = StringIO()
+    output = Vt100_Output(drawn, lambda: Size(rows=24, columns=160), term="xterm")
+    with create_pipe_input() as pipe, create_app_session(input=pipe, output=output):
+        pipe.send_text(typed)
+        return fansly_auth.token_prompt(current), drawn.getvalue()
+
+
+@pytest.mark.parametrize("current", [TOKEN, "", fansly_auth.PLACEHOLDER])
+def test_token_prompt_skipped_with_ctrl_z_keeps_what_it_had(monkeypatch, current):
+    # a skipped prompt answers None, which used to raise AttributeError
+    answer, _ = _ask_token(monkeypatch, current, "\x1a")
+    assert answer == current
+
+
+@pytest.mark.parametrize("current", ["", fansly_auth.PLACEHOLDER, "too-short"])
+def test_token_prompt_needs_an_answer_without_a_usable_token(monkeypatch, current):
+    """The placeholder and a token too short to work aren't worth keeping: the
+    prompt doesn't offer to, and a blank answer is refused."""
+    new_token = base64.b64encode(f"100000000000000888:1:2:{'cd34' * 16}".encode()).decode()
+    answer, drawn = _ask_token(monkeypatch, current, f"\r{new_token}\r")
+    assert answer == new_token
+    assert "leave blank to keep current" not in drawn
+
+
 def test_session_id_comes_from_the_token():
     assert fansly_auth.session_id(TOKEN) == SESSION_ID
     assert fansly_auth.session_id("not base64 !!") is None
@@ -269,3 +373,51 @@ def test_site_name_placeholder(fansly_profile, monkeypatch):
     monkeypatch.setattr(settings.get_settings(), "site", "onlyfans")
     p.create_variables_base()
     assert p._variables["site_name"] == "Onlyfans"
+
+
+@pytest.mark.parametrize("outcome", ["saved", "cancelled", "write_failed"])
+def test_auth_edit_refreshes_account_path_identity_only_after_save(monkeypatch, fansly_profile, outcome):
+    import ofscraper.data.api.me as me
+    import ofscraper.prompts.prompts as prompts
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.profiles.data as profile_data
+    from ofscraper.classes.placeholder import basePlaceholder
+    from ofscraper.prompts.cancel import PromptCancelled
+
+    monkeypatch.setattr(profile_data, "currentData", None)
+    monkeypatch.setattr(profile_data, "currentProfile", None)
+    calls = []
+    replacement = base64.b64encode(f"100000000000000888:1:2:{'cd34' * 16}".encode()).decode()
+
+    def account():
+        token = fansly_auth.read_auth()["authorization_token"]
+        calls.append(token)
+        return {"id": 1 if token == TOKEN else 2, "username": "old_account" if token == TOKEN else "new_account", "name": "Test account"}
+
+    monkeypatch.setattr(me, "scrape_user", account)
+    before = basePlaceholder()
+    before.create_variables_base()
+    assert before._variables["my_id"] == 1
+    assert before._variables["my_username"] == "old_account"
+    monkeypatch.setattr(fansly_auth, "token_prompt", lambda current: replacement)
+    monkeypatch.setattr(prompts, "user_agent_prompt", lambda current: UA)
+    if outcome == "cancelled":
+        def cancel(current):
+            raise PromptCancelled()
+        monkeypatch.setattr(fansly_auth, "token_prompt", cancel)
+        with pytest.raises(PromptCancelled):
+            auth_file.edit_auth()
+    elif outcome == "write_failed":
+        def fail(*args, **kwargs):
+            raise OSError("test save failure")
+        monkeypatch.setattr(fansly_auth, "write_auth", fail)
+        with pytest.raises(OSError, match="test save failure"):
+            auth_file.edit_auth()
+    else:
+        auth_file.edit_auth()
+
+    after = basePlaceholder()
+    after.create_variables_base()
+    assert after._variables["my_id"] == (2 if outcome == "saved" else 1)
+    assert after._variables["my_username"] == ("new_account" if outcome == "saved" else "old_account")
+    assert calls == ([TOKEN, replacement] if outcome == "saved" else [TOKEN])

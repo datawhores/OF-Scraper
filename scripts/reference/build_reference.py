@@ -34,7 +34,7 @@ HEADER = (
     " change the code or scripts/reference/notes.py, then rerun the script. -->\n\n"
 )
 
-# commands in the order parse_args registers them; "" is the main program
+# commands in registration order; "" is the main program
 COMMANDS = [
     "",
     "manual",
