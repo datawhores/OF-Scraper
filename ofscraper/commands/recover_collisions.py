@@ -8,7 +8,6 @@ names (see COLLISION_RECOVERY.md and POSTGRESQL.md).
 import argparse
 import json
 import os
-from pathlib import Path, PureWindowsPath
 import sqlite3
 import stat
 import sys
@@ -16,19 +15,15 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import closing
+from pathlib import Path
 
+import ofscraper.commands.utils.db_cli as db_cli
 import ofscraper.db.creator_rows as creator_rows
 import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
 
 # said when the command is given a file while PostgreSQL is on (#631)
-FILES_NOTICE = (
-    f"PostgreSQL is on ({postgres.URL_KEY} is set), but recover_collisions works"
-    " on the user_data.db file it was given, not PostgreSQL. The file holds"
-    " nothing scraped since PostgreSQL was turned on, and what is changed in it"
-    " does not reach PostgreSQL. To work on PostgreSQL, give --postgres and"
-    " --creator in place of the file. See POSTGRESQL.md."
-)
+FILES_NOTICE = db_cli.files_notice("recover_collisions")
 # an undo file written from PostgreSQL says so
 POSTGRESQL = "postgresql"
 # what is read of each media row in PostgreSQL. A row is named by its media
@@ -57,7 +52,7 @@ def collisions(rows, path_root=None, written_here=False):
     for model, media, directory, filename, downloaded in rows:
         path = Path(directory or "", filename)
         if not path.is_absolute():
-            if written_here and _from_another_system(path):
+            if written_here and db_cli.from_another_system(path):
                 raise ValueError(
                     f"The recorded path {path} is a full path on another system"
                     " than this one. Run this where the scraper runs, so that"
@@ -81,14 +76,6 @@ def collisions(rows, path_root=None, written_here=False):
         rows for rows in groups.values()
         if len({(r[0], r[1]) for r in rows}) > 1
     ]
-
-
-def _from_another_system(path):
-    """Whether a path that isn't a full path here is one elsewhere: C:\\...
-    read on Linux, or /... read on Windows. --path-root is not for those."""
-    if os.name == "nt":
-        return bool(path.root)
-    return PureWindowsPath(str(path)).is_absolute()
 
 
 def report(groups, media_to_mark, apply):
@@ -253,7 +240,7 @@ def recover_postgres(rows, apply=False, path_root=None, undo_dir=None, database=
     record = {"version": 2, "source": POSTGRESQL, "site": rows.site, "model_id": rows.model_id}
     if database:
         record["database"] = database
-    record["rows"] = [dict(zip(MEDIA[1:], row[1:])) for row in marking]
+    record["rows"] = [dict(zip(MEDIA[1:], row[1:], strict=True)) for row in marking]
     undo_created = False
     try:
         # Persist the small undo record before any flag is changed. "x": a
@@ -264,7 +251,7 @@ def recover_postgres(rows, apply=False, path_root=None, undo_dir=None, database=
             output.flush()
             os.fsync(output.fileno())
         for row in marking:
-            if not rows.change("medias", row[0], dict(zip(MEDIA[3:], row[3:])), {"downloaded": 0}):
+            if not rows.change("medias", row[0], dict(zip(MEDIA[3:], row[3:], strict=True)), {"downloaded": 0}):
                 raise postgres.ChangedMeanwhile(MEANWHILE)
     except BaseException as error:
         # nothing was kept, so the undo file is of no use
@@ -362,7 +349,7 @@ def undo_postgres(rows, undo_file, apply=False, database=None):
     }
     restoring = []
     changed = 0
-    for row, name in zip(wanted, named):
+    for row, name in zip(wanted, named, strict=True):
         found = current.get(name)
         left = [row[column] for column in MEDIA[4:]]
         if found is None or list(found[4:]) != left or found[3] not in (0, 1):
@@ -386,7 +373,7 @@ def undo_postgres(rows, undo_file, apply=False, database=None):
     result = {"applied": apply, "rows_to_restore": len(restoring), "creator": _creator(rows)}
     if apply:
         for found in restoring:
-            if not rows.change("medias", found[0], dict(zip(MEDIA[3:], found[3:])), {"downloaded": 1}):
+            if not rows.change("medias", found[0], dict(zip(MEDIA[3:], found[3:], strict=True)), {"downloaded": 1}):
                 raise postgres.ChangedMeanwhile(MEANWHILE)
         try:
             rows.commit()
@@ -412,12 +399,7 @@ def _undo_row(row):
     )
 
 
-def _goes_by(rows):
-    """A creator for a refusal: the site, the id and every username it has had."""
-    names = []
-    if "username" in rows.columns("profiles"):
-        names = sorted({str(row[0]) for row in rows.select("profiles", ["username"])})
-    return f"{rows.site} {rows.model_id}" + (f" ({', '.join(names)})" if names else "")
+validate_db_args = db_cli.validate_db_args
 
 
 def _creator(rows):
@@ -454,65 +436,17 @@ def on_postgres(database_url, creator, site=None, undo_file=None, apply=False, p
         undo_dir = _undo_folder(undo_dir)
     elif apply and undo_file is None:
         raise ValueError("A folder for the undo file is needed to apply")
-    wanted_sites = [site] if site else list(sites.SITES)
     # the server and database, without the login; nothing if the address
     # isn't one that can be read that way
     database = postgres.describe(database_url)
     if database == postgres.describe(""):
         database = None
-    try:
-        with creator_rows.in_postgres(database_url, wanted_sites, [creator], write=apply) as found:
-            if len(found) != 1:
-                # an id both sites have, an id that is another creator's
-                # username, or a username two creators have had
-                raise ValueError(
-                    f"PostgreSQL has more than one creator named {creator}:"
-                    f" {', '.join(_goes_by(rows) for rows in found)}."
-                    " Give --site, or a username or id that only one of them has"
-                )
-            if undo_file is not None:
-                return undo_postgres(found[0], undo_file, apply=apply, database=database)
-            return recover_postgres(
-                found[0], apply=apply, path_root=path_root, undo_dir=undo_dir, database=database
-            )
-    except creator_rows.NotFound:
-        # the name as it was typed (in_postgres has it in small letters)
-        raise creator_rows.NotFound(
-            f"PostgreSQL has no creator named {creator} (looked in: {', '.join(wanted_sites)})"
-        ) from None
-
-
-def validate_db_args(parser, args, files_notice, *, extra_postgres_only=None):
-    """Validate --postgres / --creator / database arguments and return database_url."""
-    extra = extra_postgres_only or {}
-    # Only this command's own environment says where PostgreSQL is: the
-    # scraper's settings and env files aren't read
-    database_url = os.environ.get(postgres.URL_KEY, "").strip()
-    if args.postgres:
-        if args.database:
-            parser.error("give a user_data.db or --postgres, not both")
-        if not database_url:
-            parser.error(
-                f"--postgres needs {postgres.URL_KEY} set in the environment this is run in"
-                " (an env file of the scraper's isn't read); see POSTGRESQL.md"
-            )
-        if not args.creator:
-            parser.error("--postgres needs --creator: the one creator to work on, by username or id")
-    elif (
-        args.site is not None
-        or args.creator is not None
-        or any(v is not None for v in extra.values())
-    ):
-        names = ["--site", "--creator", *extra]
-        pg_only_label = f"{', '.join(names[:-1])} and {names[-1]}"
-        parser.error(
-            f"{pg_only_label} go with --postgres; with a file, give that creator's user_data.db"
+    with db_cli.single_postgres_creator(database_url, creator, site=site, write=apply) as rows:
+        if undo_file is not None:
+            return undo_postgres(rows, undo_file, apply=apply, database=database)
+        return recover_postgres(
+            rows, apply=apply, path_root=path_root, undo_dir=undo_dir, database=database
         )
-    elif not args.database:
-        parser.error("the following arguments are required: database, or --postgres")
-    elif database_url:
-        print(f"warning: {files_notice}", file=sys.stderr)
-    return database_url
 
 
 def main(argv=None):

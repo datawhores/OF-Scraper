@@ -1,21 +1,20 @@
 import asyncio
-import queue
-from ofscraper.commands.scraper.actions.download import stop
-import ofscraper.utils.system.system as system
 import inspect
 import logging
+import queue
 import re
 import threading
 import time
 import traceback
+from collections import defaultdict
 from copy import deepcopy
 from functools import partial
 
-from collections import defaultdict
-
-
 import arrow
 
+import ofscraper.classes.of.posts as posts_
+import ofscraper.classes.table.app as app
+import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.data.api.archive as archived
 import ofscraper.data.api.highlights as highlights
 import ofscraper.data.api.labels as labels
@@ -25,37 +24,37 @@ import ofscraper.data.api.pinned as pinned
 import ofscraper.data.api.profile as profile
 import ofscraper.data.api.streams as streams
 import ofscraper.data.api.timeline as timeline
-import ofscraper.sites as sites
-from ofscraper.sites.fansly import scrape as fansly_scrape
-import ofscraper.classes.of.posts as posts_
-import ofscraper.classes.table.app as app
 import ofscraper.db.operations as operations
-import ofscraper.utils.settings as settings
+import ofscraper.managers.manager as manager
+import ofscraper.sites as sites
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.console as console_
-import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.const as const
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
 import ofscraper.utils.system.network as network
+import ofscraper.utils.system.system as system
+from ofscraper.classes.placeholder import media_type_keys
+from ofscraper.classes.table.utils.post_metrics import build_post_centric_rows
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.commands.scraper.actions.download.download import process_dicts
+from ofscraper.commands.utils.strings import check_str
 from ofscraper.data.api.common.check import read_check, set_check
 from ofscraper.data.api.common.timeline import get_individual_timeline_post
-from ofscraper.commands.utils.strings import check_str
 from ofscraper.db.operations import make_changes_to_content_tables
-from ofscraper.filters.media.filters import undated_first
-from ofscraper.classes.table.utils.post_metrics import build_post_centric_rows
-from ofscraper.classes.placeholder import media_type_keys
 from ofscraper.db.operations_.media import (
     batch_mediainsert,
     get_media_post_files_downloaded,
 )
+from ofscraper.filters.media.filters import undated_first
+from ofscraper.main.close.final.final import final_action
+from ofscraper.managers.postcollection import PostCollection
+from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.sites.fansly import scrape as fansly_scrape
 from ofscraper.utils.checkers import AuthCheckLeft, AuthCheckUnavailable, check_auth
 from ofscraper.utils.context.run_async import run
-from ofscraper.scripts.after_download_action_script import after_download_action_script
-import ofscraper.managers.manager as manager
-from ofscraper.commands.scraper.actions.download.download import process_dicts
-import ofscraper.commands.scraper.actions.utils.globals as common_globals
-from ofscraper.managers.postcollection import PostCollection
-from ofscraper.main.close.final.final import final_action
 
 log = logging.getLogger("shared")
 console = console_.get_shared_console()
@@ -291,7 +290,7 @@ def process_user_batch(
                 # not its failed count: a file failed in the first pass can
                 # download in the retry, so "failed" counts the rows left
                 for name, count in zip(
-                    ("videos", "audios", "photos", "forced"), counts or ()
+                    ("videos", "audios", "photos", "forced"), counts or (), strict=False
                 ):
                     totals[name] += count
         except Exception as e:
@@ -365,7 +364,7 @@ async def _refresh_failed_posts(username, model_id, media):
                 data = await _fansly_refresh_post(area, post_id, model_id, username)
                 if data is None:
                     return False
-            elif area in {"timeline", "archived", "pinned", "streams"}:
+            elif area.capitalize() in const.TIMELINE_POST_AREA_SET:
                 data = await asyncio.to_thread(get_individual_timeline_post, post_id)
             elif area == "messages":
                 async with manager.Manager.session.aget_ofsession() as c:
@@ -459,7 +458,7 @@ def checker(menu=False):
             _checker()
         except stop.DownloadsStopped:
             if not menu:
-                raise SystemExit(130)
+                raise SystemExit(130) from None
 
 
 def _no_fansly_stories(command):
@@ -530,12 +529,8 @@ async def _run_check(retriever):
         progress_utils.setup_live("api"),
         progress_utils.TemporaryTaskState(progress_updater.activity),
     ):
-        async for (
-            user_name,
-            model_id,
-            final_post_array,
-            skip_update,
-        ) in retriever():
+        async for user_name, model_id, final_post_array, *rest in retriever():
+            skip_update = rest[0] if rest else None
             await process_post_media(user_name, model_id, final_post_array)
             await make_changes_to_content_tables(
                 final_post_array,
@@ -1042,16 +1037,7 @@ def stories_checker():
 @run
 @stop.fetching
 async def stories_checker_runner():
-    with (
-        progress_utils.setup_live("api"),
-        progress_utils.TemporaryTaskState(progress_updater.activity),
-    ):
-        async for user_name, model_id, final_post_array in stories_check_retriver():
-            await process_post_media(user_name, model_id, final_post_array)
-            await make_changes_to_content_tables(
-                final_post_array, model_id=model_id, username=user_name
-            )
-            await row_gather(user_name, model_id)
+    await _run_check(stories_check_retriver)
 
 
 @run

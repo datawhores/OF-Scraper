@@ -50,12 +50,12 @@ from collections import Counter
 from contextlib import closing
 from pathlib import Path
 
+import ofscraper.commands.utils.db_cli as db_cli
 import ofscraper.db.creator_rows as creator_rows
 import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
-from ofscraper.commands import recover_collisions as sibling
 
-FILES_NOTICE = sibling.FILES_NOTICE.replace("recover_collisions", "move_creator_files")
+FILES_NOTICE = db_cli.files_notice("move_creator_files")
 # where the scraper is told what to call a deleted account whose name it
 # doesn't know; read from this command's own environment
 PLACEHOLDER_KEY = "OFSC_DELETED_MODEL_PLACEHOLDER"
@@ -188,7 +188,7 @@ def _full(path, path_root):
     """A recorded path as a full one, as recover_collisions reads it."""
     path = Path(path)
     if not path.is_absolute():
-        if sibling._from_another_system(path):
+        if db_cli.from_another_system(path):
             raise ValueError(
                 f"The recorded path {path} is a full path on another system"
                 " than this one. Run this where the scraper runs, so that"
@@ -238,7 +238,7 @@ def move(rows, model_id, apply=False, to=None, path_root=None):
             continue
         # a Windows path read elsewhere is cut as Windows cuts it, so that
         # one that names the creator is refused (_full) and not passed over
-        foreign = os.name != "nt" and sibling._from_another_system(Path(directory))
+        foreign = os.name != "nt" and db_cli.from_another_system(Path(directory))
         what, new_directory, top = _under(directory, folders, target, EITHER if foreign else SEPARATORS)
         if what in LEFT:
             left.append({"file": str(Path(directory, filename)), "why": LEFT[what]})
@@ -328,21 +328,8 @@ def on_file(database, apply=False, to=None, path_root=None):
 def on_postgres(database_url, creator, site=None, apply=False, to=None, path_root=None):
     """The move for the one creator this names, found as recover_collisions
     finds one. Without --apply the connection is read-only."""
-    wanted_sites = [site] if site else list(sites.SITES)
-    try:
-        with creator_rows.in_postgres(database_url, wanted_sites, [creator], write=apply) as found:
-            if len(found) != 1:
-                raise ValueError(
-                    f"PostgreSQL has more than one creator named {creator}:"
-                    f" {', '.join(sibling._goes_by(rows) for rows in found)}."
-                    " Give --site, or a username or id that only one of them has"
-                )
-            return move(found[0], found[0].model_id, apply=apply, to=to, path_root=path_root)
-    except creator_rows.NotFound:
-        # the name as it was typed (in_postgres has it in small letters)
-        raise creator_rows.NotFound(
-            f"PostgreSQL has no creator named {creator} (looked in: {', '.join(wanted_sites)})"
-        ) from None
+    with db_cli.single_postgres_creator(database_url, creator, site=site, write=apply) as rows:
+        return move(rows, rows.model_id, apply=apply, to=to, path_root=path_root)
 
 
 def main(argv=None):
@@ -356,7 +343,7 @@ def main(argv=None):
     parser.add_argument("--creator", metavar="NAME", help="With --postgres, the one creator to work on, by a username or id that no other creator has")
     args = parser.parse_args(argv)
 
-    database_url = sibling.validate_db_args(parser, args, FILES_NOTICE)
+    database_url = db_cli.validate_db_args(parser, args, FILES_NOTICE)
 
     try:
         if args.postgres:
