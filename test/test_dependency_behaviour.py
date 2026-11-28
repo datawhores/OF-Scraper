@@ -80,7 +80,7 @@ def test_download_limiter_splits_big_chunks_and_needs_no_shared_loop(monkeypatch
     monkeypatch.setattr(leaky.AsyncLimiter, "acquire", record)
 
     async def run():
-        await leaky.LeakyBucket(1000, 1).acquire(2500)
+        await leaky.LeakyBucket(1000, 0.05).acquire(2500)
 
     with warnings.catch_warnings():
         warnings.simplefilter("error")

@@ -11,6 +11,7 @@ import pytest
 from rich.console import Console, Group
 from rich.panel import Panel
 from rich.progress import Progress, TextColumn
+from rich.text import Text
 
 import ofscraper.main.open.load  # noqa: F401  (import order, see conftest)
 import ofscraper.utils.console as console
@@ -204,3 +205,45 @@ def test_shows_something_follows_the_tasks():
     assert not live_mod.shows_something(layout)
     progress.update(task, visible=True)
     assert live_mod.shows_something(layout)
+
+
+def _depth(renderable):
+    """How many Groups and Panels are nested around the innermost content."""
+    depth = 0
+    while isinstance(renderable, (Group, Panel)):
+        if isinstance(renderable, Panel):
+            renderable = renderable.renderable
+        elif len(renderable.renderables) == 1:
+            renderable = renderable.renderables[0]
+        else:
+            break
+        depth += 1
+    return depth
+
+
+def test_screens_do_not_nest_the_layout_they_revert_to(shared):
+    """Each screen and prompt restored the live display wrapped in one more
+    Group (rich's Live.renderable wraps a started display's content), so a
+    long daemon run built a tower thousands deep and stop_live() hit
+    RecursionError walking it."""
+    _, _, layout = _activity_panel()
+    live = _start(layout)
+    before = _depth(live.get_renderable())
+    for _ in range(3000):
+        with screens.setup_live("api"):
+            pass
+        with empty.prompt_live():
+            pass
+    live = live_mod.get_live()
+    assert _depth(live.get_renderable()) == before
+    with screens.stop_live_screen(clear="all"):
+        pass
+
+
+def test_shows_something_handles_a_deep_tree():
+    """A tree deeper than the recursion limit doesn't raise."""
+    renderable = Panel(Text(""))
+    for _ in range(5000):
+        renderable = Group(renderable)
+    assert live_mod.shows_something(renderable) is False
+    assert live_mod.shows_something(Group(renderable, "x")) is True

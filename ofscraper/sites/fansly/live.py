@@ -22,6 +22,7 @@ import asyncio
 import datetime
 import json
 import logging
+import math
 import os
 import pathlib
 import random
@@ -152,6 +153,9 @@ def pick_variant(variants: list):
 
 def utc_start(started_at) -> datetime.datetime:
     """Stream start in UTC from milliseconds or seconds; now when unknown."""
+    if isinstance(started_at, datetime.datetime):
+        return (started_at.astimezone(datetime.timezone.utc) if started_at.tzinfo
+                else started_at.replace(tzinfo=datetime.timezone.utc))
     if started_at:
         try:
             value = float(started_at)
@@ -165,41 +169,51 @@ def utc_start(started_at) -> datetime.datetime:
 def folder_name(username) -> str:
     """The API username, safe as one folder or file name component."""
     from ofscraper.classes.of.base import base
+    import ofscraper.utils.paths.names as names
 
-    # the app's own filename cleanup; it leaves backslashes and dots alone
-    name = base().file_cleanup(username).replace("\\", "").strip(" .")
-    return name or "unknown"
+    return names.clean_folder_name(base().file_cleanup(username))
 
 
-def recording_base(save_location, username, started_at) -> pathlib.Path:
+def recording_base(save_location, username, started_at, *, model_id=None) -> pathlib.Path:
     """``{save_location}/Fansly/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live``"""
-    stamp = utc_start(started_at).strftime("%Y%m%d_%H%M%S")
-    username = folder_name(username)
-    folder = pathlib.Path(save_location) / "Fansly" / username / "Livestreams"
-    return folder / f"{username}_{stamp}_live"
+    import ofscraper.classes.placeholder as placeholder
+
+    path = placeholder.live_recording_path(
+        save_location, folder_name(username), utc_start(started_at),
+        site_name="Fansly", ext="mp4", model_id=model_id, reserve_suffix=_CHAT_SUFFIX,
+    )
+    return path.with_suffix("")
 
 
-def part_path(base: pathlib.Path, n: int) -> pathlib.Path:
-    return base.with_name(f"{base.name}.mp4" if n == 1 else f"{base.name}_part{n}.mp4")
+_CHAT_SUFFIX = "_chat.jsonl"
 
 
-def next_part_number(base: pathlib.Path) -> int:
+def part_path(base: pathlib.Path, n: int, *, started_at=None) -> pathlib.Path:
+    import ofscraper.classes.placeholder as placeholder
+
+    suffix = ".mp4" if n == 1 else f"_part{n}.mp4"
+    if len(suffix) > len(_CHAT_SUFFIX):
+        base = placeholder.fit_with_suffix(base, suffix, started_at)
+    return base.with_name(f"{base.name}{suffix}")
+
+
+def next_part_number(base: pathlib.Path, *, started_at=None) -> int:
     n = 1
-    while part_path(base, n).exists():
+    while part_path(base, n, started_at=started_at).exists():
         n += 1
     return n
 
 
-def reserve_part(base: pathlib.Path) -> pathlib.Path:
+def reserve_part(base: pathlib.Path, *, started_at=None) -> pathlib.Path:
     """Create the next free part file exclusively and return it.
 
     Only a file this recorder created is ever handed to ffmpeg, counted as a
     part or deleted, even when another process records the same stream.
     """
     base.parent.mkdir(parents=True, exist_ok=True)
-    n = next_part_number(base)
+    n = next_part_number(base, started_at=started_at)
     while True:
-        path = part_path(base, n)
+        path = part_path(base, n, started_at=started_at)
         try:
             with open(path, "x"):
                 return path
@@ -212,7 +226,7 @@ def sidecar_path(base: pathlib.Path) -> pathlib.Path:
 
 
 def chat_path(base: pathlib.Path) -> pathlib.Path:
-    return base.with_name(f"{base.name}_chat.jsonl")
+    return base.with_name(f"{base.name}{_CHAT_SUFFIX}")
 
 
 # ------------------------------------------------------------------ ffmpeg
@@ -339,6 +353,7 @@ class LiveRecorder:
         # parts and chat file listed by an earlier run of the same stream
         self.earlier = {"parts": [], "chat": None}
         self.base = None
+        self.started_at = None
         self.end_reason = None
         self.sidecar = {}
 
@@ -419,8 +434,10 @@ class LiveRecorder:
                     self._update_stream(channel)
                     mask_url_secrets(channel.get("playbackUrl"))
                 if self.base is None:
+                    self.started_at = utc_start(self.stream.get("startedAt"))
                     self.base = recording_base(self.save_location, self.username,
-                                               self.stream.get("startedAt"))
+                                               self.started_at,
+                                               model_id=self.stream.get("accountId"))
                     self.base.parent.mkdir(parents=True, exist_ok=True)
                     self._read_earlier_sidecar()
                 # chat starts with the first channel that came back, so a
@@ -466,7 +483,7 @@ class LiveRecorder:
         if scheme not in self.schemes:
             log.info(f"{self.username}: skipping a variant URL with scheme {scheme or 'none'!r}")
             return False, False
-        out = reserve_part(self.base)
+        out = reserve_part(self.base, started_at=self.started_at)
         log.info(f"{self.username}: recording livestream to {out.name}")
         try:
             await self.ffmpeg_runner(
@@ -614,6 +631,19 @@ def _int_env(key: str, default: int, minimum: int = 1) -> int:
         return default
 
 
+def _float_env(key: str, default: float, minimum: float = 0.0) -> float:
+    import ofscraper.utils.of_env.of_env as of_env
+
+    try:
+        val = of_env.getattr(key, default)
+        parsed = float(default if val is None else val)
+    except (TypeError, ValueError):
+        return float(default)
+    if not math.isfinite(parsed):
+        return float(default)
+    return max(minimum, parsed)
+
+
 def has_custom_user_filters(s=None) -> bool:
     """True when userlists, blacklists, or model filters narrow the creator pool."""
     from ofscraper.managers.model import ModelManager
@@ -635,6 +665,45 @@ def warn_streak(streaks: dict, key: str, message: str = None) -> None:
     if message:
         (log.debug if streaks.get(key) else log.warning)(message)
     streaks[key] = bool(message)
+
+
+class PollStateLogger:
+    """Tracks announced live/idle state across poll cycles and logs transitions."""
+
+    def __init__(self, site_name: str, watch: bool):
+        self._site_name = site_name
+        self._watch = watch
+        self.announced_idle = False
+        self.announced_live_ids = set()
+
+    def __call__(self, selected) -> None:
+        current_ids = {s["accountId"] for s in selected}
+        self.announced_live_ids &= current_ids
+
+        new_live = [
+            s for s in selected if s["accountId"] not in self.announced_live_ids
+        ]
+        if new_live:
+            names = ", ".join(s["username"] for s in new_live)
+            log.info(f"Live now ({len(new_live)}): {names}")
+            self.announced_live_ids.update(s["accountId"] for s in new_live)
+            self.announced_idle = False
+        elif selected:
+            names = ", ".join(s["username"] for s in selected)
+            log.debug(f"Still live ({len(selected)}): {names}")
+            self.announced_idle = False
+        elif not self.announced_idle:
+            if self._watch:
+                log.info(
+                    f"No active {self._site_name} livestreams; waiting for selected creators to go live..."
+                )
+            else:
+                log.info(
+                    f"No active {self._site_name} livestreams found for the selected creators."
+                )
+            self.announced_idle = True
+        else:
+            log.debug(f"No active {self._site_name} livestreams found.")
 
 
 def lookup_due(misses: dict, name: str, poll: int) -> bool:
@@ -673,6 +742,18 @@ def count_misses(misses: dict, tried, missing) -> None:
             log.warning(f"Still can't look up {name} for livestreams; trying again every 10th check")
 
 
+def _resolve_live_jitter(s) -> float:
+    val = getattr(s, "live_jitter", None)
+    if val is not None:
+        try:
+            parsed = float(val)
+            if math.isfinite(parsed):
+                return max(0.0, parsed)
+        except (TypeError, ValueError):
+            pass
+    return _float_env("LIVE_JITTER", float(DEFAULT_JITTER), minimum=0.0)
+
+
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
@@ -683,7 +764,7 @@ def options(s=None) -> dict:
         "watch": bool(getattr(s, "live_watch", False)),
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
-        "jitter": _int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0),
+        "jitter": _resolve_live_jitter(s),
         "max_failures": _int_env("LIVE_MAX_FAILURES", DEFAULT_MAX_FAILURES, minimum=1),
         "check_concurrency": _int_env("LIVE_CHECK_CONCURRENCY", 5, minimum=1),
         "chat": bool(getattr(s, "live_chat", False)),
@@ -854,8 +935,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
     # playlists get one attempt each: a 403 means "fetch a fresh URL", not "retry"
     async with manager.Manager.session.aget_ofsession() as c, \
             manager.Manager.session.aget_ofsession(retries=1) as playlists:
-        announced_idle = False
-        announced_live_ids = set()
+        log_poll_state = PollStateLogger("Fansly", watch)
         announced_no_targets = False
         streaks = {}
         lookups = {"poll": 0, "misses": {}}
@@ -971,30 +1051,6 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
             ))
             return [r for r in results if isinstance(r, dict)]
 
-        def _log_poll_state(selected):
-            nonlocal announced_idle, announced_live_ids
-            current_ids = {s["accountId"] for s in selected}
-            announced_live_ids &= current_ids
-
-            new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
-            if new_live:
-                names = ", ".join(s["username"] for s in new_live)
-                log.info(f"Live now ({len(new_live)}): {names}")
-                announced_live_ids.update(s["accountId"] for s in new_live)
-                announced_idle = False
-            elif selected:
-                names = ", ".join(s["username"] for s in selected)
-                log.debug(f"Still live ({len(selected)}): {names}")
-                announced_idle = False
-            elif not announced_idle:
-                if watch:
-                    log.info("No active Fansly livestreams; waiting for selected creators to go live...")
-                else:
-                    log.info("No active Fansly livestreams found for the selected creators.")
-                announced_idle = True
-            else:
-                log.debug("No active Fansly livestreams found.")
-
         async def fetch_online():
             nonlocal announced_no_targets, following_set
             lookups["poll"] += 1
@@ -1018,7 +1074,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                     online = await _streams_for_targets(targets)
                     selected = select_streams(online, usernames, opts["excluded"])
                     warn_streak(streaks, "poll")
-                    _log_poll_state(selected)
+                    log_poll_state(selected)
                     return selected
 
                 # Default / list search (-fl): fetch followed online streams
@@ -1074,7 +1130,7 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
 
                 selected = select_streams(selected, usernames, opts["excluded"])
                 warn_streak(streaks, "poll")
-                _log_poll_state(selected)
+                log_poll_state(selected)
                 return selected
             except Exception as e:
                 warn_streak(streaks, "poll", f"Fansly livestream check failed: {e}")

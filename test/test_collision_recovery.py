@@ -279,3 +279,24 @@ def test_undo_checks_database_and_row_identity(database, tmp_path):
         conn.execute("UPDATE medias SET media_id=99 WHERE media_id=1")
     assert undo(database, result["undo_file"], apply=True)["rows_to_restore"] == 1
     assert flags(database) == [(99, 0), (2, 1)]
+
+
+@pytest.mark.parametrize(
+    "flag",
+    [
+        ["--undo-dir", "/tmp/undo"],
+        ["--site", "onlyfans"],
+        ["--creator", "alice"],
+    ],
+)
+def test_postgres_only_flags_with_file_report_derived_label(database, capsys, flag):
+    from ofscraper.commands.recover_collisions import main
+
+    with pytest.raises(SystemExit) as exc:
+        main([str(database), *flag])
+    assert exc.value.code == 2
+    assert (
+        "--site, --creator and --undo-dir go with --postgres;"
+        " with a file, give that creator's user_data.db"
+        in capsys.readouterr().err
+    )

@@ -30,7 +30,7 @@ PRESS ENTER TO RETURN
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 """
 
-FUZZY_INSTRUCTION = """
+_FUZZY_BODY = """
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 Instructions
@@ -80,74 +80,23 @@ KEYS
    ========
    CTRL+A
    ========
-   
+"""
 
-===================================================================
+_FUZZY_FOOTER = """===================================================================
 PRESS ENTER TO RETURN
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
 
-MODEL_FUZZY = """
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+FUZZY_INSTRUCTION = f"{_FUZZY_BODY}   \n\n{_FUZZY_FOOTER}"
 
-Instructions
-=========================================================================
-Enter Confirm KEY to confirm selection
-
-Parantheses indicates number of selected user
-
-
-MINUMUM CHOICE: 1
-MAX CHOICE:ALL
-
-=========================================================================
-
-KEYS
-=========================================================================
-  CONFIRM KEY          
-  ============
-  ENTER
-  ================
- 
- 
- SELECT KEYS
-   ================================================
-   END  |  HOME | PAGEUP | PAGEDOWN | shift+right
-   ================================================
-
- SPECIAL SELECT
- Will select and move cursor
- ================
-  TAB | SHIFT+TAB 
- =================
-
-
-  TOGGLE ALL FALSE
-   ========
-   CTRL+D
-   ========
-  
-  TOGGLE ALL TRUE
-   ========
-   CTRL+S
-   ========
-
-
-  TOGGLE ALL
-  Selects all, or clears all when all are selected
-   ========
-   CTRL+A
-   ========
-
-
-   CHANGE FILTER/SORT
-   ========
-   ALT+X|CTRL+B
-   ========
-===================================================================
-PRESS ENTER TO RETURN
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"""
+MODEL_FUZZY = (
+    f"{_FUZZY_BODY}\n\n"
+    "   CHANGE FILTER/SORT\n"
+    "   ========\n"
+    "   ALT+X|CTRL+B\n"
+    "   ========\n"
+    f"{_FUZZY_FOOTER}"
+)
 
 SCRAPE_PAID = """
 This is meant really for scraping content for deleted models

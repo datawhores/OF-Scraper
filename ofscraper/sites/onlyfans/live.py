@@ -52,14 +52,6 @@ def _check_concurrency() -> int:
     return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
 
 
-def _jitter() -> int:
-    try:
-        val = of_env.getattr("LIVE_JITTER", 10)
-        return max(0, int(10 if val is None else val))
-    except (TypeError, ValueError):
-        return 10
-
-
 def _stream_active_url(username: str) -> str:
     return of_env.getattr("STREAM_ACTIVE_URL").format(quote(username, safe=""))
 
@@ -449,16 +441,16 @@ async def get_online_streams(c, checks=None) -> list:
     return await _check_targets_concurrently(check_session, list(targets.values()), initial_live, cache)
 
 
-def recording_path(save_location, username: str, when: datetime.datetime | None = None) -> pathlib.Path:
+def recording_path(
+    save_location, username: str, when: datetime.datetime | None = None, *, model_id=None
+) -> pathlib.Path:
+    """``{save_location}/OnlyFans/{username}/Livestreams/{username}_{YYYYMMDD_HHMMSS}_live.webm``"""
+    import ofscraper.classes.placeholder as placeholder
+
     when = when or datetime.datetime.now(datetime.timezone.utc)
-    stamp = when.strftime("%Y%m%d_%H%M%S")
-    username = shared.folder_name(username)
-    return (
-        pathlib.Path(save_location)
-        / "OnlyFans"
-        / username
-        / "Livestreams"
-        / f"{username}_{stamp}_live.webm"
+    return placeholder.live_recording_path(
+        save_location, shared.folder_name(username), when,
+        site_name="OnlyFans", ext="webm", model_id=model_id,
     )
 
 
@@ -504,12 +496,10 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 manager.Manager.session.aget_ofsession(retries=1) as checks:
             loop = asyncio.get_running_loop()
             warned = []
-            announced_idle = False
-            announced_live_ids = set()
+            log_poll_state = shared.PollStateLogger("OnlyFans", watch)
             streaks = {}
 
             async def fetch_online():
-                nonlocal announced_idle, announced_live_ids
                 try:
                     online = await get_online_streams(c, checks=checks)
                 except Exception as e:
@@ -519,27 +509,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
 
                 shared.warn_streak(streaks, "poll")
                 selected = select_streams(online, opts["usernames"], opts["excluded"])
-                current_ids = {s["accountId"] for s in selected}
-                announced_live_ids &= current_ids
-
-                new_live = [s for s in selected if s["accountId"] not in announced_live_ids]
-                if new_live:
-                    names = ", ".join(s["username"] for s in new_live)
-                    log.info(f"Live now ({len(new_live)}): {names}")
-                    announced_live_ids.update(s["accountId"] for s in new_live)
-                    announced_idle = False
-                elif selected:
-                    names = ", ".join(s["username"] for s in selected)
-                    log.debug(f"Still live ({len(selected)}): {names}")
-                    announced_idle = False
-                elif not announced_idle:
-                    if watch:
-                        log.info("No active OnlyFans livestreams; waiting for selected creators to go live...")
-                    else:
-                        log.info("No active OnlyFans livestreams found for the selected creators.")
-                    announced_idle = True
-                else:
-                    log.debug("No active OnlyFans livestreams found.")
+                log_poll_state(selected)
                 return selected
 
             def check_live(username: str):
@@ -555,7 +525,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 import ofscraper.utils.auth.file as auth_file
 
                 username = stream["username"]
-                out = recording_path(save_location, username)
+                out = recording_path(save_location, username, model_id=stream["accountId"])
                 os.makedirs(os.path.dirname(out), exist_ok=True)
                 auth = auth_file.read_auth()
                 proxy = _session_proxy(c)
@@ -595,7 +565,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 record,
                 max_concurrent=opts["max_concurrent"],
                 interval=opts["interval"],
-                jitter=opts.get("jitter", _jitter()),
+                jitter=opts["jitter"],
                 once=not watch,
             )
             await watcher.run(stop)

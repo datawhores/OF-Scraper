@@ -223,6 +223,9 @@ def _write(monkeypatch, tmp_path, caption):
         async def init(self):
             return self
 
+        def templates(self):
+            return path.parent, "", "{text}.{ext}"
+
     async def _no_script(path):
         pass
 
@@ -516,7 +519,7 @@ def test_a_device_name_is_kept_outside_windows(naming, monkeypatch, tmp_path, cl
     "system, windows", [("Windows", True), ("Linux", False), ("Darwin", False)]
 )
 def test_on_windows_follows_the_system(monkeypatch, system, windows):
-    monkeypatch.setattr(placeholder.platform, "system", lambda: system)
+    monkeypatch.setattr("platform.system", lambda: system)
     assert placeholder._on_windows() is windows
 
 
@@ -566,3 +569,404 @@ def test_a_dot_folder_file_format_is_kept_when_the_name_is_not_the_template_fill
     # a caption's own dots after it are still not a folder
     out = placeholder._safe_name("./../a.txt", "./{text}/{filename}.{ext}", variables)
     assert out == "./_/a.txt"
+
+
+import asyncio
+import json
+
+from ofscraper.classes.of.posts import Post
+
+
+@pytest.fixture
+def path_options(monkeypatch, tmp_path):
+    path = tmp_path / "config.json"
+    config = {"file_options": {"save_location": str(tmp_path / "downloads"),
+                               "dir_format": "{model_username}", "file_format": "{filename}.{ext}"},
+              "advanced_options": {"temp_dir": ""}}
+    def save():
+        path.write_text(json.dumps(config), encoding="utf-8")
+    save()
+    monkeypatch.setattr(placeholder.config_file, "open_config", lambda: json.loads(path.read_text(encoding="utf-8")))
+    real = placeholder.settings.get_settings()
+    monkeypatch.setattr(placeholder.settings, "get_settings", lambda: SimpleNamespace(**{**dict(real), "site": "fansly", "anon": True}))
+    monkeypatch.setattr(placeholder.manager, "Manager", SimpleNamespace(
+        current_model_manager=SimpleNamespace(get_model=lambda username: None)))
+    monkeypatch.setattr(placeholder.log, "trace", lambda *a, **k: None, raising=False)
+    original = of_env.getattr
+    monkeypatch.setattr(of_env, "getattr", lambda key, *a, **k: True if key == "FILE_COUNT_PLACEHOLDER" else original(key, *a, **k))
+    return config, save
+
+
+def _two_media_post():
+    return Post({"id": 7, "postedAt": "2024-05-01T20:00:00Z", "text": "test", "media": [
+        {"id": i, "type": "photo", "canView": True,
+         "files": {"full": {"url": f"https://cdn.example.invalid/{i}.jpg"}}}
+        for i in (101, 102)
+    ]}, 123, "test_creator", "Timeline")
+
+
+@pytest.mark.parametrize("temp_root", [None, "", "explicit"])
+def test_temp_root_falls_back_only_when_empty(path_options, tmp_path, temp_root):
+    config, save = path_options
+    configured = str(tmp_path / "temp") if temp_root == "explicit" else temp_root
+    config["advanced_options"]["temp_dir"] = configured
+    save()
+    holder = placeholder.Placeholders(_two_media_post().all_media[0], "jpg")
+    result = asyncio.run(holder.getmediadir(root=placeholder.data.get_TempDir(), create=False))
+    root = tmp_path / "temp" if temp_root == "explicit" else tmp_path / "downloads" / "Fansly"
+    assert result == root / "test_creator"
+
+
+@pytest.mark.parametrize("kind", ["media", "caption"])
+def test_absolute_media_and_caption_folders_normalize_under_the_save_root(path_options, tmp_path, kind):
+    config, save = path_options
+    config["file_options"]["dir_format"] = "/../streams"
+    save()
+    post = _two_media_post()
+    holder = (placeholder.Placeholders(post.all_media[0], "jpg") if kind == "media"
+              else placeholder.Textholders(post, "txt"))
+    assert asyncio.run(holder.getmediadir(create=False)) == tmp_path / "downloads" / "Fansly" / "streams"
+
+
+@pytest.mark.parametrize("global_format,type_format,expected", [
+    ("{filename}.{ext}", "{post_id}.{ext}", ["7_1.jpg", "7_2.jpg"]),
+    ("{post_id}.{ext}", "{media_id}.{ext}", ["101.jpg", "102.jpg"]),
+    ("{post_id}.{ext}", None, ["7_1.jpg", "7_2.jpg"]),
+])
+def test_type_filename_controls_automatic_numbering(path_options, global_format, type_format, expected):
+    config, save = path_options
+    config["file_options"]["file_format"] = global_format
+    config["type_options"] = {"images": {"file_format": type_format}} if type_format else {}
+    save()
+    names = [asyncio.run(placeholder.Placeholders(ele, "jpg").createfilename())
+             for ele in _two_media_post().all_media]
+    assert names == expected
+
+
+def test_live_defaults_do_not_fetch_unused_account_identity(path_options, monkeypatch, tmp_path):
+    import datetime
+
+    def unexpected():
+        raise AssertionError("Default livestream templates do not need account identity")
+
+    monkeypatch.setattr(placeholder.me, "parse_user", unexpected)
+    when = datetime.datetime(2024, 5, 1, tzinfo=datetime.timezone.utc)
+    result = placeholder.live_recording_path(tmp_path, "test_creator", when, site_name="OnlyFans", ext="webm", model_id=123)
+    assert result == tmp_path / "OnlyFans" / "test_creator" / "Livestreams" / "test_creator_20240501_000000_live.webm"
+
+
+@pytest.mark.parametrize("alias", [False, True])
+def test_live_account_placeholders_share_base_context(path_options, monkeypatch, tmp_path, alias):
+    import datetime
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{myid}/{myusername}" if alias else "{my_id}/{my_username}"}
+    save()
+    monkeypatch.setattr(placeholder.me, "parse_user", lambda: ("Test account", "test_account"))
+    when = datetime.datetime(2024, 5, 1, tzinfo=datetime.timezone.utc)
+    result = placeholder.live_recording_path(tmp_path, "test_creator", when, site_name="Fansly", ext="mp4", model_id=123)
+    assert result.parent == tmp_path / "Fansly" / "anon" / "test_account"
+
+
+def test_live_requested_identity_errors_are_not_silently_formatted(path_options, monkeypatch, tmp_path):
+    import datetime
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{my_id}"}
+    save()
+
+    def unavailable():
+        raise RuntimeError("test account lookup failed")
+
+    monkeypatch.setattr(placeholder.me, "parse_user", unavailable)
+    with pytest.raises(RuntimeError, match="test account lookup failed"):
+        placeholder.live_recording_path(tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
+
+
+# ----------------------------------------------------------------------
+# Review of #850: type_options and live_options paths
+# ----------------------------------------------------------------------
+
+import datetime as _dt
+
+_STARTED = _dt.datetime(2024, 5, 1, tzinfo=_dt.timezone.utc)
+_DEFAULT_LIVE = ("OnlyFans", "test_creator", "Livestreams", "test_creator_20240501_000000_live.webm")
+
+
+def test_text_clash_check_uses_the_text_file_template(path_options, tmp_path):
+    # the global name has {post_id}, the text file's own doesn't: another
+    # post's caption at the name means this post's text goes elsewhere
+    from ofscraper.utils import text
+
+    config, save = path_options
+    config["file_options"]["file_format"] = "{post_id}_{text}.{ext}"
+    config["type_options"] = {"text": {"file_format": "{text}.{ext}"}}
+    save()
+    post = _two_media_post()
+    taken = tmp_path / "test.txt"
+    taken.write_text("another post's caption", encoding="utf-8")
+    formats = placeholder.Textholders(post, "txt").templates()[1:]
+    assert text._own_path(taken, post, "test", formats=formats) == tmp_path / "test_7.txt"
+
+
+def test_live_templates_take_the_date_parts(path_options, tmp_path):
+    config, save = path_options
+    config["live_options"] = {
+        "dir_format": "{sitename}/{model_username}/{year}/{month}",
+        "file_format": "{day}_{model_username}",
+    }
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path / "OnlyFans" / "test_creator" / "2024" / "05" / "01_test_creator_20240501_000000.webm"
+
+
+@pytest.mark.parametrize("template", ["{post_id}", "{modelObj.name}", "{date"])
+def test_a_live_template_that_cannot_be_filled_in_falls_back(path_options, monkeypatch, tmp_path, template):
+    # the stream is still recorded, under the default name, with a warning
+    config, save = path_options
+    config["live_options"] = {"file_format": template}
+    save()
+    warnings = []
+    monkeypatch.setattr(placeholder.log, "warning", warnings.append)
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path.joinpath(*_DEFAULT_LIVE)
+    assert len(warnings) == 1 and "test_creator's recording uses the default name" in warnings[0]
+
+
+@pytest.mark.parametrize("template", ["/tmp/sibling/{date}", "../{date}"])
+def test_a_live_file_template_with_a_path_keeps_the_recording_folder(path_options, tmp_path, template):
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{sitename}/recordings", "file_format": template}
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path / "OnlyFans" / "recordings" / _DEFAULT_LIVE[-1]
+
+
+def test_an_overlong_live_directory_component_uses_the_default_folder(path_options, monkeypatch, tmp_path):
+    config, save = path_options
+    config["live_options"] = {"dir_format": "recordings/" + "é" * 128 + "/{username}"}
+    save()
+    monkeypatch.setattr(placeholder.paths.platform, "system", lambda: "Linux")
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result == tmp_path.joinpath(*_DEFAULT_LIVE)
+    result.parent.mkdir(parents=True)
+
+
+def test_live_path_values_cannot_climb_folders(path_options, tmp_path):
+    result = placeholder.live_recording_path(
+        tmp_path, "..", _STARTED, site_name="OnlyFans", ext="webm"
+    )
+    assert result.parent == tmp_path / "OnlyFans" / "_" / "Livestreams"
+
+
+def test_an_override_save_location_gets_the_fansly_folder_as_save_location_does(path_options, tmp_path):
+    config, save = path_options
+    base = tmp_path / "Fansly"
+    config["file_options"]["save_location"] = str(base)
+    config["type_options"] = {"images": {"save_location": str(base)}}
+    save()
+    ele = _two_media_post().all_media[0]
+    assert placeholder.default_media_root() == base / "Fansly"
+    assert placeholder.Placeholders(ele, "jpg").templates()[0] == base / "Fansly"
+
+
+def test_templates_are_worked_out_once_per_file(path_options, monkeypatch):
+    reads = []
+    real = placeholder.data.get_type_options
+    monkeypatch.setattr(
+        placeholder.data, "get_type_options", lambda *a, **k: reads.append(1) or real(*a, **k)
+    )
+    holder = placeholder.Placeholders(_two_media_post().all_media[0], "jpg")
+    asyncio.run(holder.getmediadir(create=False))
+    asyncio.run(holder.createfilename())
+    assert len(reads) == 1
+
+
+def test_startup_check_names_live_and_type_templates(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{post_id}"}
+    config["type_options"] = {
+        "videos": {"file_format": "{nope}.{ext}"},
+        "livestreams": {"file_format": "{text}"},
+        "images": {"dir_format": "{post_id}"},
+    }
+    save()
+    lines = naming_check.problems()
+    live = "Livestreams are recorded under the default name until it's fixed"
+    assert f'live_options.dir_format "{{post_id}}" has an unknown placeholder: {{post_id}}. {live}' in lines
+    assert f'type_options.livestreams.file_format "{{text}}" has an unknown placeholder: {{text}}. {live}' in lines
+    assert any(line.startswith('type_options.videos.file_format "{nope}.{ext}"') for line in lines)
+    assert not any(line.startswith("type_options.images") for line in lines)
+
+
+def test_unique_name_warning_checks_type_file_formats(path_options):
+    from ofscraper.commands.scraper.utils import prepare
+
+    config, save = path_options
+    config["type_options"] = {"videos": {"file_format": "{date}.{ext}"}}
+    save()
+    assert prepare.check_uniquename() is False
+    # livestream names hold the start time; they aren't checked
+    config["type_options"] = {"livestreams": {"file_format": "{date}"}}
+    save()
+    assert prepare.check_uniquename() is True
+
+
+def test_startup_check_covers_full_paths_dates_and_type_names(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["file_options"]["date"] = "YYYY/MM"
+    config["responsetype"] = {"timeline": "Wall"}
+    config["type_options"] = {
+        "videos": {"dir_format": "E:/videos/{model_username}"},
+        "images": {"dir_format": "{date}"},
+        "video": {"file_format": "{media_id}.{ext}"},
+        "wall": {"file_format": "{media_id}.{ext}"},
+    }
+    save()
+    lines = naming_check.problems()
+    assert (
+        'type_options.videos.dir_format "E:/videos/{model_username}" is a full path, but'
+        " dir_format is always placed under save_location. Set"
+        " type_options.videos.save_location to choose where downloads go"
+    ) in lines
+    assert any(line.startswith('file_options.date "YYYY/MM" has a folder separator') for line in lines)
+    assert "type_options.video isn't a post area, media type or livestreams, so it's never used" in lines
+    # a responsetype folder name is a name an entry can match
+    assert not any(line.startswith("type_options.wall") for line in lines)
+
+    # livestream folders take the start time, not the date setting
+    config["type_options"] = {}
+    config["live_options"] = {"dir_format": "{date}"}
+    save()
+    assert not any(line.startswith("file_options.date") for line in naming_check.problems())
+
+
+def test_live_names_without_the_start_time_get_it(path_options, tmp_path):
+    """Two streams of one creator would get one file: OnlyFans opens it
+    with "xb" and fails, Fansly reads the first stream's sidecar"""
+    import datetime
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["live_options"] = {"dir_format": "{model_username}", "file_format": "{model_username}_live"}
+    save()
+    first, second = (
+        placeholder.live_recording_path(tmp_path, "test_creator", datetime.datetime(2024, 5, 1, hour),
+                                        site_name="OnlyFans", ext="webm")
+        for hour in (1, 2)
+    )
+    assert first.name == "test_creator_live_20240501_010000.webm"
+    assert first != second
+    assert any("have no {date} or {timestamp}" in line for line in naming_check.problems())
+
+    # a {date} in the folder keeps them apart too
+    config["live_options"]["dir_format"] = "{model_username}/{date}"
+    save()
+    assert placeholder.live_recording_path(
+        tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm"
+    ).name == "test_creator_live.webm"
+    assert not any("have no {date}" in line for line in naming_check.problems())
+
+
+@pytest.mark.parametrize("file_format", ["{nope}", "{username[a]}", "{config[file_options][date][x]}"])
+def test_a_live_name_that_cant_be_filled_keeps_the_live_folder(path_options, tmp_path, file_format):
+    import datetime
+
+    config, save = path_options
+    live = tmp_path / "live"
+    config["live_options"] = {"save_location": str(live), "file_format": file_format}
+    save()
+    result = placeholder.live_recording_path(
+        tmp_path / "main", "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
+    assert result == live / "OnlyFans" / "test_creator" / "Livestreams" / "test_creator_20240501_000000_live.webm"
+
+
+@pytest.mark.parametrize("name", ["message", "Messages", "post", "posts", "Timeline"])
+def test_type_options_names_match_their_aliases(path_options, name):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["type_options"] = {name: {"dir_format": "here"}}
+    save()
+    area = "Messages" if name.lower().startswith("message") else "Timeline"
+    folder = "Messages" if area == "Messages" else "Posts"
+    assert placeholder.media_templates((area, folder, "Images"))[1] == "here"
+    assert not any(line.startswith("type_options.") for line in naming_check.problems())
+
+
+def test_timeline_doesnt_catch_pinned_posts_but_posts_does(path_options):
+    """"posts" is the timeline's default folder, which pinned posts are
+    saved under too; "timeline" is only the timeline"""
+    config, save = path_options
+    config["type_options"] = {"timeline": {"dir_format": "wall"}}
+    save()
+    assert placeholder.media_templates(("Timeline", "Posts", "Images"))[1] == "wall"
+    assert placeholder.media_templates(("Pinned", "Posts", "Images"))[1] != "wall"
+    config["type_options"] = {"posts": {"dir_format": "wall"}}
+    save()
+    assert placeholder.media_templates(("Pinned", "Posts", "Images"))[1] == "wall"
+
+
+def test_type_options_names_for_the_same_type_are_named(path_options):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["type_options"] = {"message": {"dir_format": "a"}, "Messages": {"dir_format": "b"}}
+    save()
+    assert (
+        "type_options.message and type_options.Messages name the same type, so only"
+        " type_options.Messages is used"
+    ) in naming_check.problems()
+    assert placeholder.media_templates(("Messages", "Messages", "Images"))[1] == "b"
+
+
+@pytest.mark.parametrize("dir_format", [
+    "/streams/{username}", "D:/streams/{username}", "D:/../streams/{username}",
+    "D:../streams/{username}",
+])
+def test_a_full_path_live_folder_stays_under_the_save_location(path_options, tmp_path, monkeypatch, dir_format):
+    import datetime
+    import os
+    import pathlib
+
+    config, save = path_options
+    config["live_options"] = {"save_location": "C:/library", "dir_format": dir_format}
+    save()
+    if os.name != "nt":
+        # Exercise the Windows join on CI hosts that don't have Windows paths.
+        monkeypatch.setattr(placeholder, "os", SimpleNamespace(path=ntpath))
+        monkeypatch.setattr(placeholder, "pathlib", SimpleNamespace(Path=pathlib.PureWindowsPath))
+        monkeypatch.setattr(placeholder, "final_path", lambda path: path)
+    result = placeholder.live_recording_path(
+        tmp_path, "test_creator", datetime.datetime(2024, 5, 1), site_name="OnlyFans", ext="webm")
+    assert result == pathlib.PureWindowsPath("C:/library/streams/test_creator/test_creator_20240501_000000_live.webm")
+
+
+@pytest.mark.parametrize("site", ["onlyfans", "fansly"])
+def test_a_broken_live_template_doesnt_hide_the_other_warnings(path_options, monkeypatch, site):
+    from ofscraper.utils.config import naming_check
+
+    config, save = path_options
+    config["file_options"]["dir_format"] = "{nope}/x"
+    config["live_options"] = {"dir_format": "streams", "file_format": "{date"}
+    save()
+    current_settings = placeholder.settings.get_settings()
+    current_settings.site = site
+    monkeypatch.setattr(placeholder.settings, "get_settings", lambda: current_settings)
+    lines = []
+    monkeypatch.setattr(naming_check.log, "warning", lines.append)
+    naming_check.report()
+    assert any(line.startswith('file_options.dir_format "{nope}/x"') for line in lines), lines
+    assert any(line.startswith('live_options.file_format "{date"') for line in lines)

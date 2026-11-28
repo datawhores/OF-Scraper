@@ -357,7 +357,7 @@ def test_run_whose_undated_scan_fails_exits_partial(monkeypatch, cache, area, fa
         "settings",
         SimpleNamespace(get_settings=lambda: SimpleNamespace(label=None)),
     )
-    monkeypatch.setattr(post.free, "check_free_size", lambda: True)
+    monkeypatch.setattr(post.free, "check_free_size", lambda *a: True)
     monkeypatch.setattr(post.sites, "is_fansly", lambda: area.startswith("fansly"))
     monkeypatch.setattr(post.operations, "make_post_table_changes", AsyncMock())
     client = FakeClient([*pages_before, FAILURES[failure]()])
@@ -407,7 +407,7 @@ def test_area_saves_fetched_messages_and_keeps_rescan(monkeypatch, cache, explic
     setup_area(monkeypatch, "messages")
     saved = AsyncMock()
     monkeypatch.setattr(post.operations, "make_messages_table_changes", saved)
-    monkeypatch.setattr(post.free, "check_free_size", lambda: True)
+    monkeypatch.setattr(post.free, "check_free_size", lambda *a: True)
     monkeypatch.setattr(post.sites, "is_fansly", lambda: False)
     client = FakeClient([page([2002, 2001]), RuntimeError("boom")])
 

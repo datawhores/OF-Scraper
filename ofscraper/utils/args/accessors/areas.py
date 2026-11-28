@@ -1,10 +1,11 @@
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 
 
 def get_like_area():
     post = None
-    all_choices = ["Archived", "Timeline", "Pinned", "Streams"]
+    all_choices = list(const.TIMELINE_POST_AREAS)
     all_choices.append("Labels") if of_env.getattr("INCLUDE_LABELS_ALL") else None
     if len(settings.get_settings().like_area or []) == 0:
         post = set(settings.get_settings().posts or [])

@@ -255,3 +255,62 @@ def test_notes_from_before_the_log_is_set_up_are_written_once_it_is(config_path,
     assert "database_url in config.json is not read" in said[0]
     assert '"file_size_mx"' in said[1]
     assert "s3cr3t" not in " ".join(handler.lines)
+
+
+def test_type_options_entries_are_kept_without_a_note(config_path, logged):
+    config = defaults()
+    config["type_options"] = {
+        "videos": {"save_location": "E:/videos", "dir_format": "{model_username}"},
+        "text": {},
+    }
+    # something else makes the start rewrite the file
+    config["file_size_mx"] = "1GB"
+
+    saved = start_with(config_path, config)
+
+    assert [note for note in notes(logged) if "type_options" in note] == []
+    assert saved["type_options"] == config["type_options"]
+
+
+def test_type_options_entries_it_cant_use_are_named(config_path, logged):
+    config = defaults()
+    config["type_options"] = {
+        "videos": {"save_location": "E:/videos", "dirformat": "{model_username}"},
+        "images": "E:/images",
+    }
+
+    saved = start_with(config_path, config)
+
+    assert notes(logged) == [
+        'config.json: "type_options.videos.dirformat" isn\'t read (not a setting, or an older'
+        " name for one that's set under its current name), so it was removed from the file",
+        'config.json: "type_options.images" should hold settings (save_location, dir_format,'
+        " file_format) but holds a string, so it was removed",
+    ]
+    assert saved["type_options"] == {"videos": {"save_location": "E:/videos"}}
+
+
+def test_a_setting_holding_an_object_is_named_as_one_value(config_path, logged):
+    """not as "download_sems.count isn't read": only sections and
+    type_options entries are opened"""
+    config = defaults()
+    config["performance_options"]["download_sems"] = {"count": 5}
+
+    start_with(config_path, config)
+
+    assert notes(logged) == [
+        'config.json: "performance_options.download_sems" held an object it doesn\'t take, so the default'
+        f' {json.dumps(defaults()["performance_options"]["download_sems"])} is used and saved'
+    ]
+
+
+def test_a_type_options_value_that_isnt_text_is_named(config_path, logged):
+    config = defaults()
+    config["type_options"] = {"videos": {"dir_format": 5, "file_format": "{media_id}.{ext}"}}
+
+    saved = start_with(config_path, config)
+
+    assert notes(logged) == [
+        'config.json: "type_options.videos.dir_format" should be text but holds a number, so it was removed'
+    ]
+    assert saved["type_options"] == {"videos": {"file_format": "{media_id}.{ext}"}}

@@ -6,14 +6,15 @@ before downloads start, instead of failing or changing every file quietly.
 
 import json
 import logging
-import platform
 import re
 import string
+
+import ofscraper.utils.paths.names as names
 
 log = logging.getLogger("shared")
 
 # can't be in a file name on Windows; a slash would add a folder
-NOT_IN_A_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f\x7f]')
+NOT_IN_A_NAME = names.WINDOWS_FORBIDDEN
 
 TEXT_TYPES = ("letter", "word")
 
@@ -38,6 +39,36 @@ DIR_PLACEHOLDERS = _with_aliases(
 # file_format has {ext} too
 FILE_PLACEHOLDERS = DIR_PLACEHOLDERS | {"ext"}
 
+# the type_options names livestream recordings use
+LIVE_TYPE_KEYS = ("livestreams", "live")
+# names that mean an area's own name: "post" is the timeline, and "message"
+# (the responsetype key) is the messages area. "posts" isn't one: it's the
+# timeline's default folder name, which pinned posts are saved under too, so
+# a "posts" entry matches both, and a "timeline" one only the timeline
+TYPE_ALIASES = {"post": "timeline", "message": "messages"}
+# an area's key in the responsetype section: "timeline" for post or posts,
+# "message" for messages (the other way round from TYPE_ALIASES)
+RESPONSETYPE_KEYS = {"post": "timeline", "posts": "timeline", "messages": "message"}
+# the live placeholders that hold the start time, which keep one creator's
+# recordings apart
+LIVE_TIME_FIELDS = {"date", "timestamp"}
+
+
+def type_name(name):
+    """a type_options name or a type as compared: lowercased, an alias as
+    the name it means"""
+    name = str(name or "").strip().lower()
+    return TYPE_ALIASES.get(name, name)
+# what livestream templates can use: the names placeholder._live_path fills
+LIVE_PLACEHOLDERS = _with_aliases(
+    {
+        "config_path", "profile", "site_name", "save_location", "my_id",
+        "my_username", "root", "user_name", "username", "model_username",
+        "model_id", "first_letter", "response_type", "media_type", "date",
+        "timestamp", "year", "month", "day", "ext", "config", "args",
+    }
+)
+
 
 def text_type(value):
     """letter or word, matched without regard to case; None for anything else"""
@@ -47,19 +78,18 @@ def text_type(value):
 
 
 # outside Windows a name can hold all but "/" (it adds a folder) and NUL
-NOT_IN_A_POSIX_NAME = re.compile(r"[/\x00]")
+NOT_IN_A_POSIX_NAME = names.POSIX_FORBIDDEN
 
 
 def on_windows():
-    return platform.system() == "Windows"
+    return names.on_windows()
 
 
 def name_safe(text):
     """text without the characters a file name can't hold on this system:
     on Windows NOT_IN_A_NAME; elsewhere only "/" and NUL, so a ":" from
     HH:mm in the date setting stays, as in names made before"""
-    banned = NOT_IN_A_NAME if on_windows() else NOT_IN_A_POSIX_NAME
-    return banned.sub("", str(text))
+    return names.strip_forbidden(text, windows=on_windows())
 
 
 # "/x", "\x", "C:", "C:/x" or "~/x": dir_format is placed under save_location
@@ -69,10 +99,14 @@ FULL_PATH = re.compile(r"[/\\~]|[A-Za-z]:")
 
 def space_replacer_ok(value):
     # JSON can hold a number or a list there, which can't replace a space
-    return isinstance(value, str) and not NOT_IN_A_NAME.search(value)
+    return isinstance(value, str) and not names.has_forbidden(value)
 
 
-def template_problem(template, known):
+DOWNLOAD_EFFECT = "Each file will fail to download until it's fixed"
+LIVE_EFFECT = "Livestreams are recorded under the default name until it's fixed"
+
+
+def template_problem(template, known, effect=DOWNLOAD_EFFECT):
     """why a dir_format or file_format template can't be used, or None"""
     try:
         fields = [
@@ -92,9 +126,32 @@ def template_problem(template, known):
     if unknown:
         return (
             f"has {'unknown placeholders' if len(unknown) > 1 else 'an unknown placeholder'}:"
-            f" {', '.join(unknown)}. Each file will fail to download until it's fixed"
+            f" {', '.join(unknown)}. {effect}"
         )
     return None
+
+
+def templates():
+    """(setting, template, placeholders it can use, what happens when it
+    can't be filled in) for every folder and file name template: the
+    file_options ones, the live_options ones and each type_options one set"""
+    import ofscraper.utils.config.data as data
+
+    out = [
+        ("file_options.dir_format", data.get_dirformat(), DIR_PLACEHOLDERS, DOWNLOAD_EFFECT),
+        ("file_options.file_format", data.get_fileformat(), FILE_PLACEHOLDERS, DOWNLOAD_EFFECT),
+        ("live_options.dir_format", data.get_live_dirformat(), LIVE_PLACEHOLDERS, LIVE_EFFECT),
+        ("live_options.file_format", data.get_live_fileformat(), LIVE_PLACEHOLDERS, LIVE_EFFECT),
+    ]
+    for name, section in data.get_type_options().items():
+        live = type_name(name) in LIVE_TYPE_KEYS
+        for key, known in (("dir_format", DIR_PLACEHOLDERS), ("file_format", FILE_PLACEHOLDERS)):
+            if section.get(key):
+                out.append((
+                    f"type_options.{name}.{key}", section[key],
+                    LIVE_PLACEHOLDERS if live else known, LIVE_EFFECT if live else DOWNLOAD_EFFECT,
+                ))
+    return out
 
 
 def problems():
@@ -131,35 +188,121 @@ def problems():
             f"{setting} is {json.dumps(chosen)}, which {why},"
             " so a space is used"
         )
-    for key, template, known in (
-        ("dir_format", data.get_dirformat(), DIR_PLACEHOLDERS),
-        ("file_format", data.get_fileformat(), FILE_PLACEHOLDERS),
-    ):
-        problem = template_problem(str(template), known)
+    dated = False
+    for setting, template, known, effect in templates():
+        problem = template_problem(str(template), known, effect)
         if problem:
-            out.append(f"file_options.{key} {json.dumps(template)} {problem}")
-    dir_format = data.get_dirformat()
-    if isinstance(dir_format, str) and FULL_PATH.match(dir_format):
-        out.append(
-            f"file_options.dir_format {json.dumps(dir_format)} is a full path, but"
-            " dir_format is always placed under save_location. Set save_location"
-            " to choose where downloads go"
-        )
+            out.append(f"{setting} {json.dumps(template)} {problem}")
+        if not setting.endswith(".dir_format") or not isinstance(template, str):
+            continue
+        if FULL_PATH.match(template):
+            section = setting.rsplit(".", 1)[0]
+            where = "save_location" if section == "file_options" else f"{section}.save_location"
+            out.append(
+                f"{setting} {json.dumps(template)} is a full path, but"
+                f" dir_format is always placed under save_location. Set {where}"
+                " to choose where downloads go"
+            )
+        # livestream folders take the start time, not the date setting
+        if known is not LIVE_PLACEHOLDERS and re.search(r"\{date[}:!]", template):
+            dated = True
     # before, a "/" in the date (and "\" on Windows) made nested folders
     date = data.get_date()
     separators = "/\\" if on_windows() else "/"
-    if (
-        isinstance(dir_format, str)
-        and isinstance(date, str)
-        and re.search(r"\{date[}:!]", dir_format)
-        and any(sep in date for sep in separators)
-    ):
+    if dated and isinstance(date, str) and any(sep in date for sep in separators):
         out.append(
             f"file_options.date {json.dumps(date)} has a folder separator, but {{date}}"
             " in dir_format now fills one folder, so dates no longer nest. Use"
             " {year}/{month}/{day} in dir_format for nested date folders"
         )
+    known = known_type_names()
+    spelt = type_spellings()
+    for key, spellings in spelt.items():
+        if key not in known:
+            out.extend(
+                f"type_options.{name} isn't a post area, media type or livestreams,"
+                " so it's never used"
+                for name in spellings
+            )
+    for spellings in spelt.values():
+        if len(spellings) > 1:
+            # _type_settings keeps the last one
+            out.append(
+                f"type_options.{', type_options.'.join(spellings[:-1])} and"
+                f" type_options.{spellings[-1]} name the same type, so only"
+                f" type_options.{spellings[-1]} is used"
+            )
+    import ofscraper.classes.placeholder as placeholder
+
+    try:
+        _root, dir_fmt, file_fmt = placeholder.live_templates()
+        apart = placeholder.live_names_apart(dir_fmt, file_fmt)
+    except ValueError:
+        # a template that isn't valid ("{date"): named above already, and
+        # its recordings use the default names, which hold the start time
+        apart = True
+    if not apart:
+        out.append(
+            f"The livestream names ({json.dumps(dir_fmt)}, {json.dumps(file_fmt)}) have no"
+            " {date} or {timestamp}, so the start time is added to each file name to"
+            " keep a creator's recordings apart"
+        )
     return out
+
+
+# what a type_options entry can be named: a post's area as Post.responsetype
+# gives it, a media type, or livestreams (and TYPE_ALIASES)
+POST_AREAS = {
+    "timeline", "pinned", "archived", "messages", "paid", "purchased",
+    "stories", "highlights", "profile", "streams", "labels",
+}
+MEDIA_TYPES = {"images", "videos", "audios", "text"}
+
+
+def area_type_names(config=None):
+    """Names a type_options entry can match by post area or by the folder a
+    download saves the area's posts under (the names Post.modified_responsetype
+    gives, so media_type_keys can match them)."""
+    from ofscraper.classes.of.posts import archived_folder, responsetype_folder
+
+    if config is None:
+        import ofscraper.utils.config.file as config_file
+
+        config = config_file.open_config()
+    folders = {responsetype_folder(area, config=config) for area in POST_AREAS}
+    folders.add(archived_folder(config=config))
+    return POST_AREAS | {type_name(folder) for folder in folders}
+
+
+def known_type_names(config=None):
+    """Every name a type_options entry can be used under: a post area, its
+    folder, a media type or livestreams"""
+    return area_type_names(config) | MEDIA_TYPES | set(LIVE_TYPE_KEYS)
+
+
+def type_spellings(config=None):
+    """{type: [type_options names that mean it, in file order]}. Of two
+    spellings, placeholder._type_settings uses the last."""
+    import ofscraper.utils.config.data as data
+
+    out = {}
+    for name in data.get_type_options(config=config):
+        out.setdefault(type_name(name), []).append(name)
+    return out
+
+
+def used_type_options(config=None):
+    """{name as written: section} for the type_options entries downloads
+    use: of a known type, and of two spellings of one type only the last"""
+    import ofscraper.utils.config.data as data
+
+    options = data.get_type_options(config=config)
+    known = known_type_names(config)
+    return {
+        spellings[-1]: options[spellings[-1]]
+        for key, spellings in type_spellings(config).items()
+        if key in known
+    }
 
 
 def report():

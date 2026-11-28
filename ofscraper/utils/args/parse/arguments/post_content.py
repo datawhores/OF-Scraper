@@ -7,6 +7,7 @@ from ofscraper.utils.args.callbacks.parse.string import (
     StringTupleList,
 )
 from ofscraper.utils.args.callbacks.arguments.post import set_download_type_flag
+import ofscraper.utils.const as const
 from ofscraper.utils.args.types.choice import MultiChoice, MultiChoicePost
 
 # Define individual options
@@ -116,7 +117,7 @@ like_area_option = click.option(
     default=[],
     required=False,
     type=MultiChoice(
-        ["All", "Archived", "Timeline", "Pinned", "Labels", "Streams"],
+        list(const.TIMELINE_POST_AREA_CHOICES),
         case_sensitive=False,
     ),
     callback=StringSplitParseTitle,

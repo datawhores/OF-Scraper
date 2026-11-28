@@ -6,6 +6,7 @@ from collections import defaultdict
 import arrow
 
 import ofscraper.db.operations_.wrapper as db_wrapper
+import ofscraper.utils.const as const
 import ofscraper.utils.separate as separate
 import ofscraper.utils.settings as settings
 import ofscraper.utils.me as me_util
@@ -421,9 +422,10 @@ def temp_post_filter(media):
 def likable_post_filter(post):
     return list(
         filter(
-            lambda x: x.opened
-            and x.responsetype.capitalize()
-            in {"Timeline", "Archived", "Pinned", "Streams"},
+            lambda x: (
+                x.opened
+                and x.responsetype.capitalize() in const.TIMELINE_POST_AREA_SET
+            ),
             post,
         )
     )
