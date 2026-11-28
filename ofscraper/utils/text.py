@@ -125,19 +125,22 @@ async def get_text_process(username, ele, lock=None):
         await _write_text(ele)
 
 
+def _not_written(ele, why):
+    """Log, with the post's id, why no text file was written for it."""
+    logging.getLogger("shared").debug(f"post {ele.id}: no text file written, {why}")
+
+
 async def _write_text(ele):
     log = logging.getLogger("shared")
     dupe = (
         settings.get_settings().force_all or settings.get_settings().force_model_unique
     )
 
-    if bool(ele.text) is False:
-        return
-
     try:
-        content = file_text(ele.text)
         # a caption of only markup, e.g. "<p></p>", has no text to save
+        content = file_text(ele.text) if ele.text else ""
         if not content:
+            _not_written(ele, "the post has no caption")
             return
 
         new_ele = copy.deepcopy(ele)
@@ -154,21 +157,18 @@ async def _write_text(ele):
             formats=placeholderObj.templates()[1:],
         )
 
-        # Check for existing file BEFORE marking the attempt. A file at a
-        # name with {post_id} in it is kept as it is, even with other
-        # content (an older or hand-edited caption): --force-all rewrites it.
-        # The exception, at any name, is a file holding what an older
-        # version wrote for this caption, which is rewritten.
+        # A file at a name with {post_id} in it is kept as it is, even with
+        # other content (an older or hand-edited caption): --force-all
+        # rewrites it. The exception, at any name, is a file holding what an
+        # older version wrote for this caption, which is rewritten.
         if (
             filepath.exists()
             and not dupe
             and (_holds(filepath, content) or not _holds(filepath, *older))
         ):
-            # Returning without marking attempt will accurately log it as "skipped" in stats
+            _not_written(ele, f"it is already saved: {filepath}")
+            ele.mark_text("exists")
             return
-
-        # Now that we know we are writing to disk, officially mark the attempt
-        ele.mark_text_download_attempt()
 
         # captions often contain emoji, which Windows' default code page
         # (cp1252) can't encode before Python 3.15
@@ -176,17 +176,9 @@ async def _write_text(ele):
             await p.write(content)
 
         await after_download_script(filepath)
-
-        # Verify it actually wrote to disk to log success/failure
-        if filepath.exists():
-            ele.mark_text_downloaded(True)
-        else:
-            ele.mark_text_downloaded(False)
+        ele.mark_text("saved" if filepath.exists() else "failed")
 
     except Exception as E:
         log.traceback_(f"{E}")
         log.traceback_(f"{traceback.format_exc()}")
-        # If an error happens, ensure it's marked as an attempt so it logs as "failed"
-        ele.mark_text_download_attempt()
-        ele.mark_text_downloaded(False)
-        return
+        ele.mark_text("failed")

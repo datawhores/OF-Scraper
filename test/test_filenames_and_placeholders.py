@@ -7,6 +7,8 @@
 # ".quicktime", which players don't recognise.
 # ----------------------------------------------------------------------
 
+import logging
+
 import pytest
 
 import ofscraper.__main__  # noqa: F401  (import order: avoids a circular import)
@@ -206,11 +208,8 @@ class _Post:
         self.text = caption
         self.downloaded = None
 
-    def mark_text_download_attempt(self):
-        pass
-
-    def mark_text_downloaded(self, ok):
-        self.downloaded = ok
+    def mark_text(self, status):
+        self.downloaded = status == "saved"
 
 
 def _write(monkeypatch, tmp_path, caption):
@@ -265,18 +264,23 @@ def _write_texts(naming, monkeypatch, captions, *options, collision="media_id"):
     )
     posts = [make_post(caption, 0, post_id=n) for n, caption in enumerate(captions, 8)]
     asyncio.run(text.get_text("u", posts))
+    return [post.text_status for post in posts]
 
 
 CAPTIONS = ["Good morning everyone", "Good morning to my fans"]
 
 
-def test_a_taken_text_file_name_gets_the_post_id(naming, monkeypatch, tmp_path):
-    _write_texts(naming, monkeypatch, CAPTIONS)
+def test_a_taken_text_file_name_gets_the_post_id(naming, monkeypatch, tmp_path, caplog):
+    assert _write_texts(naming, monkeypatch, CAPTIONS) == ["saved", "saved"]
     both = {"Good morning.txt": CAPTIONS[0], "Good morning_9.txt": CAPTIONS[1]}
     assert text_files(tmp_path) == both
-    # a second run finds each post's own file, and writes nothing new
-    _write_texts(naming, monkeypatch, CAPTIONS)
+    # a second run finds each post's own file, writes nothing new, and says
+    # which post's file was already saved, not that something was skipped
+    with caplog.at_level(logging.DEBUG, logger="shared"):
+        assert _write_texts(naming, monkeypatch, CAPTIONS) == ["exists", "exists"]
     assert text_files(tmp_path) == both
+    assert "post 9: no text file written, it is already saved:" in caplog.text
+    assert "Good morning_9.txt" in caplog.text
     # --force-all rewrites each post's own file, not the other post's
     _write_texts(naming, monkeypatch, CAPTIONS, "--force-all")
     assert text_files(tmp_path) == both

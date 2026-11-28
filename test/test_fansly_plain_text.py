@@ -1,6 +1,7 @@
 """Fansly style codes are removed from the text that's saved, whatever sanitize_text says."""
 
 import asyncio
+import logging
 from types import SimpleNamespace
 
 import pytest
@@ -208,14 +209,17 @@ def test_an_older_version_s_text_file_at_a_fallback_name_is_corrected_in_place(
 
 @pytest.mark.parametrize("caption", ["<p></p>", "<br />", "<p> </p><br>"])
 def test_a_caption_of_only_markup_writes_no_text_file(
-    naming, monkeypatch, tmp_path, caption
+    naming, monkeypatch, tmp_path, caption, caplog
 ):
-    # skipped, as a post with no caption is, not saved as an empty file
+    # treated as a post with no caption: no empty file, and nothing for the
+    # run's text totals to count
     _write_text(naming, monkeypatch, caption)
     assert text_files(tmp_path) == {}
     post = make_post(caption, 0)
-    asyncio.run(text.get_text("u", [post]))
-    assert post.text_download_attempted is False
+    with caplog.at_level(logging.DEBUG, logger="shared"):
+        asyncio.run(text.get_text("u", [post]))
+    assert post.text_status is None
+    assert "post 8: no text file written, the post has no caption" in caplog.text
     assert text_files(tmp_path) == {}
 
 

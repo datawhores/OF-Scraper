@@ -948,6 +948,6 @@ class Textholders(_ContentPlaceholder):
                 )
             else:
                 out = file_format.format(**self._variables)
-        log.debug(f"final filename path {out}")
+        log.debug(f"post {ele.id}: final text filename path {out}")
         self._filename = _safe_name(out, file_fmt, self._variables)
         return self._filename

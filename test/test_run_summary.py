@@ -33,8 +33,8 @@ def media(kind="Videos", size=0, attempted=True, succeeded=True, stopped=False):
     )
 
 
-def post(attempted=True, succeeded=True):
-    return SimpleNamespace(text_download_attempted=attempted, text_download_succeeded=succeeded)
+def post(status="saved"):
+    return SimpleNamespace(text_status=status)
 
 
 def filled():
@@ -48,7 +48,8 @@ def filled():
     stats.update_stats("bob", METADATA, [
         media("Videos"), media("Images"), media(succeeded=None), media(succeeded=False),
     ])
-    stats.update_stats("bob", TEXT, [post(), post(attempted=False), post(succeeded=False)])
+    # a post with no caption (None) isn't counted
+    stats.update_stats("bob", TEXT, [post(), post("exists"), post("failed"), post(None)])
     # a creator with nothing done
     stats.update_stats("carol", DOWNLOAD, [])
     return stats
@@ -83,7 +84,8 @@ def test_printed_summary_uses_the_totals(caplog):
     assert " ➜ TOTAL ITEMS: 5" in text
     assert " ➜ FAILED:      2 overall" in text
     assert " ➜ TOTAL CHANGED: 2" in text
-    assert " ➜ SAVED:   1" in text
+    assert " ➜ SAVED:         1" in text
+    assert " ➜ ALREADY SAVED: 1" in text
 
 
 # --- the run record ---------------------------------------------------------
