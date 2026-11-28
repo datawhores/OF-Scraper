@@ -970,3 +970,62 @@ def test_a_broken_live_template_doesnt_hide_the_other_warnings(path_options, mon
     naming_check.report()
     assert any(line.startswith('file_options.dir_format "{nope}/x"') for line in lines), lines
     assert any(line.startswith('live_options.file_format "{date"') for line in lines)
+
+
+def test_placeholder_methods_do_not_pollute_module_globals(path_options):
+    sentinel_keys = (
+        "model_username",
+        "model_id",
+        "post_id",
+        "media_id",
+        "file_name",
+        "first_letter",
+        "save_location",
+    )
+    for key in sentinel_keys:
+        vars(placeholder).pop(key, None)
+
+    post = _two_media_post()
+    media_holder = placeholder.Placeholders(post.all_media[0], "jpg")
+    text_holder = placeholder.Textholders(post, "txt")
+    db_holder = placeholder.databasePlaceholder(create=False)
+
+    db_holder.databasePathHelper(1, "test_creator")
+    asyncio.run(media_holder.getmediadir(create=False))
+    asyncio.run(media_holder.createfilename())
+    asyncio.run(text_holder.createfilename())
+
+    leaked = [key for key in sentinel_keys if key in vars(placeholder)]
+    assert leaked == []
+
+
+def test_placeholder_trace_omits_config_and_skips_when_disabled(monkeypatch):
+    import ofscraper.utils.settings as settings_mod
+
+    logged = []
+    monkeypatch.setattr(placeholder, "log", SimpleNamespace(trace=logged.append))
+    level = ["INFO"]
+    monkeypatch.setattr(
+        settings_mod,
+        "get_settings",
+        lambda: SimpleNamespace(
+            discord_level="OFF", log_level=level[0], output_level="INFO"
+        ),
+    )
+
+    variables = {
+        "model_username": "creator",
+        "config": {"discord": "https://discord.com/api/webhooks/secret"},
+        "args": SimpleNamespace(action="download"),
+    }
+
+    placeholder._trace_placeholders("mediadir placeholders", variables)
+    assert logged == []
+
+    level[0] = "TRACE"
+    placeholder._trace_placeholders("mediadir placeholders", variables)
+    assert len(logged) == 1
+    assert "creator" in logged[0]
+    assert "webhooks/secret" not in logged[0]
+    assert "'config'" not in logged[0]
+    assert "'args'" not in logged[0]

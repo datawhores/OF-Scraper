@@ -237,3 +237,73 @@ def test_status_line(monkeypatch, status, shown, not_shown):
     assert len(printed) == 1
     assert shown in printed[0]
     assert not_shown not in printed[0]
+
+
+def test_onlyfans_edit_auth_clears_my_info_cache_on_save(monkeypatch):
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.profiles.data as profile_data
+
+    cleared = []
+    hidden = []
+    monkeypatch.setattr(auth_file.sites, "is_fansly", lambda: False)
+    monkeypatch.setattr(auth_file.auth_dict, "get_auth_dict", lambda: {"sess": "old"})
+    monkeypatch.setattr(
+        auth_file.make,
+        "make_auth",
+        lambda current, include_main_menu=False: ({"sess": "new", "x-bc": "new-bc"}, "saved"),
+    )
+    monkeypatch.setattr(auth_file, "hide_secrets", lambda auth: hidden.append(auth))
+    monkeypatch.setattr(profile_data, "clear_my_info", lambda: cleared.append(True))
+    monkeypatch.setattr(auth_file.console, "print", lambda *a, **k: None)
+
+    result = auth_file.edit_auth()
+    assert result == {"sess": "new", "x-bc": "new-bc"}
+    assert cleared == [True]
+    assert hidden == [{"sess": "new", "x-bc": "new-bc"}]
+
+
+@pytest.mark.parametrize("choice", ["quit", "main"])
+def test_onlyfans_edit_auth_keeps_my_info_cache_when_cancelled(monkeypatch, choice):
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.profiles.data as profile_data
+
+    cleared = []
+    monkeypatch.setattr(auth_file.sites, "is_fansly", lambda: False)
+    monkeypatch.setattr(auth_file.auth_dict, "get_auth_dict", lambda: {"sess": "old"})
+    monkeypatch.setattr(
+        auth_file.make,
+        "make_auth",
+        lambda current, include_main_menu=False: (None, choice),
+    )
+    monkeypatch.setattr(profile_data, "clear_my_info", lambda: cleared.append(True))
+
+    assert auth_file.edit_auth() == choice
+    assert cleared == []
+
+
+def test_make_auth_attempt_masks_secrets_and_clears_my_info(monkeypatch, tmp_path):
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.auth.make as auth_make
+    import ofscraper.utils.profiles.data as profile_data
+
+    auth_path = tmp_path / "auth.json"
+    hidden = []
+    cleared = []
+    monkeypatch.setattr(auth_make.common_paths, "get_auth_file", lambda: auth_path)
+    monkeypatch.setattr(
+        auth_make.prompts,
+        "auth_prompt",
+        lambda current: {"sess": "fresh-sess", "x-bc": "fresh-xbc", "auth_id": "42", "user_agent": "ua"},
+    )
+    monkeypatch.setattr(auth_make, "check_auth_warning", lambda auth: True)
+    monkeypatch.setattr(auth_make.console, "print", lambda *a, **k: None)
+    monkeypatch.setattr(auth_file, "hide_secrets", lambda auth: hidden.append(dict(auth)))
+    monkeypatch.setattr(profile_data, "clear_my_info", lambda: cleared.append(True))
+
+    saved = auth_make._make_auth_attempt({}, "Enter Each Field Manually")
+    assert saved["sess"] == "fresh-sess"
+    assert auth_path.exists()
+    assert cleared == [True]
+    assert len(hidden) == 1
+    assert hidden[0]["sess"] == "fresh-sess"
+    assert hidden[0]["x-bc"] == "fresh-xbc"

@@ -10,6 +10,8 @@ import ofscraper.utils.of_env.of_env as env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import run
 
+log = logging.getLogger("shared")
+
 
 def run_after_action_script(
     username,
@@ -21,7 +23,6 @@ def run_after_action_script(
     label,
     level_key,
 ):
-    log = logging.getLogger("shared")
     action = action or default_action
     script_path = settings.get_settings().after_action_script
     if not script_path:
@@ -43,7 +44,7 @@ def run_after_action_script(
         )
         return
     if not posts:
-        posts = list({ele.post.id: ele.post for ele in media}.values())
+        posts = list({ele.post.id: ele.post for ele in (media or [])}.values())
     processed_username = username
     try:
         processed_username = (
@@ -56,7 +57,7 @@ def run_after_action_script(
             else (userdata.model if hasattr(userdata, "model") else None)
         )
         log.info(
-            f"Running post user script for {processed_username} with script: {script_path}"
+            f"Running after {label} action script for {processed_username} with script: {script_path}"
         )
         processed_media = [x.media for x in (media or [])]
         processed_posts = [x.post for x in (posts or [])]
@@ -96,12 +97,14 @@ def run_after_action_script(
         log.info(
             f"After {label} action script failed for {processed_username} with exit code {e.returncode}: '{script_path}'"
         )
-        log.debug(f"After {label} action script stdout:\n{e.stdout.strip()}")
-        log.debug(f"After {label} action script stderr:\n{e.stderr.strip()}")
+        log.debug(
+            f"After {label} action script stdout:\n{(e.stdout or '').strip()}"
+        )
+        log.debug(
+            f"After {label} action script stderr:\n{(e.stderr or '').strip()}"
+        )
     except Exception as e:
         log.info(
-            f"An unexpected error occurred while running after {label} script for {processed_username} with script '{script_path}': {e}",
-            exc_info=True,
+            f"An unexpected error occurred while running after {label} script for {processed_username} with script '{script_path}': {e}"
         )
-        log.traceback_(e)
         log.traceback_(traceback.format_exc())
