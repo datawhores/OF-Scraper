@@ -686,7 +686,8 @@ def test_chat_on_sends_only_auth_and_keepalive_and_writes_jsonl(tmp_path):
     auth = json.dumps({"t": 1, "d": json.dumps({"token": TOKEN, "v": 3})})
     assert sock.sent[0] == auth
     assert sock.sent.count(auth) == 1
-    assert set(sock.sent) == {auth, "p"}  # nothing else: no join, alerts, likes or tips
+    join = live_chat.join_frame(room)
+    assert set(sock.sent) == {auth, join, "p"}  # nothing else: no alerts, likes or tips
     assert sock.closed
     lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
     assert [line["chatRoomMessage"]["content"] for line in lines] == ["hello", "hi again"]
@@ -748,7 +749,7 @@ def test_chat_off_opens_no_socket_and_on_records_beside_the_video(tmp_path):
     chat_file = tmp_path / "on" / "Fansly" / "creator_a" / "Livestreams" / f"creator_a_{STAMP}_live_chat.jsonl"
     assert sidecar["chat"] == chat_file.name
     assert len(chat_file.read_text(encoding="utf-8").splitlines()) == 2
-    assert set(sockets[0].sent) <= {live_chat.auth_frame(TOKEN), "p"}
+    assert set(sockets[0].sent) <= {live_chat.auth_frame(TOKEN), live_chat.join_frame(f"7{CREATOR_A[0][1:]}"), "p"}
 
 
 # ------------------------------------------------------------------ wiring, and DoD 6 (OnlyFans)

@@ -30,6 +30,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import ofscraper.utils.events as events
 import time
 
 log = logging.getLogger("shared")
@@ -660,7 +661,7 @@ def drain(page, file) -> int:
     return written
 
 
-def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmpeg=None, proxy=None):
+def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmpeg=None, proxy=None, account_id=None):
     """Record ``username``'s livestream to ``out`` until it ends or ``halt`` is set.
 
     Returns the saved path, or None when nothing was recorded.
@@ -686,6 +687,17 @@ def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmp
                     return None
                 log.info(f"{username}: recording livestream to {out.name}")
                 log.debug(f"{username}: recorder {result}")
+                events.emit_sync(
+                    "live_stream",
+                    site="onlyfans",
+                    account_id=account_id,
+                    username=username,
+                    status="recording",
+                    part_path=out,
+                    part_num=1,
+                    started_at=time.time(),
+                    reason=f"{out.name} ({result.get('audio', 'no-audio')})",
+                )
                 saved = record_loop(page, username, out, halt, EndWatch(still_live))
             finally:
                 try:
@@ -706,6 +718,16 @@ def capture(username: str, out: pathlib.Path, auth: dict, halt, still_live, ffmp
             f"to add it, run: ffmpeg -i {out.name} -c copy fixed.webm"
         )
         return out
+    events.emit_sync(
+        "live_stream",
+        site="onlyfans",
+        account_id=account_id,
+        username=username,
+        status="remuxing",
+        part_path=out,
+        part_num=1,
+        reason="Remuxing WebM duration with ffmpeg...",
+    )
     remux(ffmpeg, out)
     log.info(f"{username}: livestream saved to {out.name}")
     return out

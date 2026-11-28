@@ -30,6 +30,7 @@ import threading
 from urllib.parse import quote
 
 import ofscraper.managers.manager as manager
+import ofscraper.utils.events as events
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.system.ffmpeg as ffmpeg_finder
@@ -41,6 +42,9 @@ log = logging.getLogger("shared")
 
 _TARGET_CACHE: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
     "_onlyfans_live_target_cache", default=None
+)
+_WATCHER: contextvars.ContextVar[object | None] = contextvars.ContextVar(
+    "_onlyfans_live_watcher", default=None
 )
 
 
@@ -380,28 +384,64 @@ def _direct_targets(cache: dict, all_users: bool, targets: dict, pages: list, li
     return (missing + missing)[start:start + most]
 
 
+def _get_extra_cache(cache: dict, extra, excluded) -> dict:
+    extra_cache = cache.setdefault("_extra", {})
+    extra_sig = (
+        tuple(sorted(username_match.username_keys(extra))),
+        tuple(sorted(username_match.username_keys(excluded))),
+    )
+    if extra_cache.get("_sig") != extra_sig:
+        extra_cache.clear()
+        extra_cache["_sig"] = extra_sig
+    return extra_cache
+
+
 async def get_online_streams(c, checks=None) -> list:
     import ofscraper.utils.settings as settings
     from ofscraper.data.api.subscriptions.subscriptions import scrape_subscriptions_active
 
     s = settings.get_settings()
     opts = shared.options()
-    usernames = opts.get("usernames") if opts.get("usernames") is not None else getattr(s, "usernames", None)
-    excluded = opts.get("excluded") if opts.get("excluded") is not None else getattr(s, "excluded_username", None)
+    watcher = _WATCHER.get()
+    extra = []
+    raw_u = opts.get("usernames") if opts.get("usernames") is not None else getattr(s, "usernames", None)
+    raw_ex = opts.get("excluded") if opts.get("excluded") is not None else getattr(s, "excluded_username", None)
+    if watcher is not None and getattr(watcher, "include_following", None) is not None:
+        all_users = bool(watcher.include_following)
+        w_extra = getattr(watcher, "extra_usernames", None)
+        if w_extra is None:
+            extra_list = [raw_u] if isinstance(raw_u, str) else list(raw_u or [])
+            extra = sorted({
+                str(u).strip().lower() for u in extra_list
+                if str(u).strip() and str(u).strip().upper() != "ALL"
+            })
+        else:
+            extra = sorted(w_extra)
+        usernames = None if all_users else extra
+        w_excl = getattr(watcher, "excluded_usernames", None)
+        excluded = raw_ex if w_excl is None else w_excl
+        if not all_users and not extra:
+            events.emit_sync("live_poll", state="targets", site="onlyfans", targets=[])
+            return []
+    else:
+        usernames = raw_u
+        excluded = raw_ex
+        all_users = shared.wants_all_usernames(usernames)
     search_mode = (
         opts.get("username_search")
         if opts.get("username_search") is not None
         else getattr(s, "username_search", None)
     )
-    all_users = shared.wants_all_usernames(usernames)
     has_filters = shared.has_custom_user_filters(s)
     check_session = checks or c
 
     # Default when --username is omitted (or ALL) and no custom filters are active:
     # grab every live creator from active subscriptions in batch pages.
-    if all_users and not has_filters:
+    if all_users and not has_filters and not extra:
         pages = [page async for page in scrape_subscriptions_active(c)]
-        return live_subscriptions(pages)
+        live = live_subscriptions(pages)
+        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=live)
+        return live
 
     cache = _TARGET_CACHE.get()
     if cache is None:
@@ -409,6 +449,37 @@ async def get_online_streams(c, checks=None) -> list:
     # --refresh-users: the targets are looked up again now and then, not on
     # every check, which would scan every subscription once a minute
     refresh_users = bool(getattr(s, "refresh_users", False)) and shared.refresh_due(cache)
+
+    if all_users and not has_filters and extra:
+        pages = [page async for page in scrape_subscriptions_active(c)]
+        live = live_subscriptions(pages)
+        extra_cache = _get_extra_cache(cache, extra, excluded)
+        extra_live_ids = await _update_targets(
+            c, extra_cache, extra, excluded, False, False, True
+        )
+        extra_targets = extra_cache.get("targets") or {}
+        seen_ids = {str(x["accountId"]) for x in live}
+        to_check = [t for t in extra_targets.values() if str(t["accountId"]) not in seen_ids]
+        if to_check:
+            extra_online = await _check_targets_concurrently(
+                check_session, to_check, extra_live_ids, extra_cache
+            )
+            for item in extra_online:
+                if str(item["accountId"]) not in seen_ids:
+                    seen_ids.add(str(item["accountId"]))
+                    live.append(item)
+        merged_targets = {str(x["accountId"]): x for x in live}
+        for t in extra_targets.values():
+            merged_targets.setdefault(str(t["accountId"]), t)
+        events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(merged_targets.values()))
+        return live
+
+    sig = (all_users, tuple(sorted(username_match.username_keys(usernames))), tuple(sorted(username_match.username_keys(excluded))))
+    # a cache with no signature yet holds nothing from another choice of
+    # creators, so only a changed signature empties it
+    if cache.get("_sig", sig) != sig:
+        cache.clear()
+    cache["_sig"] = sig
 
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
@@ -421,24 +492,47 @@ async def get_online_streams(c, checks=None) -> list:
         c, cache, usernames, excluded, all_users, has_filters, by_name, refresh=refresh_users
     )
     targets = cache["targets"]
-    if not targets:
+    extra_cache = None
+    extra_initial_live = set()
+    extra_targets = {}
+    if all_users and has_filters and extra:
+        extra_cache = _get_extra_cache(cache, extra, excluded)
+        extra_initial_live = await _update_targets(
+            c, extra_cache, extra, excluded, False, False, True
+        )
+        extra_targets = extra_cache.get("targets") or {}
+
+    combined_targets = dict(targets)
+    for aid, t in extra_targets.items():
+        combined_targets.setdefault(aid, t)
+
+    events.emit_sync("live_poll", state="targets", site="onlyfans", targets=list(combined_targets.values()))
+    if not combined_targets:
         return []
 
     # more creators than LIVE_INDIVIDUAL_MAX: one list scan, not a request per creator
     if list_mode or len(targets) > _individual_max():
         # a failed read fails the poll: it would look like nobody is subscribed
         pages = [page async for page in scrape_subscriptions_active(c, strict=True)]
-        live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live
+        live_ids = {s["accountId"] for s in live_subscriptions(pages)} | initial_live | extra_initial_live
         direct = _direct_targets(cache, all_users, targets, pages, live_ids)
         live_ids |= {
             t["accountId"] for t in await _check_targets_concurrently(check_session, direct, set(), cache)
         }
+        if extra_targets:
+            checked_ids = live_ids | {t["accountId"] for t in direct}
+            extra_to_check = [t for t in extra_targets.values() if t["accountId"] not in checked_ids]
+            if extra_to_check:
+                live_ids |= {
+                    t["accountId"]
+                    for t in await _check_targets_concurrently(check_session, extra_to_check, set(), extra_cache)
+                }
         # the cached target, which keeps the name a renamed creator was looked up as
-        return [t for t in targets.values() if t["accountId"] in live_ids]
+        return [t for t in combined_targets.values() if t["accountId"] in live_ids]
 
     # Individual target path (-fi or auto-selected individual search):
     # resolve target accounts once, then poll streams/active concurrently on `checks` (retries=1).
-    return await _check_targets_concurrently(check_session, list(targets.values()), initial_live, cache)
+    return await _check_targets_concurrently(check_session, list(combined_targets.values()), initial_live | extra_initial_live, cache)
 
 
 def recording_path(
@@ -488,6 +582,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
     save_location = common_paths.get_save_location()
     ffmpeg = ffmpeg_finder.get_ffmpeg() or None
     cache_token = _TARGET_CACHE.set({})
+    watcher_token = None
 
     try:
         # Separate sessions: `c` retries batch list calls; `checks` gets one attempt
@@ -508,7 +603,13 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                     raise
 
                 shared.warn_streak(streaks, "poll")
-                selected = select_streams(online, opts["usernames"], opts["excluded"])
+                w_inc = getattr(watcher, "include_following", None)
+                inc = shared.wants_all_usernames(opts["usernames"]) if w_inc is None else bool(w_inc)
+                w_extra = getattr(watcher, "extra_usernames", None)
+                active_u = None if inc else (opts["usernames"] if w_extra is None else sorted(w_extra))
+                w_excl = getattr(watcher, "excluded_usernames", None)
+                active_ex = opts["excluded"] if w_excl is None else w_excl
+                selected = select_streams(online, active_u, active_ex)
                 log_poll_state(selected)
                 return selected
 
@@ -525,18 +626,27 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 import ofscraper.utils.auth.file as auth_file
 
                 username = stream["username"]
+                account_id = str(stream["accountId"])
                 out = recording_path(save_location, username, model_id=stream["accountId"])
                 os.makedirs(os.path.dirname(out), exist_ok=True)
                 auth = auth_file.read_auth()
                 proxy = _session_proxy(c)
+                events.emit_sync(
+                    "live_stream",
+                    site="onlyfans",
+                    account_id=account_id,
+                    username=username,
+                    status="joining",
+                    part_path=out,
+                    part_num=1,
+                    reason="Launching headless Chromium...",
+                )
                 try:
                     # capture says when it really starts recording: a page
                     # with nothing to record (a ticketed stream, the login
                     # page) shouldn't announce a recording every poll
                     log.debug(f"Recording OnlyFans livestream for {username} -> {out}")
-                    saved = await record_in_thread(
-                        live_capture.capture,
-                        stop_event,
+                    capture_kwargs = dict(
                         username=username,
                         out=out,
                         auth=auth,
@@ -544,14 +654,51 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                         ffmpeg=ffmpeg,
                         proxy=proxy,
                     )
+                    if live_capture.capture is _REAL_CAPTURE:
+                        capture_kwargs["account_id"] = account_id
+                    saved = await record_in_thread(
+                        live_capture.capture,
+                        stop_event,
+                        **capture_kwargs,
+                    )
                     (log.info if saved else log.debug)(f"Finished OnlyFans livestream recording for {username}")
+                    events.emit_sync(
+                        "live_stream",
+                        site="onlyfans",
+                        account_id=account_id,
+                        username=username,
+                        status="stopped" if stop_event.is_set() else "ended",
+                        part_path=saved or out,
+                        part_num=1,
+                        reason=(
+                            "Saved (stopped by user)"
+                            if (saved and stop_event.is_set())
+                            else (out.name if saved else "Ended with no recorded data")
+                        ),
+                    )
                 except live_capture.BrowserMissing as e:
                     if not warned:
                         warned.append(True)
                         log.warning(str(e))
+                    events.emit_sync(
+                        "live_stream",
+                        site="onlyfans",
+                        account_id=account_id,
+                        username=username,
+                        status="failed",
+                        reason="Playwright Chromium missing",
+                    )
                 except Exception as e:
                     log.warning(f"{username}: livestream recording failed: {e}")
                     log.debug("", exc_info=True)
+                    events.emit_sync(
+                        "live_stream",
+                        site="onlyfans",
+                        account_id=account_id,
+                        username=username,
+                        status="failed",
+                        reason=str(e),
+                    )
 
             if watch:
                 log.info(
@@ -560,6 +707,8 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
             else:
                 log.info("Checking for active OnlyFans livestreams...")
 
+            raw_u = opts["usernames"]
+            init_names = [raw_u] if isinstance(raw_u, str) else list(raw_u or [])
             watcher = shared.LiveWatcher(
                 fetch_online,
                 record,
@@ -567,7 +716,17 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 interval=opts["interval"],
                 jitter=opts["jitter"],
                 once=not watch,
+                site="onlyfans",
+                include_following=shared.wants_all_usernames(raw_u),
+                extra_usernames=init_names,
+                excluded_usernames=opts["excluded"],
             )
+            watcher_token = _WATCHER.set(watcher)
             await watcher.run(stop)
     finally:
+        if watcher_token is not None:
+            _WATCHER.reset(watcher_token)
         _TARGET_CACHE.reset(cache_token)
+
+
+_REAL_CAPTURE = live_capture.capture

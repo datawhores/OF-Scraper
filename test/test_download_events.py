@@ -134,7 +134,7 @@ def test_failing_subscribers_dont_change_the_download(env, heard, monkeypatch, c
     # ahead of the recording ones, which still get every event
     for name in events.EVENTS:
         monkeypatch.setitem(
-            events._subscribers, name, (broken, broken_async) + events._subscribers[name]
+            events._subscribers, name, (broken, broken_async) + events._subscribers.get(name, ())
         )
     with caplog.at_level(logging.DEBUG, logger="shared"):
         counted, _ = normal_item_run(env)

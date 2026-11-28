@@ -31,6 +31,7 @@ import threading
 import time
 from urllib.parse import parse_qsl, urljoin, urlparse
 
+import ofscraper.utils.events as events
 from ofscraper.sites.fansly import constants
 from ofscraper.utils.username_match import matches_account, username_keys
 
@@ -296,9 +297,10 @@ async def run_ffmpeg(cmd: list, stop: asyncio.Event = None, proxy: str = None) -
         )
         if waiter not in done:
             try:
-                proc.stdin.write(b"q\n")
-                await proc.stdin.drain()
-            except (BrokenPipeError, ConnectionResetError):
+                if proc.stdin and not getattr(proc.stdin, "is_closing", lambda: False)():
+                    proc.stdin.write(b"q\n")
+                    await proc.stdin.drain()
+            except (BrokenPipeError, ConnectionResetError, RuntimeError):
                 pass  # ffmpeg exited while the stop request was being sent
             try:
                 await asyncio.wait_for(asyncio.shield(waiter), timeout=15)
@@ -420,6 +422,17 @@ class LiveRecorder:
         stop = stop or asyncio.Event()
         failures = 0
         chat_task = None
+        account_id = self.stream.get("accountId")
+        events.emit_sync(
+            "live_stream",
+            site="fansly",
+            account_id=account_id,
+            username=self.username,
+            status="joining",
+            title=self.stream.get("title"),
+            started_at=self.stream.get("startedAt"),
+            reason="Checking stream channel...",
+        )
         try:
             while not stop.is_set():
                 try:
@@ -455,6 +468,15 @@ class LiveRecorder:
                     log.info(f"{self.username}: livestream recording {self.end_reason}")
                     break
                 delay = self._backoff_delay(failures or 1)
+                events.emit_sync(
+                    "live_stream",
+                    site="fansly",
+                    account_id=account_id,
+                    username=self.username,
+                    status="retrying",
+                    title=self.stream.get("title"),
+                    reason=f"Stream dropped; retry in {delay:.0f}s ({failures}/{self.max_failures})",
+                )
                 try:
                     await asyncio.wait_for(stop.wait(), timeout=delay)
                 except asyncio.TimeoutError:
@@ -462,11 +484,30 @@ class LiveRecorder:
             if stop.is_set() and not self.end_reason:
                 self.end_reason = "stopped"
         finally:
+            if stop.is_set() and not self.end_reason:
+                self.end_reason = "stopped"
             if chat_task:
                 chat_task.cancel()
                 await asyncio.gather(chat_task, return_exceptions=True)
             if self.base is not None:
                 self._write_sidecar()
+            has_parts = bool(self.parts or self.earlier["parts"])
+            if stop.is_set() or self.end_reason == "stopped":
+                final_status = "stopped"
+            elif not has_parts and failures >= self.max_failures:
+                final_status = "failed"
+            else:
+                final_status = "ended"
+            events.emit_sync(
+                "live_stream",
+                site="fansly",
+                account_id=account_id,
+                username=self.username,
+                status=final_status,
+                part_path=self.parts[-1] if self.parts else None,
+                part_num=len(self.earlier["parts"]) + len(self.parts),
+                reason=self.end_reason or "ended",
+            )
         return self.sidecar
 
     async def _record_part(self, channel, stop):
@@ -485,6 +526,18 @@ class LiveRecorder:
             return False, False
         out = reserve_part(self.base, started_at=self.started_at)
         log.info(f"{self.username}: recording livestream to {out.name}")
+        events.emit_sync(
+            "live_stream",
+            site="fansly",
+            account_id=self.stream.get("accountId"),
+            username=self.username,
+            status="recording",
+            title=self.stream.get("title"),
+            started_at=self.stream.get("startedAt"),
+            part_path=out,
+            part_num=len(self.earlier["parts"]) + len(self.parts) + 1,
+            reason=out.name,
+        )
         try:
             await self.ffmpeg_runner(
                 ffmpeg_command(self.ffmpeg, variant, out, self.user_agent), stop,
@@ -533,80 +586,411 @@ class LiveWatcher:
     """
 
     def __init__(self, fetch_online, record, max_concurrent=DEFAULT_MAX_CONCURRENT,
-                 interval=DEFAULT_INTERVAL, jitter=DEFAULT_JITTER, once=False):
+                 interval=DEFAULT_INTERVAL, jitter=DEFAULT_JITTER, once=False,
+                 site: str = "fansly", chat_enabled: bool = False,
+                 include_following: bool | None = None, extra_usernames=None, excluded_usernames=None):
         self.fetch_online = fetch_online
         self.record = record
         self.max_concurrent = max(1, int(max_concurrent or 1))
         self.interval = interval
         self.jitter = jitter
         self.once = once
+        self.site = site
+        self.chat_enabled = bool(chat_enabled)
+        self.include_following = None if include_following is None else bool(include_following)
+        self.extra_usernames = (
+            None if extra_usernames is None else {
+                str(u).strip().lower()
+                for u in extra_usernames
+                if str(u).strip() and str(u).strip().upper() != "ALL"
+            }
+        )
+        self.excluded_usernames = (
+            None if excluded_usernames is None else {
+                str(u).strip().lower()
+                for u in excluded_usernames
+                if str(u).strip()
+            }
+        )
         self.active = {}
         self.max_seen = 0
+        self.paused = False
+        self.suppressed = set()
+        self.creator_stops = {}
+        self._pending_resume = set()
+        self._removed_ids = {}
+        self._last_online = {}
+        self._wake = None
+        self._force_poll = False
+
+    def request_poll(self):
+        self._force_poll = True
+        if self._wake is not None:
+            self._wake.set()
+
+    def set_paused(self, paused: bool):
+        self.paused = bool(paused)
+        if not self.paused:
+            self.request_poll()
+        elif self._wake is not None:
+            self._wake.set()
+
+    def set_chat_enabled(self, enabled: bool):
+        self.chat_enabled = bool(enabled)
+
+    def set_max_concurrent(self, value: int):
+        self.max_concurrent = max(1, int(value or 1))
+        if self._wake is not None:
+            self._wake.set()
+
+    def stop_creator(self, account_id) -> bool:
+        key_str = str(account_id)
+        self._pending_resume.discard(key_str)
+        self.suppressed.add(key_str)
+        ev = self.creator_stops.get(key_str)
+        info = self._last_online.get(key_str) or {}
+        uname = info.get("username") or key_str
+        if ev is not None and not ev.is_set():
+            ev.set()
+            events.emit_sync(
+                "live_stream",
+                site=self.site,
+                account_id=key_str,
+                username=uname,
+                status="stopping",
+                reason="Finalizing MP4 cleanly...",
+            )
+            return True
+        # Not actively recording (was queued or online): mark stopped immediately
+        events.emit_sync(
+            "live_stream",
+            site=self.site,
+            account_id=key_str,
+            username=uname,
+            status="stopped",
+            reason="Stopped by user (click [Resume] or press r)",
+        )
+        if self._wake is not None:
+            self._wake.set()
+        return False
+
+    def resume_creator(self, account_id):
+        key_str = str(account_id)
+        self.suppressed.discard(key_str)
+        info = self._last_online.get(key_str) or {}
+        uname = info.get("username") or key_str
+        if key_str in self.active:
+            # Old recording is still flushing to disk; queue automatic restart on exit
+            self._pending_resume.add(key_str)
+            events.emit_sync(
+                "live_stream",
+                site=self.site,
+                account_id=key_str,
+                username=uname,
+                status="queued",
+                reason="Waiting for previous part to finish closing...",
+            )
+            return
+        events.emit_sync(
+            "live_stream",
+            site=self.site,
+            account_id=key_str,
+            username=uname,
+            status="queued",
+            reason="Resuming stream check...",
+        )
+        self.request_poll()
+
+    def stop_all(self, account_ids=None) -> int:
+        keys = {str(k) for k in (account_ids or []) if k is not None}
+        keys |= set(self.creator_stops.keys())
+        keys |= set(self.active.keys())
+        keys |= set(self._last_online.keys())
+        self._pending_resume.clear()
+        self.suppressed |= keys
+        stopped = 0
+        for key_str in keys:
+            ev = self.creator_stops.get(key_str)
+            info = self._last_online.get(key_str) or {}
+            uname = info.get("username") or key_str
+            if ev is not None and not ev.is_set():
+                ev.set()
+                stopped += 1
+                events.emit_sync(
+                    "live_stream",
+                    site=self.site,
+                    account_id=key_str,
+                    username=uname,
+                    status="stopping",
+                    reason="Finalizing MP4 cleanly...",
+                )
+            else:
+                events.emit_sync(
+                    "live_stream",
+                    site=self.site,
+                    account_id=key_str,
+                    username=uname,
+                    status="stopped",
+                    reason="Stopped by user (click [Resume] or press a)",
+                )
+        if self._wake is not None:
+            self._wake.set()
+        return stopped
+
+    def resume_all(self):
+        skip = username_keys(self.excluded_usernames)
+        removed_ids = {aid for ids in self._removed_ids.values() for aid in ids}
+        to_resume = []
+        for key_str in list(self.suppressed):
+            info = self._last_online.get(key_str) or {}
+            if key_str in removed_ids or matches_account(info.get("username"), key_str, skip):
+                continue
+            self.suppressed.discard(key_str)
+            to_resume.append((key_str, info))
+        for key_str, info in to_resume:
+            uname = info.get("username") or key_str
+            if key_str in self.active:
+                self._pending_resume.add(key_str)
+            events.emit_sync(
+                "live_stream",
+                site=self.site,
+                account_id=key_str,
+                username=uname,
+                status="queued",
+                reason="Resuming stream check...",
+            )
+        self.request_poll()
+
+    def set_include_following(self, enabled: bool):
+        self.include_following = bool(enabled)
+        self.request_poll()
+
+    def add_usernames(self, names):
+        if self.extra_usernames is None:
+            self.extra_usernames = set()
+        if self.excluded_usernames is None:
+            self.excluded_usernames = set()
+        for raw in names or ():
+            clean = str(raw).strip().lstrip("@").lower()
+            if not clean or clean == "all":
+                continue
+            self.extra_usernames.add(clean)
+            self.excluded_usernames.discard(clean)
+            # the accounts the typed text stands for: the stopped creators it
+            # names (by account id, or by the name they were last live under)
+            # and the removed creators whose account id it is
+            ids = set()
+            for key_str in self.suppressed:
+                info = self._last_online.get(key_str) or {}
+                uname = str(info.get("username") or "").strip().lower()
+                if key_str.lower() == clean or uname == clean:
+                    ids.add(key_str)
+            for removed in self._removed_ids.values():
+                ids |= {key_str for key_str in removed if key_str.lower() == clean}
+            # a creator removed under another name than the one typed (their
+            # account id, say) is still left out by that name: forget it too
+            for name in [n for n, removed in self._removed_ids.items() if n == clean or removed & ids]:
+                self.excluded_usernames.discard(name)
+                ids |= self._removed_ids.pop(name)
+            for key_str in ids:
+                self.excluded_usernames.discard(key_str.lower())
+                self.suppressed.discard(key_str)
+                if key_str in self.active:
+                    # the recording stopped by the removal is still closing:
+                    # check again as soon as it has, not on the next interval
+                    self._pending_resume.add(key_str)
+        self.request_poll()
+
+    def remove_username(self, username: str, account_id=None):
+        if self.extra_usernames is None:
+            self.extra_usernames = set()
+        if self.excluded_usernames is None:
+            self.excluded_usernames = set()
+        clean = str(username or "").strip().lstrip("@").lower()
+        if clean:
+            self.extra_usernames.discard(clean)
+            self.excluded_usernames.add(clean)
+        if account_id is not None:
+            key_str = str(account_id)
+            self.excluded_usernames.add(key_str.lower())
+            if clean:
+                self._removed_ids.setdefault(clean, set()).add(key_str)
+            self._pending_resume.discard(key_str)
+            self.suppressed.add(key_str)
+            ev = self.creator_stops.get(key_str)
+            if ev is not None:
+                ev.set()
 
     def _start(self, stream, stop, wake) -> bool:
-        key = stream["accountId"]
-        if not claim(key):
-            # recorded by another watcher in this process (the one-shot
-            # --live run or the daemon's watch thread); the next poll retries
+        key_str = str(stream["accountId"])
+        self._last_online[key_str] = dict(stream)
+        if not claim(key_str):
             log.debug(f"{stream.get('username')}: already being recorded")
             return False
 
+        creator_stop = asyncio.Event()
+        if stop.is_set():
+            creator_stop.set()
+        self.creator_stops[key_str] = creator_stop
+
+        async def _forward_stop():
+            await stop.wait()
+            creator_stop.set()
+
+        forwarder = asyncio.ensure_future(_forward_stop())
+
         async def runner():
             try:
-                await self.record(stream, stop)
+                await self.record(stream, creator_stop)
             except Exception as e:
                 log.info(f"{stream.get('username')}: livestream recording failed: {e}")
             finally:
-                self.active.pop(key, None)
-                wake.set()
+                forwarder.cancel()
+                await asyncio.gather(forwarder, return_exceptions=True)
+                self.creator_stops.pop(key_str, None)
+                self.active.pop(key_str, None)
+
+        def _on_done(_task):
+            forwarder.cancel()
+            self.creator_stops.pop(key_str, None)
+            self.active.pop(key_str, None)
+            release(key_str)
+            if key_str in self._pending_resume and not stop.is_set():
+                self._pending_resume.discard(key_str)
+                self.suppressed.discard(key_str)
+                self._force_poll = True
+            elif key_str in self.suppressed and not stop.is_set():
+                events.emit_sync(
+                    "live_stream",
+                    site=self.site,
+                    account_id=key_str,
+                    username=stream.get("username") or key_str,
+                    status="stopped",
+                    reason="Stopped by user (click [Resume] or press r)",
+                )
+            wake.set()
 
         task = asyncio.ensure_future(runner())
-        # the only release: it also runs when the task is cancelled before it
-        # ever ran. Releasing in runner() as well could drop a claim another
-        # thread made in between.
-        task.add_done_callback(lambda _: release(key))
-        self.active[key] = task
+        task.add_done_callback(_on_done)
+        self.active[key_str] = task
         self.max_seen = max(self.max_seen, len(self.active))
         return True
-
     async def run(self, stop: asyncio.Event = None):
         """Watch until ``stop``; with ``once`` only who is live now, then return."""
         stop = stop or asyncio.Event()
         wake = asyncio.Event()
+        self._wake = wake
+        loop = asyncio.get_running_loop()
+        events.emit_sync(
+            "live_watcher",
+            state="started",
+            watcher=self,
+            loop=loop,
+            site=self.site,
+            once=self.once,
+            interval=self.interval,
+            jitter=self.jitter,
+            max_concurrent=self.max_concurrent,
+        )
         queue = []
         poll = True
         try:
             while not stop.is_set():
                 wake.clear()
                 if poll:
+                    events.emit_sync("live_poll", state="polling", site=self.site)
                     try:
-                        queue = list(await self.fetch_online())
+                        fetched = list(await self.fetch_online())
+                        events.emit_sync(
+                            "live_poll",
+                            state="ok",
+                            site=self.site,
+                            online=fetched,
+                            online_count=len(fetched),
+                        )
+                        for s in fetched:
+                            self._last_online[str(s["accountId"])] = dict(s)
+                        online_keys = {str(s["accountId"]) for s in fetched}
+                        self.suppressed &= (online_keys | set(self.active.keys()))
+                        for s in fetched:
+                            if str(s["accountId"]) in self.suppressed and str(s["accountId"]) not in self.active:
+                                events.emit_sync(
+                                    "live_stream",
+                                    site=self.site,
+                                    account_id=str(s["accountId"]),
+                                    username=s.get("username"),
+                                    status="stopped",
+                                    title=s.get("title"),
+                                    started_at=s.get("startedAt"),
+                                    reason="Paused by user (press r to resume)",
+                                )
+                        queue = [
+                            s for s in fetched
+                            if str(s["accountId"]) not in self.suppressed
+                        ]
                     except Exception as e:
                         log.debug(f"live check failed: {e}")
-                queue = [s for s in queue if s["accountId"] not in self.active]
-                while queue and len(self.active) < self.max_concurrent:
+                        events.emit_sync("live_poll", state="error", site=self.site, error=str(e))
+                queue = [
+                    s for s in queue
+                    if str(s["accountId"]) not in self.active and str(s["accountId"]) not in self.suppressed
+                ]
+                while not self.paused and queue and len(self.active) < self.max_concurrent:
                     self._start(queue.pop(0), stop, wake)
+                for waiting in queue:
+                    events.emit_sync(
+                        "live_stream",
+                        site=self.site,
+                        account_id=str(waiting["accountId"]),
+                        username=waiting.get("username"),
+                        status="queued",
+                        title=waiting.get("title"),
+                        started_at=waiting.get("startedAt"),
+                        reason=(
+                            "Polls paused; starts when resumed"
+                            if self.paused
+                            else "Waiting for free recording slot"
+                        ),
+                    )
                 if self.once:
                     if not queue and not self.active:
                         break
-                    poll = False
                     await _either(wake, stop)
+                    if self._force_poll:
+                        self._force_poll = False
+                        poll = True
+                    else:
+                        poll = False
                     continue
                 timeout = self.interval + random.uniform(0, self.jitter)
+                events.emit_sync(
+                    "live_poll",
+                    state="waiting",
+                    site=self.site,
+                    timeout=timeout,
+                    paused=self.paused,
+                    max_concurrent=self.max_concurrent,
+                )
                 try:
                     await asyncio.wait_for(_either(wake, stop), timeout=timeout)
                     # a recording ended: start the next waiting creator now,
                     # the next poll still happens on the interval
-                    poll = not wake.is_set()
+                    if self._force_poll:
+                        self._force_poll = False
+                        poll = True
+                    else:
+                        poll = (not wake.is_set()) and (not self.paused)
                 except asyncio.TimeoutError:
-                    poll = True
+                    poll = not self.paused
         except asyncio.CancelledError:
             for task in self.active.values():
                 task.cancel()
             raise
         finally:
+            self._wake = None
             if self.active:
                 await asyncio.gather(*self.active.values(), return_exceptions=True)
+            events.emit_sync("live_watcher", state="stopped", watcher=self, site=self.site)
 
 
 async def _either(a: asyncio.Event, b: asyncio.Event):
@@ -757,11 +1141,20 @@ def _resolve_live_jitter(s) -> float:
 def options(s=None) -> dict:
     """Livestream options from the merged settings (all default to off/brief values)."""
     import ofscraper.utils.settings as settings
+    import ofscraper.utils.args.globals as global_args
 
+    global_args_obj = global_args.args if s is None else None
     s = s or settings.get_settings()
+    once = bool(getattr(s, "live", False))
+    tui = bool(
+        getattr(s, "live_tui", False)
+        or (getattr(global_args_obj, "live_tui", False) if global_args_obj is not None else False)
+    )
+    watch = bool(getattr(s, "live_watch", False)) or (tui and not once)
     return {
-        "once": bool(getattr(s, "live", False)),
-        "watch": bool(getattr(s, "live_watch", False)),
+        "once": once,
+        "watch": watch,
+        "tui": tui,
         "interval": getattr(s, "live_interval", None) or DEFAULT_INTERVAL,
         "max_concurrent": getattr(s, "live_max", None) or DEFAULT_MAX_CONCURRENT,
         "jitter": _resolve_live_jitter(s),
@@ -792,6 +1185,10 @@ def once_enabled(s=None) -> bool:
 
 def watch_enabled(s=None) -> bool:
     return enabled(s) and options(s)["watch"]
+
+
+def tui_enabled(s=None) -> bool:
+    return bool(options(s).get("tui"))
 
 
 class LiveThread(threading.Thread):
@@ -864,6 +1261,14 @@ class LiveThread(threading.Thread):
 
 def run_blocking(watch: bool, runner=None, menu=False):
     """Record in the foreground; Ctrl+C stops the recordings cleanly first."""
+    import sys
+    import ofscraper.utils.args.accessors.output as output_args
+
+    if tui_enabled() and not output_args.low_output() and sys.stdout.isatty():
+        from ofscraper.classes.live_tui import run_live_tui
+
+        return run_live_tui(watch=watch, runner=runner, menu=menu)
+
     thread = LiveThread(watch, runner)
     thread.start()
     try:
@@ -1059,50 +1464,81 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 unfollowed_cache.clear()
                 filtered_cache.clear()
                 following_set = None
-            usernames = opts["usernames"]
-            name_list = [usernames] if isinstance(usernames, str) else list(usernames or [])
+            w_inc = getattr(watcher, "include_following", None)
+            include_following = wants_all_usernames(opts["usernames"]) if w_inc is None else bool(w_inc)
+            w_extra = getattr(watcher, "extra_usernames", None)
+            if w_extra is None:
+                raw = opts["usernames"]
+                extra_list = [raw] if isinstance(raw, str) else list(raw or [])
+                extra_names = sorted({
+                    str(u).strip().lower() for u in extra_list
+                    if str(u).strip() and str(u).strip().upper() != "ALL"
+                })
+            else:
+                extra_names = sorted(w_extra)
+            w_excl = getattr(watcher, "excluded_usernames", None)
+            excluded = opts["excluded"] if w_excl is None else w_excl
             search_mode = opts["username_search"]
-            all_users = wants_all_usernames(usernames)
+            active_usernames = None if include_following else extra_names
 
             try:
-                # Individual search (-fi) with explicit usernames: query only those creators
-                if not all_users and search_mode == "individual":
-                    targets = await _resolve_fansly_targets(name_list, unfollowed_only=False)
+                if not include_following and not extra_names:
+                    events.emit_sync("live_poll", state="targets", site="fansly", targets=[])
+                    warn_streak(streaks, "poll")
+                    log_poll_state([])
+                    return []
+
+                # Individual search (-fi) with explicit usernames only (Following OFF)
+                if not include_following and search_mode == "individual":
+                    targets = await _resolve_fansly_targets(extra_names, unfollowed_only=False)
+                    skip = username_keys(excluded)
+                    targets = [
+                        t for t in targets
+                        if not matches_account(t.get("username"), t.get("accountId"), skip)
+                    ]
                     if not targets and not announced_no_targets:
                         log.warning("No matching creators found to check for livestreams.")
                         announced_no_targets = True
                     online = await _streams_for_targets(targets)
-                    selected = select_streams(online, usernames, opts["excluded"])
+                    selected = select_streams(online, active_usernames, excluded)
+                    events.emit_sync("live_poll", state="targets", site="fansly", targets=targets)
                     warn_streak(streaks, "poll")
                     log_poll_state(selected)
                     return selected
 
-                # Default / list search (-fl): fetch followed online streams
+                # Fetch followed online streams first, then fall back for unfollowed explicit targets
                 online = await live_api.get_online_streams(c)
-                selected = select_streams(online, usernames, opts["excluded"])
+                selected = select_streams(online, active_usernames, excluded)
+                explicit_targets = []
 
-                # Auto fallback when explicit --username creators aren't followed
-                if not all_users and search_mode != "list":
+                if extra_names and search_mode != "list":
                     matched_keys = username_keys(
                         [s.get("username") for s in selected]
                         + [s.get("accountId") for s in selected]
                     )
-                    skip = username_keys(opts["excluded"])
+                    skip = username_keys(excluded)
                     missing = [
-                        u
-                        for u in name_list
-                        if u
-                        and str(u).lower() not in matched_keys
-                        and str(u).lower() not in skip
+                        u for u in extra_names
+                        if u and str(u).lower() not in matched_keys and str(u).lower() not in skip
                     ]
                     if missing:
-                        # a failed fallback loses only the unfollowed creators this poll
                         try:
-                            targets = await _resolve_fansly_targets(missing, unfollowed_only=True)
-                            selected.extend(await _streams_for_targets(targets))
+                            explicit_targets = await _resolve_fansly_targets(
+                                missing, unfollowed_only=(search_mode != "individual")
+                            )
+                            explicit_targets = [
+                                t for t in explicit_targets
+                                if not matches_account(t.get("username"), t.get("accountId"), skip)
+                            ]
+                            extra_online = await _streams_for_targets(explicit_targets)
+                            seen_ids = {str(s["accountId"]) for s in selected}
+                            for item in extra_online:
+                                if str(item["accountId"]) not in seen_ids:
+                                    seen_ids.add(str(item["accountId"]))
+                                    selected.append(item)
                             warn_streak(streaks, "fallback")
                         except Exception as e:
-                            warn_streak(streaks, "fallback", f"Fansly: checking unfollowed creators failed: {e}")
+                            warn_streak(streaks, "fallback", f"Fansly: checking extra creators failed: {e}")
 
                 if opts["has_filters"] and selected:
                     unchecked = [
@@ -1118,8 +1554,6 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         mm = getattr(manager.Manager, "model_manager", None) or ModelManager()
                         allowed_ids = {str(m.id) for m in mm.filter_models(models)}
                         returned = {str(m.id) for m in models}
-                        # an account the lookup didn't return is left out this
-                        # poll only, not for the session
                         for s in unchecked:
                             aid = str(s["accountId"])
                             if aid in returned:
@@ -1128,7 +1562,14 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                         s for s in selected if filtered_cache.get(str(s["accountId"]), False)
                     ]
 
-                selected = select_streams(selected, usernames, opts["excluded"])
+                selected = select_streams(selected, active_usernames, excluded)
+                merged_targets = {str(t["accountId"]): t for t in explicit_targets}
+                for s in selected:
+                    merged_targets[str(s["accountId"])] = {
+                        "accountId": str(s["accountId"]),
+                        "username": s["username"],
+                    }
+                events.emit_sync("live_poll", state="targets", site="fansly", targets=list(merged_targets.values()))
                 warn_streak(streaks, "poll")
                 log_poll_state(selected)
                 return selected
@@ -1149,10 +1590,11 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 return await live_api.get_channel(c, stream["accountId"])
 
             chat = None
-            if opts["chat"]:
+            if getattr(watcher, "chat_enabled", opts["chat"]):
                 chat = live_chat.ChatRecorder(
                     live_chat.aiohttp_connect(auth.get("user_agent"), proxy),
                     auth.get("authorization_token"),
+                    username=stream["username"],
                 )
             await LiveRecorder(
                 stream, save_location, fetch_channel, fetch_text, max_failures=opts["max_failures"],
@@ -1160,11 +1602,18 @@ async def run(watch: bool = False, stop: asyncio.Event = None):
                 proxy=proxy,
             ).run(stop_event)
 
+        raw_u = opts["usernames"]
+        init_names = [raw_u] if isinstance(raw_u, str) else list(raw_u or [])
         watcher = LiveWatcher(
             fetch_online, record,
             max_concurrent=opts["max_concurrent"],
             interval=opts["interval"],
             jitter=opts["jitter"],
             once=not watch,
+            site="fansly",
+            chat_enabled=opts["chat"],
+            include_following=wants_all_usernames(raw_u),
+            extra_usernames=init_names,
+            excluded_usernames=opts["excluded"],
         )
         await watcher.run(stop)
