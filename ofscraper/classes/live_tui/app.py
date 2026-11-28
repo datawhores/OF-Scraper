@@ -8,6 +8,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 
+from rich.markup import escape as rich_escape
 from rich.text import Text
 from textual.app import App
 from textual.binding import Binding
@@ -225,6 +226,7 @@ class LiveStreamApp(App):
         self._streams: dict[str, StreamRowState] = {}
         self._username_index: dict[tuple[str, str], str] = {}
         self._removed_keys: set[str] = set()
+        self._removed_user_ids: dict[tuple[str, str], str] = {}
         self._chat_buffers: dict[str, deque[Text]] = {}
         self._active_chat_user: str | None = None
         self._shown_keys: set[str] = set()
@@ -527,7 +529,10 @@ class LiveStreamApp(App):
                     self._update_chat_title(selected)
 
     def _update_chat_title(self, entry: StreamRowState | None) -> None:
-        title_widget = self.query_one("#chat_pane_title", Static)
+        try:
+            title_widget = self.query_one("#chat_pane_title", Static)
+        except Exception:
+            return
         if entry is None:
             title_widget.update("Fansly Live Chat (--live-chat)")
         elif entry.site != "Fansly":
@@ -543,7 +548,10 @@ class LiveStreamApp(App):
             return
         self._active_chat_user = target_user
         self._update_chat_title(entry)
-        chat_widget = self.query_one("#live_chat_log", RichLog)
+        try:
+            chat_widget = self.query_one("#live_chat_log", RichLog)
+        except Exception:
+            return
         chat_widget.clear()
         if target_user and target_user in self._chat_buffers:
             for line in self._chat_buffers[target_user]:
@@ -716,7 +724,7 @@ class LiveStreamApp(App):
         else:
             poll_badge = f"[dim]{self._poll_state}[/dim]"
 
-        err_line = f"\n[bold red]Last Error:[/bold red] {self._last_error[:45]}" if self._last_error else ""
+        err_line = f"\n[bold red]Last Error:[/bold red] {rich_escape(self._last_error[:45])}" if self._last_error else ""
 
         self.query_one("#telemetry_left", Static).update(
             f"[bold ansi_blue]Site:[/bold ansi_blue] {self._site_label}   "
@@ -737,7 +745,10 @@ class LiveStreamApp(App):
     # ------------------------------------------------------------------ user actions
 
     def _selected_row_key(self) -> str | None:
-        table = self.query_one("#streams_table", DataTableExtended)
+        try:
+            table = self.query_one("#streams_table", DataTableExtended)
+        except Exception:
+            return None
         if table.row_count == 0:
             return None
         try:
@@ -829,13 +840,17 @@ class LiveStreamApp(App):
         self._sync_following_button()
         scope = "followed creators" if self._site_label == "Fansly" else "active subscriptions"
         if not self._include_following:
-            extra = getattr(self._watcher, "extra_usernames", set())
+            extra = set(getattr(self._watcher, "extra_usernames", None) or ())
             to_drop = [
                 k for k, v in self._streams.items()
                 if v.status == "offline" and v.username.lower() not in extra
             ]
             for k in to_drop:
                 self._streams.pop(k, None)
+            if to_drop:
+                self._username_index = {
+                    uk: rk for uk, rk in self._username_index.items() if rk in self._streams
+                }
             self._rebuild_table()
             self.notify(f"Excluded {scope}; tracking explicit usernames only.")
         else:
@@ -866,10 +881,20 @@ class LiveStreamApp(App):
             return
         site = self._site_label.lower()
         for n in names:
-            self._removed_keys.discard(f"{site}:{n.lower()}")
-            rk = self._username_index.get((site, n.lower()))
+            clean = n.lower()
+            self._removed_keys.discard(f"{site}:{clean}")
+            rk = self._username_index.get((site, clean))
             if rk:
                 self._removed_keys.discard(rk)
+            removed_id = self._removed_user_ids.pop((site, clean), None)
+            if removed_id is not None:
+                self._removed_keys.discard(f"{site}:{removed_id}")
+            # added back by account id: forget the name it was removed under
+            for removed_as in [
+                k for k, v in self._removed_user_ids.items()
+                if k[0] == site and str(v).lower() == clean
+            ]:
+                del self._removed_user_ids[removed_as]
         self._call_watcher(self._watcher.add_usernames, names)
         self.notify(f"Added {', '.join(names)} to live watchlist; checking now...", markup=False)
 
@@ -877,7 +902,9 @@ class LiveStreamApp(App):
         if not self._watcher:
             self.notify("Watcher has already finished.", severity="warning")
             return
+        site = entry.key.split(":", 1)[0] if ":" in entry.key else entry.site.lower()
         self._removed_keys.add(entry.key)
+        self._removed_user_ids[(site, entry.username.lower())] = entry.account_id
         self._call_watcher(self._watcher.remove_username, entry.username, entry.account_id)
         self._streams.pop(entry.key, None)
         self._username_index = {
@@ -965,8 +992,13 @@ class LiveStreamApp(App):
         self._call_watcher(self._watcher.stop_all, ids)
         for e in active_entries:
             e.user_stopped = True
-            e.status = "stopped"
-            e.reason = "Stopped all by user (press a to start all)"
+            was_rec = e.status in {"recording", "joining", "retrying"}
+            e.status = "stopping" if was_rec else "stopped"
+            e.reason = (
+                "Finalizing MP4 cleanly..."
+                if was_rec
+                else "Stopped all by user (press a to start all)"
+            )
         self._rebuild_table()
         self._refresh_telemetry()
         self.notify(f"Stopping {len(active_entries)} active/online stream(s)...")
@@ -1061,29 +1093,14 @@ class LiveStreamApp(App):
         import os
         import shutil
         import subprocess
+        import ofscraper.classes.placeholder as placeholder
         import ofscraper.classes.table.utils.open_folder as open_folder
         import ofscraper.sites as sites
         import ofscraper.utils.paths.common as common_paths
         from ofscraper.sites.fansly.live import folder_name
 
-        # Build a local env for fallback subprocesses without mutating os.environ
-        sub_env = os.environ.copy()
-        uid = os.getuid() if hasattr(os, "getuid") else None
-        if uid is not None:
-            runtime_dir = pathlib.Path(f"/run/user/{uid}")
-            if not sub_env.get("WAYLAND_DISPLAY") and runtime_dir.is_dir():
-                wl = [w for w in sorted(runtime_dir.glob("wayland-[0-9]*")) if not w.name.endswith(".lock")]
-                if wl:
-                    sub_env["WAYLAND_DISPLAY"] = wl[0].name
-            dbus_key = "DBUS_SESSION_BUS_ADDRESS"
-            if not sub_env.get(dbus_key) and (runtime_dir / "bus").exists():
-                sub_env[dbus_key] = f"unix:path=/run/user/{uid}/bus"
-        if not sub_env.get("DISPLAY"):
-            x_socks = sorted(pathlib.Path("/tmp/.X11-unix").glob("X[0-9]*"))
-            if x_socks:
-                sub_env["DISPLAY"] = f":{x_socks[0].name[1:]}"
-
         save_root = pathlib.Path(common_paths.get_save_location()).expanduser()
+        live_root = pathlib.Path(placeholder.live_save_location(save_root)).expanduser()
         target = None
 
         if entry is not None:
@@ -1092,18 +1109,31 @@ class LiveStreamApp(App):
                 target = open_folder.Target(open_folder.absolute(existing), select=True)
             else:
                 site_dir = "Fansly" if entry.site == "Fansly" else "OnlyFans"
-                live_dir = save_root / site_dir / folder_name(entry.username) / "Livestreams"
+                ext = "mp4" if entry.site == "Fansly" else "webm"
+                when = (
+                    datetime.datetime.fromtimestamp(entry.started_epoch, tz=datetime.timezone.utc)
+                    if entry.started_epoch
+                    else datetime.datetime.now(datetime.timezone.utc)
+                )
+                live_dir = placeholder.live_recording_path(
+                    save_root,
+                    folder_name(entry.username),
+                    when,
+                    site_name=site_dir,
+                    ext=ext,
+                    model_id=entry.account_id,
+                ).parent
                 creator_dir = live_dir.parent
-                site_root = save_root / site_dir
-                for candidate in (live_dir, creator_dir, site_root, save_root):
+                site_root = live_root / site_dir
+                for candidate in (live_dir, creator_dir, site_root, live_root, save_root):
                     if candidate.is_dir():
                         target = open_folder.Target(open_folder.absolute(candidate))
                         break
                 if target is None:
                     target = open_folder.Target(open_folder.absolute(live_dir))
         else:
-            site_root = save_root / ("Fansly" if sites.is_fansly() else "OnlyFans")
-            chosen = site_root if site_root.is_dir() else save_root
+            site_root = live_root / ("Fansly" if sites.is_fansly() else "OnlyFans")
+            chosen = site_root if site_root.is_dir() else (live_root if live_root.is_dir() else save_root)
             target = open_folder.Target(open_folder.absolute(chosen))
 
         try:
@@ -1111,6 +1141,22 @@ class LiveStreamApp(App):
             self.notify(f"Opened: {target.folder}", title="Open Folder", markup=False)
         except Exception as e:
             if target.folder.is_dir() and shutil.which("code"):
+                # Build a local env for the VS Code fallback without mutating os.environ
+                sub_env = os.environ.copy()
+                uid = os.getuid() if hasattr(os, "getuid") else None
+                if uid is not None:
+                    runtime_dir = pathlib.Path(f"/run/user/{uid}")
+                    if not sub_env.get("WAYLAND_DISPLAY") and runtime_dir.is_dir():
+                        wl = [w for w in sorted(runtime_dir.glob("wayland-[0-9]*")) if not w.name.endswith(".lock")]
+                        if wl:
+                            sub_env["WAYLAND_DISPLAY"] = wl[0].name
+                    dbus_key = "DBUS_SESSION_BUS_ADDRESS"
+                    if not sub_env.get(dbus_key) and (runtime_dir / "bus").exists():
+                        sub_env[dbus_key] = f"unix:path=/run/user/{uid}/bus"
+                if not sub_env.get("DISPLAY"):
+                    x_socks = sorted(pathlib.Path("/tmp/.X11-unix").glob("X[0-9]*"))
+                    if x_socks:
+                        sub_env["DISPLAY"] = f":{x_socks[0].name[1:]}"
                 try:
                     subprocess.Popen(
                         ["code", "--new-window", str(target.folder)],

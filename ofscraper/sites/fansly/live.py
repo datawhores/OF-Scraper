@@ -617,6 +617,7 @@ class LiveWatcher:
         self.suppressed = set()
         self.creator_stops = {}
         self._pending_resume = set()
+        self._removed_ids = {}
         self._last_online = {}
         self._wake = None
         self._force_poll = False
@@ -736,10 +737,16 @@ class LiveWatcher:
         return stopped
 
     def resume_all(self):
-        was_suppressed = list(self.suppressed)
-        self.suppressed.clear()
-        for key_str in was_suppressed:
+        skip = username_keys(self.excluded_usernames)
+        removed_ids = {aid for ids in self._removed_ids.values() for aid in ids}
+        to_resume = []
+        for key_str in list(self.suppressed):
             info = self._last_online.get(key_str) or {}
+            if key_str in removed_ids or matches_account(info.get("username"), key_str, skip):
+                continue
+            self.suppressed.discard(key_str)
+            to_resume.append((key_str, info))
+        for key_str, info in to_resume:
             uname = info.get("username") or key_str
             if key_str in self.active:
                 self._pending_resume.add(key_str)
@@ -764,9 +771,33 @@ class LiveWatcher:
             self.excluded_usernames = set()
         for raw in names or ():
             clean = str(raw).strip().lstrip("@").lower()
-            if clean and clean != "all":
-                self.extra_usernames.add(clean)
-                self.excluded_usernames.discard(clean)
+            if not clean or clean == "all":
+                continue
+            self.extra_usernames.add(clean)
+            self.excluded_usernames.discard(clean)
+            # the accounts the typed text stands for: the stopped creators it
+            # names (by account id, or by the name they were last live under)
+            # and the removed creators whose account id it is
+            ids = set()
+            for key_str in self.suppressed:
+                info = self._last_online.get(key_str) or {}
+                uname = str(info.get("username") or "").strip().lower()
+                if key_str.lower() == clean or uname == clean:
+                    ids.add(key_str)
+            for removed in self._removed_ids.values():
+                ids |= {key_str for key_str in removed if key_str.lower() == clean}
+            # a creator removed under another name than the one typed (their
+            # account id, say) is still left out by that name: forget it too
+            for name in [n for n, removed in self._removed_ids.items() if n == clean or removed & ids]:
+                self.excluded_usernames.discard(name)
+                ids |= self._removed_ids.pop(name)
+            for key_str in ids:
+                self.excluded_usernames.discard(key_str.lower())
+                self.suppressed.discard(key_str)
+                if key_str in self.active:
+                    # the recording stopped by the removal is still closing:
+                    # check again as soon as it has, not on the next interval
+                    self._pending_resume.add(key_str)
         self.request_poll()
 
     def remove_username(self, username: str, account_id=None):
@@ -781,6 +812,8 @@ class LiveWatcher:
         if account_id is not None:
             key_str = str(account_id)
             self.excluded_usernames.add(key_str.lower())
+            if clean:
+                self._removed_ids.setdefault(clean, set()).add(key_str)
             self._pending_resume.discard(key_str)
             self.suppressed.add(key_str)
             ev = self.creator_stops.get(key_str)
@@ -901,7 +934,7 @@ class LiveWatcher:
                     s for s in queue
                     if str(s["accountId"]) not in self.active and str(s["accountId"]) not in self.suppressed
                 ]
-                while queue and len(self.active) < self.max_concurrent:
+                while not self.paused and queue and len(self.active) < self.max_concurrent:
                     self._start(queue.pop(0), stop, wake)
                 for waiting in queue:
                     events.emit_sync(
@@ -912,7 +945,11 @@ class LiveWatcher:
                         status="queued",
                         title=waiting.get("title"),
                         started_at=waiting.get("startedAt"),
-                        reason="Waiting for free recording slot",
+                        reason=(
+                            "Polls paused; starts when resumed"
+                            if self.paused
+                            else "Waiting for free recording slot"
+                        ),
                     )
                 if self.once:
                     if not queue and not self.active:
