@@ -24,6 +24,8 @@ import ofscraper.utils.settings as settings
 
 def _area_choices(include_extra: bool = True) -> list:
     if sites.is_fansly():
+        if not include_extra:
+            return [Choice("Timeline")]
         return [
             Choice("Timeline"),
             Choice("Messages"),
@@ -99,7 +101,7 @@ def like_areas_prompt(like=True) -> list:
                 "name": name,
                 "message": f"Which area(s) would you to perform {'like' if like else 'unlike'} actions on",
                 "validate": prompt_validators.emptyListValidator(),
-                "choices": [Choice("Timeline")] if sites.is_fansly() else _area_choices(include_extra=False),
+                "choices": _area_choices(include_extra=False),
             }
         ]
     )

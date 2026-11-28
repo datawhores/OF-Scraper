@@ -66,12 +66,16 @@ def normalize(raw: dict) -> dict:
     return auth
 
 
+def _token_usable(token) -> bool:
+    token = token or ""
+    return len(token) >= 50 and token != PLACEHOLDER
+
+
 def problems(auth: dict) -> list:
     """Reasons the auth can't be used; empty when it looks usable."""
     out = []
-    token = auth.get("authorization_token") or ""
     ua = auth.get("user_agent") or ""
-    if len(token) < 50 or token == PLACEHOLDER:
+    if not _token_usable(auth.get("authorization_token")):
         out.append("authorization_token is missing or too short")
     if len(ua) < 40 or ua == PLACEHOLDER:
         out.append("user_agent is missing or too short")
@@ -196,17 +200,26 @@ def token_prompt(current):
     import ofscraper.prompts.promptConvert as promptClasses
 
     name = "input"
-    answers = promptClasses.batchConverter(
-        {
-            "type": "input",
-            "name": name,
-            "message": "Enter the Fansly authorization token",
-            "default": current or "",
-            "secret": True,
-            "validate": EmptyInputValidator(),
-        }
-    )
-    return answers[name]
+    # a blank answer keeps the current token only when there is one worth
+    # keeping: the placeholder or a token too short to work has to be replaced
+    keep = _token_usable(current)
+    question = {
+        "type": "input",
+        "name": name,
+        "message": (
+            "Enter the Fansly authorization token (leave blank to keep current)"
+            if keep
+            else "Enter the Fansly authorization token"
+        ),
+        "default": "",
+        "secret": True,
+    }
+    if not keep:
+        question["validate"] = EmptyInputValidator()
+    answers = promptClasses.batchConverter(question)
+    # a skipped prompt (Ctrl+Z) answers None
+    value = answers[name] or ""
+    return value if value.strip() else (current or "")
 
 
 def load() -> dict:

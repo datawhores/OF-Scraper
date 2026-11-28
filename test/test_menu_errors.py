@@ -305,3 +305,121 @@ def test_profile_change_compares_effective_sites(monkeypatch, tmp_path, menu_pro
     assert settings.get_args().download_area == ["Archived"]
     assert settings.get_args().like_area == ["Featured"]
     assert settings.get_args().scrape_paid is True
+
+
+def test_switch_site_preserves_each_site_creator_manager(monkeypatch, menu_profile):
+    of_manager = manager.Manager.current_model_manager
+    of_manager.state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["a creator"])
+    monkeypatch.setattr(prompt_classes, "getChecklistSelection", lambda **kwargs: "session")
+
+    menu.switch_site_helper()
+    assert sites.current_site() == sites.FANSLY
+    fansly_manager = manager.Manager.current_model_manager
+    assert fansly_manager is not of_manager
+    fansly_manager.state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["another creator"])
+
+    menu.switch_site_helper()
+    assert sites.current_site() == sites.ONLYFANS
+    assert manager.Manager.current_model_manager is of_manager
+    assert manager.Manager.current_model_manager.state.get_all_queued_usernames() == ["a creator"]
+
+    menu.switch_site_helper()
+    assert sites.current_site() == sites.FANSLY
+    assert manager.Manager.current_model_manager is fansly_manager
+    assert manager.Manager.current_model_manager.state.get_all_queued_usernames() == ["another creator"]
+
+
+@pytest.mark.parametrize(
+    "stored_site,override,activation,should_clear",
+    [
+        (sites.FANSLY, None, "active", True),
+        (sites.FANSLY, None, "default", True),
+        (sites.FANSLY, sites.ONLYFANS, "active", False),
+        (sites.FANSLY, None, "no", False),
+    ],
+)
+def test_create_profile_clears_areas_only_when_effective_site_changes(
+    monkeypatch, tmp_path, menu_profile, stored_site, override, activation, should_clear
+):
+    _profile_switch_setup(monkeypatch, tmp_path, menu_profile, stored_site, override)
+    monkeypatch.setattr(menu.prompts, "create_profiles_prompt", lambda: "fresh")
+    monkeypatch.setattr(menu.prompts, "change_selected_profile", lambda: activation)
+
+    menu.profile_menu_helper("create")
+
+    expected_profile = "main_profile" if activation == "no" else "fresh_profile"
+    assert profile_data.get_active_profile() == expected_profile
+    if should_clear:
+        assert sites.current_site() == sites.ONLYFANS
+        args = settings.get_args()
+        assert not args.posts
+        assert not args.download_area
+        assert not args.like_area
+        assert args.scrape_paid is None
+        assert areas.get_download_area() == set()
+    else:
+        assert settings.get_args().posts == ["Pinned"]
+        assert settings.get_args().download_area == ["Archived"]
+        assert settings.get_args().like_area == ["Featured"]
+        assert settings.get_args().scrape_paid is True
+
+
+@pytest.mark.parametrize("is_default", [False, True])
+def test_rename_active_profile_preserves_session_site_override(
+    monkeypatch, tmp_path, menu_profile, is_default
+):
+    config = tmp_path / "config.json"
+    config.write_text('{"main_profile": "main_profile"}', encoding="utf-8")
+    monkeypatch.setattr(common_paths, "get_config_path", lambda: config)
+    (tmp_path / "main_profile").mkdir(exist_ok=True)
+    if is_default:
+        menu_profile.profile = None
+    settings.update_settings()
+
+    of_manager = manager.Manager.current_model_manager
+    of_manager.state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["a creator"])
+
+    sites.set_active_site(sites.FANSLY)
+    settings.update_settings()
+    assert sites.current_site() == sites.FANSLY
+    fansly_manager = manager.Manager.current_model_manager
+    fansly_manager.state.set_queue(EActivity.ScrapeActivity.DOWNLOAD, ["another creator"])
+
+    manager.Manager.profile_manager.rename_profile("main_profile", "renamed_profile")
+    settings.update_settings()
+
+    assert profile_data.get_active_profile() == "renamed_profile"
+    assert sites.current_site() == sites.FANSLY
+    assert sites._session_site == sites.FANSLY
+    assert sites._session_profile == "renamed_profile"
+    assert manager.Manager.current_model_manager is fansly_manager
+    sites.set_active_site(sites.ONLYFANS)
+    settings.update_settings()
+    assert manager.Manager.current_model_manager is of_manager
+
+
+def test_delete_profile_from_the_menu_removes_its_folder_and_creator_managers(
+    monkeypatch, tmp_path, menu_profile
+):
+    """The Profile menu's Delete called ProfileManager.delete_profile() without
+    the profile's name: a TypeError after the folder was already removed, so
+    the creator managers kept for that profile were never dropped."""
+    import ofscraper.utils.profiles.manage as profile_manage
+
+    (tmp_path / "main_profile").mkdir(exist_ok=True)
+    other = tmp_path / "other_profile"
+    other.mkdir()
+    settings.update_settings()
+    kept = manager.Manager.current_model_manager
+    profile_manager = manager.Manager.profile_manager
+    profile_manager.model_managers[("other_profile", sites.ONLYFANS)] = object()
+    profile_manager.model_managers[("other_profile", sites.FANSLY)] = object()
+    monkeypatch.setattr(profile_manage.tools, "print_profiles", lambda: None)
+    monkeypatch.setattr(profile_manage.profile_data, "get_profile_names", lambda: [])
+    monkeypatch.setattr(profile_manage.prompts, "get_profile_prompt", lambda names: "other_profile")
+
+    profile_manage.delete_profile()
+
+    assert not other.exists()
+    assert [k for k in profile_manager.model_managers if k[0] == "other_profile"] == []
+    assert manager.Manager.current_model_manager is kept
