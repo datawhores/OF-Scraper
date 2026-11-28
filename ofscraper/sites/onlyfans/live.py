@@ -52,17 +52,6 @@ def _check_concurrency() -> int:
     return max(1, int(of_env.getattr("LIVE_CHECK_CONCURRENCY")))
 
 
-def _jitter() -> float:
-    val = getattr(shared.options(), "get", lambda *_: None)("jitter")
-    if val is not None:
-        return max(0.0, float(val))
-    try:
-        val = of_env.getattr("LIVE_JITTER", 10)
-        return max(0.0, float(10 if val is None else val))
-    except (TypeError, ValueError):
-        return 10.0
-
-
 def _stream_active_url(username: str) -> str:
     return of_env.getattr("STREAM_ACTIVE_URL").format(quote(username, safe=""))
 
@@ -543,7 +532,7 @@ async def run(watch: bool, stop: asyncio.Event | None = None):
                 record,
                 max_concurrent=opts["max_concurrent"],
                 interval=opts["interval"],
-                jitter=opts.get("jitter", _jitter()),
+                jitter=opts["jitter"],
                 once=not watch,
             )
             await watcher.run(stop)

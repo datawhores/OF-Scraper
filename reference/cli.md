@@ -862,7 +862,7 @@ When `-u`, a user list or other subscription filters choose the creators, the ch
 
 **Type:** integer range · **Default:** none · **Commands:** main program
 
-Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitter)
+Seconds between live checks in --live-watch (default 60, plus random jitter up to --live-jitter)
 
 **Dest:** `live_interval` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 
@@ -871,6 +871,8 @@ Seconds between live checks in --live-watch (default 60, plus up to 10 s of jitt
 **Type:** float range · **Default:** none · **Commands:** main program
 
 Max random extra seconds added to each --live-watch check interval (default 10)
+
+Overrides `LIVE_JITTER` (`OFSC_LIVE_JITTER`) for the run, on OnlyFans and Fansly. Without the option, or with a value that isn't a finite number, the wait falls back to `LIVE_JITTER`. Fractions of a second are accepted, and `0` turns the jitter off.
 
 **Dest:** `live_jitter` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`
 

@@ -22,6 +22,7 @@ import asyncio
 import datetime
 import json
 import logging
+import math
 import os
 import pathlib
 import random
@@ -613,6 +614,19 @@ def _int_env(key: str, default: int, minimum: int = 1) -> int:
         return default
 
 
+def _float_env(key: str, default: float, minimum: float = 0.0) -> float:
+    import ofscraper.utils.of_env.of_env as of_env
+
+    try:
+        val = of_env.getattr(key, default)
+        parsed = float(default if val is None else val)
+    except (TypeError, ValueError):
+        return float(default)
+    if not math.isfinite(parsed):
+        return float(default)
+    return max(minimum, parsed)
+
+
 def has_custom_user_filters(s=None) -> bool:
     """True when userlists, blacklists, or model filters narrow the creator pool."""
     from ofscraper.managers.model import ModelManager
@@ -658,10 +672,12 @@ def _resolve_live_jitter(s) -> float:
     val = getattr(s, "live_jitter", None)
     if val is not None:
         try:
-            return max(0.0, float(val))
+            parsed = float(val)
+            if math.isfinite(parsed):
+                return max(0.0, parsed)
         except (TypeError, ValueError):
             pass
-    return float(_int_env("LIVE_JITTER", DEFAULT_JITTER, minimum=0))
+    return _float_env("LIVE_JITTER", float(DEFAULT_JITTER), minimum=0.0)
 
 
 def options(s=None) -> dict:
