@@ -14,8 +14,6 @@ import logging
 import traceback
 from urllib.parse import parse_qs, urlsplit
 
-from rich.console import Console
-
 import ofscraper.data.api.subscriptions.common as common
 import ofscraper.managers.manager as manager
 import ofscraper.utils.of_env.of_env as of_env
@@ -23,7 +21,6 @@ from ofscraper.utils.context.run_async import run
 from ofscraper.utils.live.updater import userlist
 
 log = logging.getLogger("shared")
-console = Console()
 MAX_EMPTY_PAGES = 5
 
 
@@ -140,23 +137,18 @@ def _subscription_page_step(url, count):
     return step if step > 0 else count
 
 
-async def scrape_subscriptions_active(c, offset=0, strict=False):
-    """
-    Async Generator Worker Loop for active subscriptions.
-    Yields batches page-by-page. With ``strict``, a failed request raises
-    instead of ending the list, so an empty list and a failed one differ.
-    """
+async def _scrape_subscriptions(c, endpoint_key, label, offset=0, *, strict=False):
     current_offset = offset
     empty_pages = 0
     while True:
-        url = of_env.getattr("subscriptionsActiveEP").format(current_offset)
+        url = of_env.getattr(endpoint_key).format(current_offset)
         try:
-            log.debug(f"usernames active offset {current_offset}")
+            log.debug(f"usernames {label} offset {current_offset}")
             async with c.requests_async(url=url) as r:
                 if not (200 <= r.status < 300):
                     log.debug(f"Subscription API Error: {r.status}")
                     if strict:
-                        raise RuntimeError(f"active subscriptions: HTTP {r.status}")
+                        raise RuntimeError(f"{label} subscriptions: HTTP {r.status}")
                     break
 
                 response = await r.json_()
@@ -165,14 +157,14 @@ async def scrape_subscriptions_active(c, offset=0, strict=False):
                 if subscriptions:
                     empty_pages = 0
                     log.debug(
-                        f"active subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
+                        f"{label} subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
                     )
                     yield subscriptions
                 else:
                     empty_pages += 1
                     if empty_pages >= MAX_EMPTY_PAGES:
                         log.debug(
-                            f"active subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
+                            f"{label} subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
                         )
                         break
 
@@ -195,6 +187,22 @@ async def scrape_subscriptions_active(c, offset=0, strict=False):
             log.traceback_(E)
             log.traceback_(traceback.format_exc())
             break
+
+
+async def scrape_subscriptions_active(c, offset=0, strict=False):
+    """
+    Async Generator Worker Loop for active subscriptions.
+    Yields batches page-by-page. With ``strict``, a failed request raises
+    instead of ending the list, so an empty list and a failed one differ.
+    """
+    gen = _scrape_subscriptions(
+        c, "subscriptionsActiveEP", "active", offset=offset, strict=strict
+    )
+    try:
+        async for batch in gen:
+            yield batch
+    finally:
+        await gen.aclose()
 
 
 async def scrape_subscriptions_disabled(c, offset=0, *, strict=False):
@@ -202,52 +210,11 @@ async def scrape_subscriptions_disabled(c, offset=0, *, strict=False):
     Async Generator Worker Loop for expired subscriptions.
     Yields batches page-by-page.
     """
-    current_offset = offset
-    empty_pages = 0
-    while True:
-        url = of_env.getattr("subscriptionsExpiredEP").format(current_offset)
-        try:
-            log.debug(f"usernames offset expired {current_offset}")
-            async with c.requests_async(url=url) as r:
-                if not (200 <= r.status < 300):
-                    log.debug(f"Subscription API Error: {r.status}")
-                    if strict:
-                        raise RuntimeError(f"expired subscriptions: HTTP {r.status}")
-                    break
-
-                response = await r.json_()
-                subscriptions = response.get("list", [])
-
-                if subscriptions:
-                    empty_pages = 0
-                    log.debug(
-                        f"expired subscriptions offset {current_offset}: usernames found -> {list(map(lambda x: x.get('username'), subscriptions))}"
-                    )
-                    yield subscriptions
-                else:
-                    empty_pages += 1
-                    if empty_pages >= MAX_EMPTY_PAGES:
-                        log.debug(
-                            f"expired subscriptions offset {current_offset}: paging stopped after {empty_pages} consecutive empty pages"
-                        )
-                        break
-
-                if response.get("hasMore") is not True:
-                    break
-
-                step = _subscription_page_step(url, len(subscriptions))
-                if step <= 0:
-                    break
-                current_offset += step
-
-        except asyncio.TimeoutError:
-            if strict:
-                raise
-            log.debug(f"Task timed out {url}")
-            break
-        except Exception as E:
-            if strict:
-                raise
-            log.traceback_(E)
-            log.traceback_(traceback.format_exc())
-            break
+    gen = _scrape_subscriptions(
+        c, "subscriptionsExpiredEP", "expired", offset=offset, strict=strict
+    )
+    try:
+        async for batch in gen:
+            yield batch
+    finally:
+        await gen.aclose()

@@ -216,3 +216,37 @@ def test_empty_page_without_positive_step_stops(
 
     assert collect(worker, server) == []
     assert server.offsets == [0]
+
+
+class TimeoutServer:
+    @asynccontextmanager
+    async def requests_async(self, *, url):
+        raise asyncio.TimeoutError()
+        yield  # pragma: no cover
+
+
+@pytest.mark.parametrize("worker,endpoint_key", WORKERS, ids=["active", "expired"])
+def test_strict_timeout_logs_before_raising(worker, endpoint_key, caplog):
+    async def run():
+        return [item async for batch in worker(TimeoutServer(), strict=True) for item in batch]
+
+    with caplog.at_level("DEBUG", logger="shared"):
+        with pytest.raises(asyncio.TimeoutError):
+            asyncio.run(run())
+
+    assert "Task timed out" in caplog.text
+
+
+def test_active_accepts_positional_strict():
+    async def run():
+        return [
+            item
+            async for batch in subscriptions.scrape_subscriptions_active(
+                TimeoutServer(), 0, True
+            )
+            for item in batch
+        ]
+
+    with pytest.raises(asyncio.TimeoutError):
+        asyncio.run(run())
+

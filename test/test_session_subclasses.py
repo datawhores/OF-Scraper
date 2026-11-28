@@ -17,6 +17,14 @@ from ofscraper.managers.sessionmanager.sleepers import sleepers
 
 @pytest.fixture(autouse=True)
 def plain_settings(monkeypatch):
+    import ofscraper.utils.of_env.of_env as of_env
+
+    real_getattr = of_env.getattr
+    monkeypatch.setattr(
+        of_env,
+        "getattr",
+        lambda key, default=None: False if key == "API_FORCE_KEY" else real_getattr(key, default),
+    )
     monkeypatch.setattr(
         settings,
         "get_settings",
@@ -78,3 +86,90 @@ def test_session_subclasses_resolve_default_and_override_sleepers(
 
 def test_cdm_session_constructs_with_defaults():
     assert cdm_session() is not None
+
+
+def test_download_session_defaults_and_overrides(monkeypatch):
+    import asyncio
+    from contextlib import asynccontextmanager
+
+    from ofscraper.managers.sessionmanager import sessionmanager as sm
+
+    seen = []
+
+    @asynccontextmanager
+    async def fake_requests_async(self, *args, **kwargs):
+        seen.append(kwargs)
+        yield SimpleNamespace(status=200)
+
+    monkeypatch.setattr(sm.sessionManager, "requests_async", fake_requests_async)
+    sess = download_session()
+
+    async def run():
+        async with sess.requests_async("https://example.test", actions=[]):
+            pass
+        async with sess.requests_async(
+            "https://example.test", actions=[sm.HEADERS], exceptions=[sm.FORBIDDEN]
+        ):
+            pass
+        async with sess.requests_async("https://example.test", exceptions=[]):
+            pass
+
+    asyncio.run(run())
+
+    assert seen[0]["actions"] == [sm.SIGN, sm.COOKIES, sm.HEADERS]
+    assert seen[0]["exceptions"] == [sm.TOO_MANY, sm.AUTH]
+    assert seen[1]["actions"] == [sm.HEADERS]
+    assert seen[1]["exceptions"] == [sm.FORBIDDEN]
+    assert seen[2]["actions"] == [sm.SIGN, sm.COOKIES, sm.HEADERS]
+    assert seen[2]["exceptions"] == []
+
+
+def test_of_session_request_defaults_sync_and_async(monkeypatch):
+    import asyncio
+    from contextlib import asynccontextmanager, contextmanager
+
+    from ofscraper.managers.sessionmanager import sessionmanager as sm
+
+    async_seen = []
+    sync_seen = []
+
+    @asynccontextmanager
+    async def fake_async(self, *args, **kwargs):
+        async_seen.append(kwargs)
+        yield SimpleNamespace(status=200)
+
+    @contextmanager
+    def fake_sync(self, *args, **kwargs):
+        sync_seen.append(kwargs)
+        yield SimpleNamespace(status=200)
+
+    monkeypatch.setattr(sm.sessionManager, "requests_async", fake_async)
+    monkeypatch.setattr(sm.sessionManager, "requests", fake_sync)
+    sess = OFSessionManager()
+
+    async def run():
+        async with sess.requests_async("https://example.test"):
+            pass
+        async with sess.requests_async(
+            "https://example.test", actions=[], exceptions=[]
+        ):
+            pass
+        async with sess.requests_async("https://example.test", actions=None):
+            pass
+
+    asyncio.run(run())
+    with sess.requests("https://example.test"):
+        pass
+    with sess.requests("https://example.test", actions=[], exceptions=[]):
+        pass
+    with sess.requests("https://example.test", actions=None):
+        pass
+
+    for seen in (async_seen, sync_seen):
+        assert seen[0]["actions"] == [sm.SIGN, sm.COOKIES, sm.HEADERS]
+        assert seen[0]["exceptions"] == [sm.TOO_MANY, sm.AUTH, sm.FORBIDDEN]
+        assert seen[1]["actions"] == []
+        assert seen[1]["exceptions"] == []
+        assert seen[2]["actions"] is None
+        assert seen[2]["exceptions"] == [sm.TOO_MANY, sm.AUTH, sm.FORBIDDEN]
+

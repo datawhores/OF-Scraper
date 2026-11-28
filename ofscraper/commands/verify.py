@@ -28,12 +28,12 @@ import ofscraper.db.postgres as postgres
 import ofscraper.sites as sites
 from ofscraper.commands.recover_collisions import (
     MEANWHILE,
-    _from_another_system,
     _remove_unused,
     _undo_folder,
     _unconfirmed,
 )
 from ofscraper.commands.stash_sync import map_path
+from ofscraper.commands.utils.db_cli import from_another_system
 from ofscraper.utils.paths.spelling import Spellings
 
 MISSING, EMPTY, SIZE_DIFFERS, HASH_DIFFERS, NO_FILE_RECORDED, OK = (
@@ -85,7 +85,7 @@ def _deleted_posts(rows):
 def _full_path(directory, filename, path_root, mappings):
     path = os.path.join(directory or "", filename)
     path = map_path(path, mappings) if mappings else path
-    if not Path(path).is_absolute() and _from_another_system(Path(path)):
+    if not Path(path).is_absolute() and from_another_system(Path(path)):
         raise ValueError(
             f"{path} is a full path on another system: give --path-map RECORDED=HERE"
             " to read it as a path here"

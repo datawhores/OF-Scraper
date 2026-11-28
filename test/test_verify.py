@@ -536,12 +536,12 @@ def _windows_312_isabs(path):
 def test_a_posix_path_read_on_windows_needs_a_path_map(monkeypatch):
     # Windows Python 3.11 and 3.12, simulated: ntpath, and its isabs that took
     # /mnt/lib for a full path although it names no drive.
-    import ofscraper.commands.recover_collisions as recover_collisions
+    import ofscraper.commands.utils.db_cli as db_cli
 
     windows_path = SimpleNamespace(**{**vars(ntpath), "isabs": _windows_312_isabs})
     monkeypatch.setattr(verify, "os", SimpleNamespace(path=windows_path, name="nt"))
     monkeypatch.setattr(verify, "Path", PureWindowsPath)
-    monkeypatch.setattr(recover_collisions, "os", SimpleNamespace(name="nt"))
+    monkeypatch.setattr(db_cli, "os", SimpleNamespace(name="nt"))
     for path_root in (None, r"C:\run"):
         with pytest.raises(ValueError, match="--path-map"):
             verify._full_path("/mnt/lib", "ok.jpg", path_root, None)
