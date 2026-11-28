@@ -3,18 +3,15 @@ import logging
 from rich import print
 
 import ofscraper.db.postgres as postgres
+import ofscraper.managers.manager as manager
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.paths.manage as manage
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.tools as tools
-import ofscraper.managers.manager as manager
 from ofscraper.utils.markup import escape_text
 
-
 log = logging.getLogger("shared")
-currentData = None
-currentProfile = None
 
 
 def change_default_profile():

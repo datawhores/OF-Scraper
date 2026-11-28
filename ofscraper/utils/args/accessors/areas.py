@@ -18,17 +18,7 @@ def get_like_area():
 
 def get_download_area():
     post = None
-    all_choices = [
-        "Highlights",
-        "Archived",
-        "Messages",
-        "Timeline",
-        "Pinned",
-        "Stories",
-        "Purchased",
-        "Profile",
-        "Streams",
-    ]
+    all_choices = list(const.ALL_POST_AREAS)
     all_choices.append("Labels") if of_env.getattr("INCLUDE_LABELS_ALL") else None
     if len(settings.get_settings().download_area or []) == 0:
         post = set(settings.get_settings().posts or [])

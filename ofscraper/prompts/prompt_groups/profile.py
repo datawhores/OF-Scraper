@@ -11,12 +11,11 @@ r"""
 
 """
 
-from InquirerPy.separator import Separator
-from InquirerPy.validator import EmptyInputValidator
-from prompt_toolkit.shortcuts import prompt as prompt
-from InquirerPy.base import Choice
 import pathlib
 
+from InquirerPy.base import Choice
+from InquirerPy.separator import Separator
+from InquirerPy.validator import EmptyInputValidator
 
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
@@ -31,12 +30,12 @@ def _profile_choice(profile) -> Choice:
         if isinstance(profile, pathlib.Path)
         else common_paths.get_config_home() / str(profile)
     )
-    name = profile.stem if isinstance(profile, pathlib.Path) else str(profile)
+    name = profile.name if isinstance(profile, pathlib.Path) else str(profile)
     site_label = sites.site_name(sites.read_profile_site(profile_dir))
-    return Choice(value=profile, name=f"{name} [{site_label}]")
+    return Choice(value=name, name=f"{name} [{site_label}]")
 
 
-def profiles_prompt() -> int:
+def profiles_prompt() -> str:
     name = "profile"
     profile_prompt_choices = [*of_env.getattr("profilesPromptChoices")]
     profile_prompt_choices.insert(5, Separator())
@@ -58,7 +57,7 @@ def profiles_prompt() -> int:
 def edit_profiles_prompt(profiles) -> str:
     name = "edit"
 
-    profile_choices = [Choice(value=profile.stem, name=f"{profile.stem} [{sites.site_name(sites.read_profile_site(profile))}]") for profile in profiles]
+    profile_choices = [_profile_choice(profile) for profile in profiles]
 
     questions = promptClasses.batchConverter(
         *[

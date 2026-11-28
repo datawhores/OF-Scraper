@@ -161,6 +161,26 @@ def test_site_option_is_parsed():
     assert params["site"] is None
 
 
+def test_resolve_site_is_side_effect_free(profiles, monkeypatch):
+    monkeypatch.setattr(sites, "_session_site", None)
+    monkeypatch.setattr(sites, "_session_profile", None)
+    (profiles / "fans_profile").mkdir()
+    sites.write_profile_site(profiles / "fans_profile", "fansly")
+    (profiles / "other_profile").mkdir()
+
+    assert sites.resolve_site(SimpleNamespace(site=None, profile="fans_profile")) == "fansly"
+    assert sites._session_site is None
+    assert sites._session_profile is None
+
+    monkeypatch.setattr(sites, "_session_site", sites.FANSLY)
+    monkeypatch.setattr(sites, "_session_profile", "main_profile")
+
+    assert sites.resolve_site(SimpleNamespace(site=None, profile="other_profile")) == "onlyfans"
+    assert sites._session_site == sites.FANSLY
+    assert sites._session_profile == "main_profile"
+    assert sites.resolve_site(SimpleNamespace(site=None, profile="main_profile")) == "fansly"
+
+
 # ------------------------------------------------------------------ auth file and token check
 
 def test_auth_file_round_trip_and_validation(tmp_path):
@@ -421,3 +441,57 @@ def test_auth_edit_refreshes_account_path_identity_only_after_save(monkeypatch, 
     assert after._variables["my_id"] == (2 if outcome == "saved" else 1)
     assert after._variables["my_username"] == ("new_account" if outcome == "saved" else "old_account")
     assert calls == ([TOKEN, replacement] if outcome == "saved" else [TOKEN])
+
+
+def test_session_site_override_cleared_when_config_general_changes_profile(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    import ofscraper.utils.config.data as config_data
+    import ofscraper.utils.config.menu as config_menu
+    import ofscraper.utils.paths.common as common_paths
+    import ofscraper.utils.settings as settings
+
+    profile_a = tmp_path / "alpha_profile"
+    profile_b = tmp_path / "beta_profile"
+    profile_a.mkdir()
+    profile_b.mkdir()
+    sites.write_profile_site(profile_a, sites.ONLYFANS)
+    sites.write_profile_site(profile_b, sites.ONLYFANS)
+
+    active_main = ["alpha_profile"]
+    monkeypatch.setattr(common_paths, "get_config_home", lambda: tmp_path)
+    monkeypatch.setattr(config_data, "get_main_profile", lambda: active_main[0])
+    monkeypatch.setattr(settings, "get_args", lambda: SimpleNamespace(profile=None, site=None))
+    monkeypatch.setattr(config_menu.config_file, "open_config", lambda: {"main_profile": active_main[0]})
+    monkeypatch.setattr(
+        config_menu.config_,
+        "update_config_full",
+        lambda cur, upd: active_main.__setitem__(0, upd["main_profile"]),
+    )
+    monkeypatch.setattr(config_menu.settings, "update_settings", lambda: None)
+    monkeypatch.setattr(config_menu.console_, "get_console", lambda: SimpleNamespace(print=lambda *a, **k: None))
+
+    try:
+        sites.clear_session_site()
+        sites.set_active_site(sites.FANSLY)
+        assert sites.resolve_site(SimpleNamespace(profile=None, site=None)) == sites.FANSLY
+
+        # Switching profile via Config > General must clear the session site override
+        config_menu.update_config_helper({"main_profile": "beta_profile"})
+        assert sites.resolve_site(SimpleNamespace(profile=None, site=None)) == sites.ONLYFANS
+
+        # Returning to alpha_profile must not re-apply the stale Fansly session override
+        config_menu.update_config_helper({"main_profile": "alpha_profile"})
+        assert sites.resolve_site(SimpleNamespace(profile=None, site=None)) == sites.ONLYFANS
+    finally:
+        sites.clear_session_site()
+
+
+def test_profile_choice_preserves_dots_in_profile_folder_name(tmp_path):
+    from ofscraper.prompts.prompt_groups.profile import _profile_choice
+
+    dotted = tmp_path / "creator.alt_profile"
+    dotted.mkdir()
+    choice = _profile_choice(dotted)
+    assert choice.value == "creator.alt_profile"
+    assert choice.name.startswith("creator.alt_profile ")
+

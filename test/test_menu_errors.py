@@ -239,6 +239,22 @@ def test_main_menu_counts_each_queued_creator_once(monkeypatch, menu_profile):
     assert "| Users: 2 selected |" in _main_menu_instruction(monkeypatch)
 
 
+def test_main_menu_status_does_not_instantiate_model_manager(monkeypatch, menu_profile):
+    import ofscraper.prompts.prompt_groups.menu as menu_prompts
+
+    assert manager.Manager._profile_manager is None
+    status = menu_prompts._main_menu_status()
+    assert "| Users: Prompt on run |" in status
+    assert manager.Manager._profile_manager is None
+
+    pm = manager.Manager.profile_manager
+    assert pm.model_managers == {}
+    status = menu_prompts._main_menu_status()
+    assert "| Users: Prompt on run |" in status
+    assert pm.model_managers == {}
+    assert pm.peek_model_manager() is None
+
+
 def _profile_switch_setup(monkeypatch, tmp_path, args, stored_site, override=None):
     config = tmp_path / "config.json"
     config.write_text("{}", encoding="utf-8")

@@ -63,7 +63,7 @@ class MultiChoice(click.Choice):
 
 class MultiChoicePost(MultiChoice):
     def _match_key(self, value):
-        return re.sub("^-", "", value, count=1)
+        return value.removeprefix("-")
 
 
 class MutuallyExclusiveMultichoice(MultiChoice):

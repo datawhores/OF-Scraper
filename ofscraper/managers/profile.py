@@ -1,16 +1,16 @@
 import logging
 import shutil
-from ofscraper.managers.model import ModelManager
-import ofscraper.sites as sites
-import ofscraper.utils.settings as settings
-import ofscraper.utils.profiles.data as data
-import ofscraper.utils.paths.common as common_paths
-import ofscraper.utils.config.config as config_
-import ofscraper.utils.profiles.data as profile_data
-import ofscraper.utils.of_env.of_env as of_env
 
+import ofscraper.sites as sites
+import ofscraper.utils.config.config as config_
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.profiles.data as profile_data
+import ofscraper.utils.settings as settings
+from ofscraper.managers.model import ModelManager
 
 log = logging.getLogger("shared")
+
 
 class ProfileManager:
     def __init__(self):
@@ -37,8 +37,9 @@ class ProfileManager:
         else:
             log.info(f"Temporarily switching active profile to '{new_profile_name}' for this session...")
             args.profile = new_profile_name
+        sites.clear_session_site()
         settings.update_args(args)
-        log.info(f"[green]✅ Active profile is now '{new_profile_name}'[/green]")   
+        log.info(f"[green]✅ Active profile is now '{new_profile_name}'[/green]")
 
     def delete_profile(self, profile_name: str):
         if profile_name == self.active_profile:
@@ -52,14 +53,14 @@ class ProfileManager:
         if profile_path.exists():
             log.info(f"Removing profile directory: {profile_path}")
             shutil.rmtree(profile_path)
-        
+
         log.info(f"[green]Successfully deleted profile '{profile_name}'[/green]")
+
     def rename_profile(self, old_name: str, new_name: str):
         """
         Safely renames a profile, updating the filesystem, in-memory state,
         and persistent config. This is the single source of truth for this action.
         """
-        log=logging.getLogger("shared")
         if old_name == new_name:
             log.info("Names are the same. No action needed.")
             return
@@ -79,9 +80,9 @@ class ProfileManager:
                 log.debug(f"Moved profile folder to '{new_folder}'")
             except Exception as e:
                 log.error(f"Failed to rename profile folder: {e}")
-                return # Stop the process if the file operation fails
+                return  # Stop the process if the file operation fails
         else:
-            new_folder.mkdir(parents=True,exist_ok=True)
+            new_folder.mkdir(parents=True, exist_ok=True)
 
         moved = [k for k in self.model_managers if k[0] == old_name]
         if moved:
@@ -93,14 +94,18 @@ class ProfileManager:
 
         if self.config_profile == old_name:
             log.info(f"Default config profile was '{old_name}', updating to '{new_name}'.")
-            config_.update_config("main_profile", new_name) # Updates the main config file
-        if not self.config_profile==old_name and self.active_profile==old_name:
+            config_.update_config("main_profile", new_name)  # Updates the main config file
+        if not self.config_profile == old_name and self.active_profile == old_name:
             log.info(f"Active config profile was '{old_name}', updating to '{new_name}'.")
-            args=settings.get_args()
-            args.profile=new_name
+            args = settings.get_args()
+            args.profile = new_name
             settings.update_args(args)
         log.info(f"[green]Successfully renamed profile '{old_name}' to '{new_name}'[/green]")
-    
+
+    def peek_model_manager(self) -> ModelManager | None:
+        """Return the existing creator manager for the active profile and site, or None."""
+        return self.model_managers.get((self.active_profile, sites.current_site()))
+
     @property
     def current_model_manager(self) -> ModelManager:
         """Get the creator manager for the active profile and site."""
@@ -111,17 +116,17 @@ class ProfileManager:
             log.info(f"Creating new ModelManager for profile: '{profile}' ({site})")
             self.model_managers[key] = ModelManager()
         return self.model_managers[key]
-    
+
     @property
     def active_profile(self) -> str:
         """
         Returns the current active profile by always checking get_active_profile
         """
-        return data.get_active_profile()
-    
+        return profile_data.get_active_profile()
+
     @property
     def config_profile(self) -> str:
         """
         Returns the current config profile by always checking get_current_config_proifle.
         """
-        return data.get_current_config_profile()
+        return profile_data.get_current_config_profile()

@@ -1,9 +1,5 @@
-from ofscraper.prompts.cancel import cancel_scope
-
 import logging
-from typing import Dict, List, Optional, Set, Union, Iterable
-
-from ofscraper.utils.markup import escape_text
+from typing import Dict, Iterable, List, Optional, Set, Union
 
 import ofscraper.data.models.utils.retriver as retriver
 import ofscraper.filters.models.date as date_
@@ -12,19 +8,21 @@ import ofscraper.filters.models.other as other
 import ofscraper.filters.models.price as price
 import ofscraper.filters.models.sort as sort
 import ofscraper.filters.models.subtype as subtype
+import ofscraper.main.close.exit_status as exit_status
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.console as console
 import ofscraper.utils.interactive as interactive
-from ofscraper.utils.context.run_async import run
-from ofscraper.classes.of.models import Model
+import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
 import ofscraper.utils.username_match as username_match
-import ofscraper.main.close.exit_status as exit_status
+from ofscraper.classes.of.models import Model
+from ofscraper.managers.utils.state import EActivity, StateManager, string_to_activity
+from ofscraper.prompts.cancel import cancel_scope
 from ofscraper.utils.args.mutators.user import resetUserFilters
-from ofscraper.managers.utils.state import StateManager, EActivity, string_to_activity
-import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.live.updater as progress_updater
-import ofscraper.utils.live.screens as progress_utils
+from ofscraper.utils.context.run_async import run
+from ofscraper.utils.markup import escape_text
 
 log = logging.getLogger("shared")
 
@@ -152,11 +150,7 @@ class ModelManager:
         final_selection = []
 
         # Load all base data into memory first (or force refresh when --refresh-users is set)
-        if self._refresh_users():
-            log.info("Refresh users active. Re-fetching subscriptions for this pass.")
-            self._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
-        else:
-            self._load_all_subs_if_needed()
+        self._load_subs_for_pass(log_refresh=True)
 
         # --- Step 2: Select Models Based on Mode ---
         if settings.get_args().daemon:
@@ -216,10 +210,7 @@ class ModelManager:
         """The usual creator questions (filters, then the picker), without
         queueing anyone. The check table opened from the Action Menu (#425)
         uses it."""
-        if self._refresh_users():
-            self._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
-        else:
-            self._load_all_subs_if_needed()
+        self._load_subs_for_pass()
         return self._select_models_scraper()
 
     @run
@@ -585,6 +576,15 @@ class ModelManager:
     # 4. API FETCHING & CACHING (The Engine Room)
     # =========================================================================
 
+    def _load_subs_for_pass(self, log_refresh: bool = False) -> None:
+        """Load base subscriptions, or force a pass refresh when ``--refresh-users`` is set."""
+        if self._refresh_users():
+            if log_refresh:
+                log.info("Refresh users active. Re-fetching subscriptions for this pass.")
+            self._fetch_all_subs(force_refetch=True, reset=True, keep_on_empty=True)
+        else:
+            self._load_all_subs_if_needed()
+
     def _load_all_subs_if_needed(self) -> None:
         """
         THE INITIAL DATA LOADER:
@@ -608,8 +608,10 @@ class ModelManager:
         leaves an empty list: after --user-list or --black-list changed, the
         old list's creators must not stay. ``keep_on_empty`` (the
         --refresh-users rescan each pass makes) drops them only once the scan
-        finds someone, so a failed scan whose retry is declined keeps the
-        list the session already had."""
+        finds someone, so a failed interactive scan whose retry is declined
+        keeps the list the session already had. In daemon mode, ``reset``
+        still clears the list on an empty scan so the pass is skipped instead
+        of scraping stale creators."""
         if self._all_subs_dict and not force_refetch and not reset:
             return
         self._last_fetched = None

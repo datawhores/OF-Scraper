@@ -1,21 +1,20 @@
-from ofscraper.prompts.cancel import back_to_menu, cancel_scope
-
 import logging
 import traceback
 
+import ofscraper.managers.manager as manager
 import ofscraper.prompts.prompts as prompts
+import ofscraper.sites as sites
 import ofscraper.utils.actions as actions
 import ofscraper.utils.auth.file as auth_file
-import ofscraper.sites as sites
 import ofscraper.utils.config.menu as config_menu
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.merge as merge
 import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.settings as settings
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.profiles.manage as profiles_manage
 import ofscraper.utils.profiles.tools as profile_tools
-import ofscraper.managers.manager as manager
+import ofscraper.utils.settings as settings
+from ofscraper.prompts.cancel import back_to_menu, cancel_scope
 from ofscraper.utils.markup import escape_text
 
 log = logging.getLogger("shared")
@@ -99,32 +98,26 @@ def main_menu_action():
             log.debug(traceback.format_exc())
 
 
+def clear_selected_areas():
+    actions.remove_post_area()
+    actions.remove_download_area()
+    actions.remove_like_area()
+
+
 @back_to_menu
 def switch_site_helper():
-    from InquirerPy.base import Choice
-    import ofscraper.prompts.promptConvert as promptClasses
     import ofscraper.utils.paths.common as common_paths
 
     target = sites.FANSLY if not sites.is_fansly() else sites.ONLYFANS
     target_label = sites.site_name(target)
-    scope = promptClasses.getChecklistSelection(
-        message=f"Switch active site from {sites.site_name()} to {target_label}:",
-        choices=[
-            Choice("session", f"Switch to {target_label} for this session only"),
-            Choice("profile", f"Switch to {target_label} and save to profile site.json"),
-            Choice(None, "Cancel"),
-        ],
-        default="session",
-    )
+    scope = prompts.switch_site_prompt(target)
     if not scope:
         return
     if scope == "profile":
         sites.write_profile_site(common_paths.get_profile_path(), target)
     sites.set_active_site(target)
     settings.update_settings()
-    actions.remove_post_area()
-    actions.remove_download_area()
-    actions.remove_like_area()
+    clear_selected_areas()
     log.info(f"Switched active site to {target_label}")
 
 
@@ -154,12 +147,10 @@ def profile_menu_helper(result_profiles_prompt):
             profiles_manage.create_profile()
         # Re-selecting the active profile (or creating without activating) is a no-op, including its session site.
         if profile_data.get_active_profile() != previous_profile:
-            sites.set_active_site(None)
+            sites.clear_session_site()
             settings.update_settings()
             if sites.current_site() != previous_site:
-                actions.remove_post_area()
-                actions.remove_download_area()
-                actions.remove_like_area()
+                clear_selected_areas()
     elif result_profiles_prompt == "name":
         # Edit a profile
         profiles_manage.edit_profile_name()
