@@ -267,7 +267,8 @@ def daemon_process():
     if settings.get_settings().output_level == "PROMPT":
         log.info("[bold]silent-mode on[/bold]")
     log.info("[bold]Daemon mode on[/bold]")
-    manager.Manager.current_model_manager.sync_models()
+    if not getattr(settings.get_settings(), "refresh_users", False):
+        manager.Manager.current_model_manager.sync_models()
     actions.select_areas()
     wakeup = DaemonWakeup()
     wakeup.install()

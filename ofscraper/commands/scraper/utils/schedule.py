@@ -106,7 +106,8 @@ def schedule_helper(*functs, wakeup=None):
         wakeup.state = "busy"
     jobqueue.put(logger.resetLogger)
     jobqueue.put(logs.printStartValues)
-    jobqueue.put(manager.Manager.current_model_manager.sync_models)
+    if not getattr(settings.get_settings(), "refresh_users", False):
+        jobqueue.put(manager.Manager.current_model_manager.sync_models)
     jobqueue.put(before_arg.update_before)
     for funct in functs:
         jobqueue.put(funct)
