@@ -209,32 +209,79 @@ async def _look_up_names(c, names, excluded, has_filters: bool, cache: dict):
 _ALL = "the creator list"
 
 
-async def _update_targets(c, cache: dict, usernames, excluded, all_users: bool, has_filters: bool, by_name: bool) -> set:
+async def _update_targets(
+    c,
+    cache: dict,
+    usernames,
+    excluded,
+    all_users: bool,
+    has_filters: bool,
+    by_name: bool,
+    refresh: bool = False,
+) -> set:
     """Look up the target creators into ``cache["targets"]``: all of them on the
     first poll (the -u names one by one with ``by_name``, else from the
     subscription lists), then on later polls the ones a failed lookup left
     out, so one failure doesn't leave a creator unwatched all session.
+    With ``refresh`` (--refresh-users, when ``shared.refresh_due`` says so) the
+    targets are looked up again and replace the ones held, while names that
+    missed 3+ times still back off to every 10th poll.
     Returns the ids the lookup saw live."""
     # the cache is filled only after a lookup succeeds: one that raised leaves
     # it as it was, so the next poll looks up everything again
     cache["poll"] = poll = cache.get("poll", 0) + 1
     misses = cache.setdefault("misses", {})
-    if "targets" not in cache or cache["unresolved"] is None:
+    if "targets" not in cache or cache.get("unresolved") is None or refresh:
         # a lookup that keeps finding no creators at all is made less often too
-        if "targets" in cache and not shared.lookup_due(misses, _ALL, poll):
+        if (
+            "targets" in cache
+            and cache.get("unresolved") is None
+            and not shared.lookup_due(misses, _ALL, poll)
+        ):
             return set()
+        if refresh:
+            cache.pop("blacklist_ids", None)
+            cache.pop("named_ids", None)
         names = None if all_users else ([usernames] if isinstance(usernames, str) else list(usernames))
-        models = await _fetch_models(c, cache, names if by_name else None)
-        targets, initial_live, unresolved = await _resolve_target_creators(
-            usernames, excluded, all_users, has_filters, models, cache
-        )
-        # -u names the lists don't have, such as a creator's old name, are
-        # looked up one by one, as the scraper does (#662)
-        if unresolved and not by_name:
-            more, more_live, unresolved = await _look_up_names(c, unresolved, excluded, has_filters, cache)
-            targets, initial_live = targets + more, initial_live | more_live
-        tried = [_ALL, *(unresolved or [])]
-        shared.count_misses(misses, tried, tried if unresolved is None else unresolved)
+        if by_name:
+            due = [n for n in names if shared.lookup_due(misses, n, poll)]
+            skipped = [n for n in names if n not in due]
+            if due:
+                models = await _fetch_models(c, cache, due)
+                targets, initial_live, missing = await _resolve_target_creators(
+                    due, excluded, False, has_filters, models, cache
+                )
+                shared.count_misses(misses, due, missing)
+            else:
+                targets, initial_live, missing = [], set(), []
+            unresolved = skipped + missing
+        else:
+            models = await _fetch_models(c, cache, None)
+            targets, initial_live, unresolved = await _resolve_target_creators(
+                usernames, excluded, all_users, has_filters, models, cache
+            )
+            # -u names the lists don't have, such as a creator's old name, are
+            # looked up one by one, as the scraper does (#662)
+            if unresolved:
+                due = [n for n in unresolved if shared.lookup_due(misses, n, poll)]
+                skipped = [n for n in unresolved if n not in due]
+                if due:
+                    more, more_live, missing = await _look_up_names(
+                        c, due, excluded, has_filters, cache
+                    )
+                    targets, initial_live = targets + more, initial_live | more_live
+                else:
+                    missing = []
+                unresolved = skipped + missing
+                tried, missed = [_ALL, *due], missing
+            else:
+                tried = [_ALL]
+                missed = [_ALL] if unresolved is None else []
+            if names:
+                for n in names:
+                    if n not in (unresolved or ()):
+                        misses.pop(n, None)
+            shared.count_misses(misses, tried, missed)
     elif cache["unresolved"]:
         # a name that keeps missing (a typo, a deleted account) is asked less often
         due = [n for n in cache["unresolved"] if shared.lookup_due(misses, n, poll)]
@@ -246,7 +293,10 @@ async def _update_targets(c, cache: dict, usernames, excluded, all_users: bool, 
     else:
         return set()
 
-    cache.setdefault("targets", {}).update({t["accountId"]: t for t in targets})
+    if refresh:
+        cache["targets"] = {t["accountId"]: t for t in targets}
+    else:
+        cache.setdefault("targets", {}).update({t["accountId"]: t for t in targets})
     cache["unresolved"] = unresolved
     if unresolved is None or unresolved:
         missing = "the creator list" if unresolved is None else ", ".join(map(str, unresolved))
@@ -364,9 +414,9 @@ async def get_online_streams(c, checks=None) -> list:
     cache = _TARGET_CACHE.get()
     if cache is None:
         cache = {}
-    elif getattr(s, "refresh_users", False):
-        for key in ("targets", "unresolved", "blacklist_ids", "named_ids"):
-            cache.pop(key, None)
+    # --refresh-users: the targets are looked up again now and then, not on
+    # every check, which would scan every subscription once a minute
+    refresh_users = bool(getattr(s, "refresh_users", False)) and shared.refresh_due(cache)
 
     # Batch subscription path:
     # - ALL with custom filters (--user-list, price/date filters, etc.)
@@ -375,7 +425,9 @@ async def get_online_streams(c, checks=None) -> list:
     by_name = not list_mode and (
         search_mode == "individual" or len(username_match.username_keys(usernames)) <= _individual_max()
     )
-    initial_live = await _update_targets(c, cache, usernames, excluded, all_users, has_filters, by_name)
+    initial_live = await _update_targets(
+        c, cache, usernames, excluded, all_users, has_filters, by_name, refresh=refresh_users
+    )
     targets = cache["targets"]
     if not targets:
         return []
