@@ -4,26 +4,31 @@ import os
 import pathlib
 import re
 import string
+
 import arrow
 
+import ofscraper.managers.manager as manager
 import ofscraper.sites as sites
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
-import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.dry_run as dry_run
 import ofscraper.utils.me as me
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.paths.names as names
 import ofscraper.utils.paths.paths as paths
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
-import ofscraper.utils.dry_run as dry_run
-from ofscraper.utils.string import parse_safe
-from ofscraper.utils.config.naming_check import (
-    LIVE_TIME_FIELDS, LIVE_TYPE_KEYS, name_safe, type_name, used_type_options,
-)
-import ofscraper.managers.manager as manager
 from ofscraper.scripts.naming_script import naming_script
+from ofscraper.utils.config.naming_check import (
+    LIVE_TIME_FIELDS,
+    LIVE_TYPE_KEYS,
+    name_safe,
+    type_name,
+    used_type_options,
+)
+from ofscraper.utils.string import parse_safe
 
 log = logging.getLogger("shared")
 
@@ -405,6 +410,25 @@ class tempFilePlaceholder(basePlaceholder):
         return pathlib.Path(self._tempfilepath).name
 
 
+_TRACE_EXCLUDED_KEYS = frozenset({"config", "args"})
+
+
+def _trace_enabled():
+    import ofscraper.utils.logs.utils.trace as trace_utils
+
+    try:
+        return bool(trace_utils.is_trace())
+    except AttributeError:
+        return False
+
+
+def _trace_placeholders(prefix, variables):
+    if not _trace_enabled():
+        return
+    safe = {k: v for k, v in variables.items() if k not in _TRACE_EXCLUDED_KEYS}
+    log.trace(f"{prefix} {safe}")
+
+
 class databasePlaceholder(basePlaceholder):
     def __init__(self, create=True) -> None:
         """create=False works out the database path without making the
@@ -419,9 +443,8 @@ class databasePlaceholder(basePlaceholder):
         self._variables.update({"first_letter": model_username[0].capitalize()})
         self._variables.update({"model_id": model_id})
         self.add_no_underline()
-        globals().update(self._variables)
-        log.trace(
-            f"modelid:{model_id}  database placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        _trace_placeholders(
+            f"modelid:{model_id}  database placeholders", self._variables
         )
         metadata_format = data.get_metadata()
         formatStr = metadata_format.format(**self._variables)
@@ -600,15 +623,27 @@ class _ContentPlaceholder(basePlaceholder):
         # Windows; a date fills one folder, so its "/" adds none
         if "date" in self._variables:
             self._variables["date"] = name_safe(self._variables["date"])
-        globals().update(self._variables)
-        log.trace(
-            f"modelid:{model_id}  mediadir placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
+        _trace_placeholders(
+            f"modelid:{model_id}  mediadir placeholders", self._variables
         )
-        final_path = _template_folder(root, _safe_format(dir_fmt, self._variables))
-        log.trace(f"final mediadir path {final_path}")
-        self._mediadir = final_path
+        mediadir = _template_folder(root, _safe_format(dir_fmt, self._variables))
+        log.trace(f"final mediadir path {mediadir}")
+        self._mediadir = mediadir
         self._mediadir.mkdir(parents=True, exist_ok=True) if create else None
-        return final_path
+        return mediadir
+
+    async def _prepare_filename_variables(self):
+        ele = self._ele
+        file_fmt = self.templates()[2]
+        self._variables.update({"ext": self._ext})
+        await self.add_common_variables(ele, ele.username, ele.model_id)
+        # the date setting can hold "/", which a folder can use but a file
+        # name can't
+        self._variables["date"] = name_safe(self._variables["date"])
+        _trace_placeholders(
+            f"model_id:{ele.model_id}  filename placeholders", self._variables
+        )
+        return file_fmt
 
     @property
     def filepath(self):
@@ -724,22 +759,10 @@ class Placeholders(_ContentPlaceholder):
         if of_env.getattr("SKIP_FILENAME_RETRIVAL"):
             return None
         ele = self._ele
-        ext = self._ext
-        username = ele.username
-        model_id = ele.model_id
-        file_fmt = self.templates()[2]
-        self._variables.update({"ext": ext})
-        await self.add_common_variables(ele, username, model_id)
-        # the date setting can hold "/", which a folder can use but a file
-        # name can't
-        self._variables.update({"date": name_safe(self._variables["date"])})
-        globals().update(self._variables)
-        log.trace(
-            f"model_id:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
-        )
+        file_fmt = await self._prepare_filename_variables()
         out = None
         if ele.responsetype.capitalize() == "Profile":
-            out = _safe_parts(f"{await ele.final_filename}.{ext}")
+            out = _safe_parts(f"{await ele.final_filename}.{self._ext}")
         else:
             out = _safe_format(file_fmt, self._variables)
         out = self._addcount(ele, out, file_fmt)
@@ -903,24 +926,12 @@ class Textholders(_ContentPlaceholder):
     @basePlaceholder.async_wrapper
     async def createfilename(self):
         ele = self._ele
-        ext = self._ext
-        username = ele.username
-        model_id = ele.model_id
-        file_fmt = self.templates()[2]
-        self._variables.update({"ext": ext})
-        await self.add_common_variables(ele, username, model_id)
-        # the date setting can hold "/", which a folder can use but a file
-        # name can't
-        self._variables.update({"date": name_safe(self._variables["date"])})
-        globals().update(self._variables)
-        log.trace(
-            f"model_id:{model_id}  filename placeholders {list(filter(lambda x:x[0] in set(list(self._variables.keys())),list(locals().items())))}"
-        )
+        file_fmt = await self._prepare_filename_variables()
         out = None
         if ele.responsetype.capitalize() == "Profile":
             # file_cleanup has put in space_replacer
             text = ele.file_sanitized_text
-            out = f"{text}.{ext}"
+            out = f"{text}.{self._ext}"
         else:
             file_format = file_fmt
             fields = parse_safe(file_format)
@@ -940,7 +951,3 @@ class Textholders(_ContentPlaceholder):
         log.debug(f"final filename path {out}")
         self._filename = _safe_name(out, file_fmt, self._variables)
         return self._filename
-
-    @property
-    def filedir(self):
-        return pathlib.Path(self.trunicated_filepath).parent

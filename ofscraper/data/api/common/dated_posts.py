@@ -14,6 +14,7 @@ that area's scan. Shared utilities (``settings``, ``of_env``, ``incomplete``,
 """
 
 import logging
+import math
 import traceback
 from dataclasses import dataclass
 
@@ -61,7 +62,7 @@ async def get_posts(m, model_id, username, c=None, post_id=None):
         generators = m.get_tasks(splitArrays, c, model_id, username, after)
         data = await m.process_tasks_batch(generators)
         incomplete.save_scan(model_id, area.api, after, username)
-    elif len(post_id) <= of_env.getattr(area.max_individual):
+    else:
         data = m.process_posts_as_individual()
     m.update_check(data, model_id, after, area.api)
     return data
@@ -108,14 +109,29 @@ async def process_tasks_batch(m, generators):
     return responseArray
 
 
+def _parse_created_at(value):
+    if value in (None, ""):
+        return None
+    try:
+        ts = float(value)
+    except (TypeError, ValueError):
+        return None
+    return ts if math.isfinite(ts) else None
+
+
 def split_posts(m, oldposts, after):
-    if len(oldposts) == 0:
+    dated_posts = []
+    for x in oldposts:
+        ts = _parse_created_at(x.get("created_at"))
+        if ts is None:
+            continue
+        row = x if isinstance(x.get("created_at"), (int, float)) else {**x, "created_at": ts}
+        dated_posts.append((ts, row))
+    if len(dated_posts) == 0:
         return []
-    min_posts = m.get_min_posts_batch(len(oldposts), m.AREA.api)
-    postsDataArray = sorted(oldposts, key=lambda x: float(x.get("created_at") or 0))
-    filteredArray = [
-        x for x in postsDataArray if float(x.get("created_at") or 0) >= after
-    ]
+    min_posts = m.get_min_posts_batch(len(dated_posts), m.AREA.api)
+    dated_posts.sort(key=lambda pair: pair[0])
+    filteredArray = [x for ts, x in dated_posts if ts >= after]
 
     splitArrays = [
         filteredArray[i : i + min_posts]
@@ -288,7 +304,7 @@ async def scrape_posts(
                     log.debug("Passed the user's '--before' upper boundary. Exiting.")
                     yield [
                         x
-                        for x, ts in zip(batch, batch_timestamps)
+                        for x, ts in zip(batch, batch_timestamps, strict=True)
                         if ts is None or ts <= before
                     ]
                     break

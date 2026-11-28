@@ -68,4 +68,9 @@ def _make_auth_attempt(auth, browserSelect):
         return None
     with open(authFile, "w", encoding="utf-8") as f:
         f.write(json.dumps(auth, indent=4))
+    import ofscraper.utils.auth.file as auth_file
+    import ofscraper.utils.profiles.data as profile_data
+
+    auth_file.hide_secrets(auth)
+    profile_data.clear_my_info()
     return auth

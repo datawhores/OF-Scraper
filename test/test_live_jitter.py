@@ -75,3 +75,27 @@ def test_invalid_ofsc_live_jitter_env_falls_back_to_default(monkeypatch, reset_o
     of_env_pkg.get_all_configs(forced=True)
     assert of_env.getattr("LIVE_JITTER") == 10.0
     assert fansly_live.options(SimpleNamespace(live_jitter=None))["jitter"] == 10.0
+
+
+@pytest.mark.parametrize(
+    "env_var, key, default, minimum",
+    [
+        ("OFSC_LIVE_CHECK_CONCURRENCY", "LIVE_CHECK_CONCURRENCY", 5, 1),
+        ("OFSC_LIVE_CHECK_TIMEOUT", "LIVE_CHECK_TIMEOUT", 15, 1),
+        ("OFSC_LIVE_INDIVIDUAL_MAX", "LIVE_INDIVIDUAL_MAX", 10, 0),
+        ("OFSC_LIVE_MAX_FAILURES", "LIVE_MAX_FAILURES", 3, 1),
+    ],
+)
+@pytest.mark.parametrize("raw", ["abc", "", "1.5"])
+def test_invalid_live_int_env_falls_back_to_default(
+    monkeypatch, env_var, key, default, minimum, raw
+):
+    from ofscraper.utils.of_env.values.req.live import load_req_live_config
+
+    monkeypatch.setenv(env_var, raw)
+    cfg = load_req_live_config()
+    assert cfg[key] == default
+
+    monkeypatch.setenv(env_var, "-5")
+    assert load_req_live_config()[key] == minimum
+
