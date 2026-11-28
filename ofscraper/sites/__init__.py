@@ -9,6 +9,8 @@ import json
 import logging
 import pathlib
 
+import ofscraper.utils.const as const
+
 ONLYFANS = "onlyfans"
 FANSLY = "fansly"
 DEFAULT_SITE = ONLYFANS
@@ -17,6 +19,22 @@ SITE_FILE = "site.json"
 # display name used for the {site_name} placeholder
 SITE_NAMES = {ONLYFANS: "Onlyfans", FANSLY: "Fansly"}
 SITES = tuple(SITE_NAMES)
+_SITE_CAPABILITIES = {
+    ONLYFANS: {
+        "post_areas": const.ALL_POST_AREAS,
+        "like_areas": const.TIMELINE_POST_AREAS,
+        "anon_areas": ("Profile", *const.TIMELINE_POST_AREAS),
+        "db_areas": const.ALL_POST_AREAS,
+        "scrape_paid": True,
+    },
+    FANSLY: {
+        "post_areas": ("Timeline", "Messages", "Purchased"),
+        "like_areas": ("Timeline",),
+        "anon_areas": ("Timeline",),
+        "db_areas": ("Timeline", "Messages", "Purchased", "Labels"),
+        "scrape_paid": False,
+    },
+}
 _session_site = None
 _session_profile = None
 
@@ -54,10 +72,40 @@ def write_profile_site(profile_dir, site: str) -> pathlib.Path:
     return path
 
 
+def _resolve_profile_name(args=None) -> str | None:
+    try:
+        import ofscraper.utils.config.data as config_data
+        import ofscraper.utils.profiles.tools as profile_tools
+
+        if args is None:
+            import ofscraper.utils.settings as settings
+
+            args = settings.get_args()
+        profile = (getattr(args, "profile", None) if args is not None else None) or (
+            config_data.get_main_profile()
+        )
+        return profile_tools.profile_name_fixer(profile)
+    except Exception as e:
+        log.debug(f"could not resolve the active profile name: {e}")
+        return None
+
+
+def clear_session_site() -> None:
+    """Clear the session-only site override and its bound profile."""
+    global _session_site, _session_profile
+    _session_site = None
+    _session_profile = None
+
+
 def set_active_site(site: str | None) -> str | None:
     """Set (or clear) the active site for the current interactive session."""
-    global _session_site
-    _session_site = normalize(site) if site is not None else None
+    global _session_site, _session_profile
+    normalized = normalize(site) if site is not None else None
+    if normalized is None:
+        clear_session_site()
+        return None
+    _session_site = normalized
+    _session_profile = _resolve_profile_name()
     return _session_site
 
 
@@ -87,11 +135,9 @@ def init_session_site() -> str:
 
 def resolve_site(args) -> str:
     """``--site`` if given, else the profile's stored site, else OnlyFans."""
-    global _session_site, _session_profile
     override = normalize(getattr(args, "site", None) if args is not None else None)
     if override:
         return override
-    profile = None
     try:
         import ofscraper.utils.config.data as config_data
         import ofscraper.utils.paths.common as common_paths
@@ -101,10 +147,7 @@ def resolve_site(args) -> str:
             config_data.get_main_profile()
         )
         profile = profile_tools.profile_name_fixer(profile)
-        if _session_profile is not None and profile != _session_profile:
-            _session_site = None
-        _session_profile = profile
-        if _session_site:
+        if _session_site and _session_profile is not None and profile == _session_profile:
             return _session_site
         profile_dir = common_paths.get_config_home() / profile
     except Exception as e:
@@ -127,3 +170,33 @@ def is_fansly() -> bool:
 
 def site_name(site=None) -> str:
     return SITE_NAMES[normalize(site) or current_site()]
+
+
+def _capabilities(site=None) -> dict:
+    resolved = normalize(site) if site is not None else (FANSLY if is_fansly() else ONLYFANS)
+    return _SITE_CAPABILITIES[resolved or DEFAULT_SITE]
+
+
+def post_areas(site=None) -> tuple[str, ...]:
+    """Post areas available for download/metadata on ``site``."""
+    return _capabilities(site)["post_areas"]
+
+
+def like_areas(site=None) -> tuple[str, ...]:
+    """Post areas that support like/unlike on ``site``."""
+    return _capabilities(site)["like_areas"]
+
+
+def anon_areas(site=None) -> tuple[str, ...]:
+    """Post areas available for anonymous metadata scraping on ``site``."""
+    return _capabilities(site)["anon_areas"]
+
+
+def db_areas(site=None) -> tuple[str, ...]:
+    """Post areas selectable in the DB prompt on ``site``."""
+    return _capabilities(site)["db_areas"]
+
+
+def supports_scrape_paid(site=None) -> bool:
+    """Whether ``site`` has a separate paid-posts page to scrape."""
+    return _capabilities(site)["scrape_paid"]

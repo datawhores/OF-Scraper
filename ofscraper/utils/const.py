@@ -49,3 +49,14 @@ TIMELINE_POST_AREA_CHOICES = (
     "Labels",
     "Streams",
 )
+ALL_POST_AREAS = (
+    "Profile",
+    "Timeline",
+    "Pinned",
+    "Archived",
+    "Highlights",
+    "Stories",
+    "Messages",
+    "Purchased",
+    "Streams",
+)

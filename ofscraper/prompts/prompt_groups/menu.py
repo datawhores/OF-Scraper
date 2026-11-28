@@ -11,13 +11,39 @@ r"""
 
 """
 
+from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
-from prompt_toolkit.shortcuts import prompt as prompt
 
 import ofscraper.db.postgres as postgres
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.sites as sites
 import ofscraper.utils.of_env.of_env as of_env
+
+
+def _get_non_property(obj, attr):
+    if isinstance(getattr(type(obj), attr, None), property):
+        return None
+    return getattr(obj, attr, None)
+
+
+def _peek_current_model_manager(mgr):
+    if mgr is None:
+        return None
+    # Prefer peeking on an already-initialized ProfileManager so rendering
+    # the menu never eagerly creates a ProfileManager or ModelManager.
+    if hasattr(mgr, "_profile_manager"):
+        pm = _get_non_property(mgr, "_profile_manager")
+        if pm is None:
+            return None
+        if hasattr(pm, "peek_model_manager"):
+            return pm.peek_model_manager()
+        return _get_non_property(pm, "current_model_manager")
+    pm = _get_non_property(mgr, "profile_manager")
+    if pm is not None:
+        if hasattr(pm, "peek_model_manager"):
+            return pm.peek_model_manager()
+        return _get_non_property(pm, "current_model_manager")
+    return _get_non_property(mgr, "current_model_manager")
 
 
 def _main_menu_status() -> str:
@@ -38,7 +64,7 @@ def _main_menu_status() -> str:
         area_parts.append(f"Like: {', '.join(like_areas)}")
     areas_str = " / ".join(area_parts) if area_parts else "Prompt on run"
 
-    mm = getattr(manager.Manager, "current_model_manager", None)
+    mm = _peek_current_model_manager(manager.Manager)
     selected = len(mm.state.get_all_queued_usernames()) if mm is not None else 0
     cli_users = getattr(settings.get_settings(), "usernames", None) or []
     if selected:
@@ -58,7 +84,7 @@ def _main_menu_status() -> str:
 
 
 @promptClasses.top_level
-def main_prompt() -> int:
+def main_prompt() -> str:
     choices_map = dict(of_env.getattr("mainPromptChoices"))
     main_prompt_choices = list(choices_map)
     main_prompt_choices.insert(1, Separator())
@@ -77,6 +103,21 @@ def main_prompt() -> int:
         instruction=_main_menu_status(),
     )
     return choices_map[answer]
+
+
+def switch_site_prompt(target: str | None = None) -> str | None:
+    if target is None:
+        target = sites.FANSLY if not sites.is_fansly() else sites.ONLYFANS
+    target_label = sites.site_name(target)
+    return promptClasses.getChecklistSelection(
+        message=f"Switch active site from {sites.site_name()} to {target_label}:",
+        choices=[
+            Choice("session", f"Switch to {target_label} for this session only"),
+            Choice("profile", f"Switch to {target_label} and save to profile site.json"),
+            Choice(None, "Cancel"),
+        ],
+        default="session",
+    )
 
 
 def continue_prompt() -> bool:
