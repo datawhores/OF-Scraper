@@ -22,12 +22,12 @@ from urllib.parse import urlparse
 import arrow
 import httpx
 
+import ofscraper.managers.manager as manager
 import ofscraper.utils.auth.file as auth_file
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
-import ofscraper.managers.manager as manager
 
 curr_auth = None
 last_check = None

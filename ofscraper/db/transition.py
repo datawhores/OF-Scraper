@@ -36,10 +36,10 @@ from ofscraper.db.operations_.media import (
     repair_size_skipped_media,
 )
 from ofscraper.db.operations_.messages import (
+    add_column_message_group_id,
+    add_column_message_is_deleted,
     add_column_messages_ID,
     rebuild_messages_table,
-    add_column_message_is_deleted,
-    add_column_message_group_id,
 )
 from ofscraper.db.operations_.others import (
     add_column_other_ID,
@@ -50,13 +50,13 @@ from ofscraper.db.operations_.others import (
 )
 from ofscraper.db.operations_.posts import (
     add_column_post_ID,
+    add_column_post_is_deleted,
+    add_column_post_mentions,
     add_column_post_opened,
     add_column_post_pinned,
+    add_column_post_purchase_type,
     add_column_post_stream,
     rebuild_posts_table,
-    add_column_post_is_deleted,
-    add_column_post_purchase_type,
-    add_column_post_mentions,
 )
 from ofscraper.db.operations_.profile import (
     add_column_profiles_seen_at,

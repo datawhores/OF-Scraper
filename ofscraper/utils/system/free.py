@@ -1,10 +1,9 @@
 import pathlib
 import shutil
 
-import ofscraper.utils.settings as settings
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
-
+import ofscraper.utils.settings as settings
 
 # config.json's save_location, keyed on the file and its modification time:
 # the check runs often, and the file is read again only once it changes.

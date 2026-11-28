@@ -5,7 +5,6 @@ parent only schedules, forwards stop signals to the running child, reads each
 child's exit code, and writes a daemon-level status file.
 """
 
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
@@ -13,6 +12,7 @@ import signal
 import subprocess
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 
 import ofscraper.commands.scraper.utils.schedule as daemon_schedule
 import ofscraper.main.close.exit_status as exit_status

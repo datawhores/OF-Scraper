@@ -7,15 +7,15 @@ import arrow
 
 import ofscraper.db.operations_.wrapper as db_wrapper
 import ofscraper.utils.const as const
+import ofscraper.utils.me as me_util
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.separate as separate
 import ofscraper.utils.settings as settings
-import ofscraper.utils.me as me_util
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded,
     get_media_ids_downloaded_model_sync,
     get_media_post_ids_downloaded,
 )
-import ofscraper.utils.of_env.of_env as of_env
 from ofscraper.scripts.skip_download_script import retry_permanent_skips
 from ofscraper.utils.args.accessors.areas import get_download_area
 

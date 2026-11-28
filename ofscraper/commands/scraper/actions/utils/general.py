@@ -15,11 +15,9 @@ import asyncio
 import re
 from functools import partial
 
-
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.hash as hash
-
+import ofscraper.utils.of_env.of_env as of_env
 
 # get_hash's default thread: the current DownloadContext's pool
 _CURRENT_POOL = object()

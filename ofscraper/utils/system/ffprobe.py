@@ -1,11 +1,12 @@
 import logging
 import pathlib
 import re
-from ofscraper.utils.system.subprocess import run
+
 import ofscraper.utils.of_env.of_env as env
 
 # Import both binaries!
 from ofscraper.utils.system.ffmpeg import get_ffmpeg, get_ffprobe
+from ofscraper.utils.system.subprocess import run
 
 log = logging.getLogger("shared")
 

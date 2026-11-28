@@ -1,16 +1,16 @@
 import logging
-import subprocess
 import os
-import traceback
 import pathlib
+import subprocess
+import traceback
 from typing import Union
 
+import ofscraper.utils.of_env.of_env as env
 import ofscraper.utils.settings as settings
 from ofscraper.utils.system.subprocess import async_run
-import ofscraper.utils.of_env.of_env as env
 
 
-async def after_download_script(final_path: Union[str, pathlib.Path]): 
+async def after_download_script(final_path: Union[str, pathlib.Path]):
     final_path = str(final_path)
     log = logging.getLogger("shared")
     script_path = settings.get_settings().after_download_script
@@ -32,21 +32,21 @@ async def after_download_script(final_path: Union[str, pathlib.Path]):
     try:
         # Run the script asynchronously and capture the output
         result = await async_run(
-            [script_path],  
+            [script_path],
             capture_output=True,
             input=final_path,  # Pipe the file path into stdin
             text=True,
-            check=True,  
+            check=True,
             level=env.getattr("AFTER_DOWNLOAD_SCRIPT_SUBPROCESS_LEVEL"),
             name="after download script",
-            timeout=600 
+            timeout=600
         )
 
         # --- Explicitly log stdout/stderr mirroring other scripts ---
         if result:
             stdout_output = result.stdout.strip() if result.stdout else ""
             stderr_output = result.stderr.strip() if result.stderr else ""
-            
+
             if env.getattr("SCRIPT_OUTPUT_SUBPROCCESS"):
                 if stdout_output:
                     log.log(

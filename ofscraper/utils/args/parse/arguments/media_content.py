@@ -3,13 +3,13 @@ import cloup as click
 # import click
 from humanfriendly import parse_size
 
+import ofscraper.utils.args.parse.arguments.utils.date as date_helper
 from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
     StringSplitParseTitle,
 )
-from ofscraper.utils.args.types.choice import MultiChoice
 from ofscraper.utils.args.types.arrow import ArrowType
-import ofscraper.utils.args.parse.arguments.utils.date as date_helper
+from ofscraper.utils.args.types.choice import MultiChoice
 
 quality_option = click.option(
     "-q",

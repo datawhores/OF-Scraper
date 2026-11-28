@@ -10,7 +10,6 @@ import ofscraper.utils.console as console_
 import ofscraper.utils.profiles.data as profile_data
 import ofscraper.utils.settings as settings
 
-
 log = logging.getLogger("shared")
 
 

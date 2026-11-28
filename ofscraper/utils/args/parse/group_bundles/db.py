@@ -1,52 +1,46 @@
 import pathlib
+
 import cloup as click
 
-from ofscraper.utils.args.parse.groups.program import program_options
-from ofscraper.utils.args.parse.groups.logging import logging_options
-from ofscraper.utils.args.parse.arguments.post_content import (
-    db_sort_option,
-    db_desc_option,
-    db_posts_option,
-)
-
-from ofscraper.utils.args.parse.groups.media_filter import (
-    media_type_option,
-    max_size_option,
-    min_size_option,
-    length_max,
-    length_min,
-    media_filter_options_desc,
-    max_media_count_option,
-)
-from ofscraper.utils.args.parse.groups.user_list import userlist_options
-from ofscraper.utils.args.parse.groups.user_select import user_select_options
-from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
-    downloaded_option,
-    lock_option,
-    check_post_id_filter_option,
     check_media_id_filter_option,
-    preview_option,
+    check_post_id_filter_option,
     created_after,
     created_before,
+    downloaded_option,
+    lock_option,
     posted_after,
     posted_before,
+    preview_option,
 )
-
-
-from ofscraper.utils.args.parse.groups.advanced_user_filter import (
-    advanced_userfilters_options,
+from ofscraper.utils.args.parse.arguments.post_content import (
+    db_desc_option,
+    db_posts_option,
+    db_sort_option,
+    download_type_option,
 )
-
-
 from ofscraper.utils.args.parse.groups.advanced_program import (
     advanced_options_desc,
     advanced_options_help,
     update_profile_option,
 )
-from ofscraper.utils.args.parse.arguments.post_content import (
-    download_type_option,
+from ofscraper.utils.args.parse.groups.advanced_user_filter import (
+    advanced_userfilters_options,
 )
+from ofscraper.utils.args.parse.groups.logging import logging_options
+from ofscraper.utils.args.parse.groups.media_filter import (
+    length_max,
+    length_min,
+    max_media_count_option,
+    max_size_option,
+    media_filter_options_desc,
+    media_type_option,
+    min_size_option,
+)
+from ofscraper.utils.args.parse.groups.program import program_options
+from ofscraper.utils.args.parse.groups.user_list import userlist_options
+from ofscraper.utils.args.parse.groups.user_select import user_select_options
+from ofscraper.utils.args.parse.groups.user_sort import user_sorting_options
 
 
 def db_args(func):

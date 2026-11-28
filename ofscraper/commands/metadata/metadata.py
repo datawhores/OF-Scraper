@@ -1,46 +1,43 @@
-import logging
-import copy
-import arrow
 import asyncio
+import copy
+import logging
 
-import ofscraper.utils.settings as settings
-import ofscraper.utils.of_env.of_env as of_env
+import arrow
+
+import ofscraper.commands.scraper.actions.utils.globals as common_globals
+import ofscraper.data.api.init as init
+import ofscraper.db.operations as operations
+import ofscraper.managers.manager as manager
+import ofscraper.utils.actions as actions
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.data.posts.post import post_media_process
-from ofscraper.commands.utils.strings import (
-    metadata_activity_str,
-    mark_stray_str,
-)
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.profiles.tools as profile_tools
+import ofscraper.utils.settings as settings
+from ofscraper.commands.metadata.consumer import consumer
+from ofscraper.commands.metadata.desc import desc
+from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
+from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
 from ofscraper.commands.utils.command import CommandManager
-
-from ofscraper.utils.context.run_async import run as run_async
-import ofscraper.db.operations as operations
+from ofscraper.commands.utils.scrape_context import scrape_context_manager
+from ofscraper.commands.utils.strings import (
+    mark_stray_str,
+    metadata_activity_str,
+)
+from ofscraper.data.posts.post import post_media_process
+from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.db.operations_.media import (
     batch_set_media_downloaded,
     get_archived_media,
     get_messages_media,
     get_timeline_media,
 )
-import ofscraper.data.api.init as init
-import ofscraper.utils.actions as actions
-import ofscraper.utils.profiles.tools as profile_tools
-from ofscraper.commands.utils.scrape_context import scrape_context_manager
 from ofscraper.main.close.final.final import final_action
-from ofscraper.utils.checkers import check_auth
-import ofscraper.managers.manager as manager
-import ofscraper.commands.scraper.actions.utils.globals as common_globals
-import ofscraper.utils.cache.cache as cache
-
-
-from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
-
-from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
-from ofscraper.utils.context.run_async import run
-from ofscraper.commands.metadata.consumer import consumer
-from ofscraper.commands.metadata.desc import desc
-from ofscraper.data.posts.scrape_paid import scrape_paid_all
 from ofscraper.managers.postcollection import PostCollection
+from ofscraper.utils.checkers import check_auth
+from ofscraper.utils.context.run_async import run
+from ofscraper.utils.context.run_async import run as run_async
 
 log = logging.getLogger("shared")
 

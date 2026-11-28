@@ -1,6 +1,7 @@
 import ofscraper.utils.of_env.of_env as env
 from ofscraper.managers.sessionmanager.sessionmanager import SessionSleep
 
+
 class Sleeper:
     """
     Manages the creation of SessionSleep instances, creating them on-demand

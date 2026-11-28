@@ -15,13 +15,13 @@ import logging
 import traceback
 
 import ofscraper.managers.manager as manager
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.screens as progress_utils
 import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 from ofscraper.data.api.tasks import collect_pages
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
-import ofscraper.utils.settings as settings
 
 log = logging.getLogger("shared")
 attempt = contextvars.ContextVar("attempt")

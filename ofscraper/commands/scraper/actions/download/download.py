@@ -1,44 +1,40 @@
+import asyncio
 import logging
 import pathlib
-import asyncio
+from functools import partial
 
-import ofscraper.utils.hash as hash
-from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.commands.utils.strings import (
-    download_activity_str,
-)
-import ofscraper.utils.live.updater as progress_updater
-import ofscraper.utils.config.data as config_data
 import ofscraper.classes.placeholder as placeholder
-from ofscraper.utils.string import format_safe
-from ofscraper.utils.markup import escape_text
-
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
+import ofscraper.managers.manager as manager
+import ofscraper.sites as sites
 import ofscraper.utils.cache.cache as cache
+import ofscraper.utils.config.data as config_data
+import ofscraper.utils.dry_run as dry_run
+import ofscraper.utils.hash as hash
 import ofscraper.utils.live.screens as progress_utils
-
-
-from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
-
-from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
-from ofscraper.utils.context.run_async import run
-from ofscraper.commands.scraper.actions.download.run import consumer, download
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.managers.fansly_stream_download import (
     FanslyStreamDownloadManager,
 )
+from ofscraper.commands.scraper.actions.download.run import consumer, download
 from ofscraper.commands.scraper.actions.download.utils import silent
-from ofscraper.db.operations_.media import prev_download_media_data
-import ofscraper.sites as sites
-from functools import partial
-from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.refresh import (
     fansly_refresher,
 )
 from ofscraper.commands.scraper.actions.download.utils.text import textDownloader
-import ofscraper.utils.settings as settings
-import ofscraper.utils.dry_run as dry_run
-import ofscraper.managers.manager as manager
+from ofscraper.commands.scraper.actions.utils.paths import setDirectoriesDate
+from ofscraper.commands.scraper.actions.utils.workers import get_max_workers
+from ofscraper.commands.utils.strings import (
+    download_activity_str,
+)
+from ofscraper.db.operations_.media import prev_download_media_data
+from ofscraper.utils.context.run_async import run
+from ofscraper.utils.context.run_async import run as run_async
+from ofscraper.utils.markup import escape_text
+from ofscraper.utils.string import format_safe
 
 
 def save_path_str(username=None, model_id=None):

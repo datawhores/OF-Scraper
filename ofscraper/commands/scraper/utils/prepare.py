@@ -1,13 +1,12 @@
 import logging
-import time
 import re
+import time
 
 import ofscraper.data.api.init as init
 import ofscraper.managers.manager as manager
 import ofscraper.utils.actions as actions
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.profiles.tools as profile_tools
-
 
 log = logging.getLogger("shared")
 

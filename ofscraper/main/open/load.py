@@ -7,13 +7,13 @@ import ofscraper.main.close.exit_status as exit_status
 import ofscraper.main.open.run as run
 import ofscraper.utils.config.config as config_
 import ofscraper.utils.config.file as config_file
+import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.dates as dates
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.paths.manage as paths_manage
-import ofscraper.utils.system.system as system
-import ofscraper.utils.config.naming_check as naming_check
 import ofscraper.utils.settings as settings
+import ofscraper.utils.system.system as system
 
 
 def _report_startup_error(error):

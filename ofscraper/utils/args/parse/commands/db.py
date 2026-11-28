@@ -5,6 +5,7 @@ from click import BadParameter
 
 from ofscraper.utils.args.parse.group_bundles.db import db_args
 
+
 def parse_ids(value, option):
     """The whole ids in an option's value, as ints: one id, or several split
     by commas or spaces as the main command's --post-id takes them (#363).

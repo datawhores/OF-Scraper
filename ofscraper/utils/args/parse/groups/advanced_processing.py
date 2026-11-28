@@ -2,7 +2,7 @@ import cloup as click
 
 from ofscraper.utils.args.parse.arguments.advanced_processing import (
    username_search_option,
-    users_first_option
+   users_first_option,
 )
 
 advanced_processing_desc = "Advanced Search & Processing Options"

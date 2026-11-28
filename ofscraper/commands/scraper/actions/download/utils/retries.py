@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_random
 
 import ofscraper.utils.of_env.of_env as of_env
@@ -26,7 +27,7 @@ class download_retry(AsyncRetrying):
             and not isinstance(e, (KeyboardInterrupt, asyncio.CancelledError, NoRetry))
             and not is_signed_cdn_forbidden(e)
         )
-        
+
         def _log_retry(retry_state):
             logging.getLogger("shared").debug(
                 f"Download interrupted/failed. Retrying in {retry_state.next_action.sleep:.2f}s "
@@ -34,9 +35,9 @@ class download_retry(AsyncRetrying):
             )
 
         super().__init__(
-            stop=stop, 
-            wait=wait, 
-            retry=retry, 
+            stop=stop,
+            wait=wait,
+            retry=retry,
             reraise=True,
             before_sleep=_log_retry
         )

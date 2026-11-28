@@ -1,12 +1,12 @@
 # checkmode  args
 import cloup as click
 
+import ofscraper.utils.const as const
 from ofscraper.utils.args.callbacks.parse.file import FileCallback
 from ofscraper.utils.args.callbacks.parse.string import (
     StringSplitParse,
     StringSplitParseTitle,
 )
-import ofscraper.utils.const as const
 from ofscraper.utils.args.types.choice import MultiChoice
 
 # check

@@ -3,17 +3,16 @@ import re
 
 import pynumparser
 from InquirerPy.base import Choice
-from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
 
+import ofscraper.managers.manager as manager
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.promptConvert as promptConvert
 import ofscraper.prompts.utils.model_helpers as modelHelpers
 import ofscraper.utils.config.data as config_data
 import ofscraper.utils.context.stdout as stdout
 import ofscraper.utils.settings as settings
-import ofscraper.managers.manager as manager
-
+from ofscraper.prompts.promptConvert import prompt
 
 console = Console()
 
@@ -45,7 +44,7 @@ def model_details(prompt_):
         ----------------------------------------------------------------------------------------------------------------------------------------
         Original Any Promo Price: [bold deep_sky_blue2]{selected.lowest_promo_all}[/bold deep_sky_blue2]   [Lowest of Any Promotional Price]
         =======================================================================================================================================
-        
+
         [italic yellow]Final Prices Detail =>[ https://cloakedkeys.gitbook.io/ofsc/guides/using-the-scraper/batch-scraping-and-bot-actions/model-selection-sorting/price-filtering-sort][/italic yellow]
         ---------------------------------------------------------------------------------------------------------------------------------------
         Final Current Price: [bold deep_sky_blue2]{selected.final_current_price}[/bold deep_sky_blue2]   [Sub Price or Lowest Claimable Promo Price or Regular Price| See Final Price Details]
@@ -55,7 +54,7 @@ def model_details(prompt_):
         Final Renewal Price: [bold deep_sky_blue2]{selected.final_renewal_price}[/bold deep_sky_blue2]   [Lowest Claimable Promo or Regular Price | See Final Price Details]
         ----------------------------------------------------------------------------------------------------------------------------------------
         Final Regular Price: [bold deep_sky_blue2]{selected.final_regular_price}[/bold deep_sky_blue2]   [Regular Price | See Final Price Details]
-        =======================================================================================================================================  
+        =======================================================================================================================================
 
         PRESS ENTER TO RETURN
         """

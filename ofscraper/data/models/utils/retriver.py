@@ -1,17 +1,18 @@
 import logging
+
+import ofscraper.classes.of.models as models
 import ofscraper.data.api.me as me
 import ofscraper.data.api.subscriptions.individual as individual
 import ofscraper.data.api.subscriptions.lists as lists
 import ofscraper.data.api.subscriptions.subscriptions as subscriptions
-import ofscraper.classes.of.models as models
 import ofscraper.prompts.prompts as prompts
 import ofscraper.sites as sites
-from ofscraper.sites.fansly import scrape as fansly_scrape
 import ofscraper.utils.console as console
 import ofscraper.utils.me as me_util
-from ofscraper.utils.live.updater import activity
 import ofscraper.utils.settings as settings
 import ofscraper.utils.username_match as username_match
+from ofscraper.sites.fansly import scrape as fansly_scrape
+from ofscraper.utils.live.updater import activity
 
 
 async def get_models(all_main_models: bool = False) -> list:
@@ -46,12 +47,12 @@ async def get_models(all_main_models: bool = False) -> list:
             parsed_subscriptions = await get_via_individual()
         else:
             parsed_subscriptions = await get_via_list(count)
-            
+
     # Log the final list of all retrieved usernames
     logging.getLogger("shared").debug(
         f"Final retrieved models ({len(parsed_subscriptions)}): {[model.name for model in parsed_subscriptions]}"
     )
-    
+
     return parsed_subscriptions
 async def get_via_main_list(count):
     out = []

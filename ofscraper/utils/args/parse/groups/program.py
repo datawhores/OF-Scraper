@@ -2,10 +2,10 @@ import cloup as click
 
 from ofscraper.utils.args.parse.arguments.program import (
     config_location_option,
+    env_file_option,
     profile_option,
     site_option,
     version_option,
-    env_file_option,
 )
 
 program_options_desc = "Program Options"

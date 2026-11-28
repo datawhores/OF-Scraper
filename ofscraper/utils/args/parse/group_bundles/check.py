@@ -1,39 +1,37 @@
+import functools
+
 import cloup as click
 from cloup import constraint
 from cloup.constraints import mutually_exclusive
-import functools
+
 from ofscraper.utils.args.parse.arguments.check import (
+    check_mode_media_sort,
     force,
     text_only_option,
     text_option,
-    check_mode_media_sort,
 )
 from ofscraper.utils.args.parse.arguments.metadata_filters import (
-    downloaded_option,
-    lock_option,
     check_media_id_filter_option,
     check_post_id_filter_option,
-)
-
-from ofscraper.utils.args.parse.groups.media_filter import (
-    length_max,
-    length_min,
-    media_type_option,
-    quality_option,
-    media_desc_option,
-    max_size_option,
-    min_size_option,
-)
-
-from ofscraper.utils.args.parse.groups.download import download_options
-from ofscraper.utils.args.parse.groups.file import file_options
-from ofscraper.utils.args.parse.groups.logging import logging_options
-from ofscraper.utils.args.parse.groups.program import program_options
-from ofscraper.utils.args.parse.arguments.metadata_filters import (
+    downloaded_option,
+    lock_option,
     posted_after,
     posted_before,
 )
 from ofscraper.utils.args.parse.arguments.post_content import download_type_option
+from ofscraper.utils.args.parse.groups.download import download_options
+from ofscraper.utils.args.parse.groups.file import file_options
+from ofscraper.utils.args.parse.groups.logging import logging_options
+from ofscraper.utils.args.parse.groups.media_filter import (
+    length_max,
+    length_min,
+    max_size_option,
+    media_desc_option,
+    media_type_option,
+    min_size_option,
+    quality_option,
+)
+from ofscraper.utils.args.parse.groups.program import program_options
 
 
 def main_check(func):

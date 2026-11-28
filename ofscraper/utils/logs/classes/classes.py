@@ -1,5 +1,6 @@
 import logging
 import re
+
 from rich.errors import MarkupError
 from rich.logging import RichHandler
 from rich.text import Text

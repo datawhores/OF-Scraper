@@ -93,8 +93,8 @@ def _send(kind, message, profile=None):
         log.info(f"Alert script path is invalid: '{script}'")
         return
     try:
-        from ofscraper.utils.system.subprocess import run
         import ofscraper.utils.of_env.of_env as env
+        from ofscraper.utils.system.subprocess import run
 
         run(
             [script],

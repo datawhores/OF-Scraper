@@ -18,8 +18,8 @@ import types
 from concurrent.futures import ThreadPoolExecutor
 
 import ofscraper.utils.console as console_
-import ofscraper.utils.settings as settings
 import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.settings as settings
 
 # the counters reset by init_run_state
 _COUNTERS = (

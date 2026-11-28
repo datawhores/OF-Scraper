@@ -1,4 +1,5 @@
 import arrow
+
 import ofscraper.utils.of_env.of_env as of_env
 
 FORMAT = "YYYY-MM-DD"

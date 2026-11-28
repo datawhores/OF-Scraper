@@ -337,7 +337,11 @@ async def _new_paths(media, username, model_id, posts, labelled, counts, site, r
     """Each media row with the path a download would now give it, or why
     it can't be made: {rowid: (path or None, why)}."""
     import ofscraper.utils.config.data as config_data
-    from ofscraper.utils.config.naming_check import MEDIA_TYPES, area_type_names, type_name
+    from ofscraper.utils.config.naming_check import (
+        MEDIA_TYPES,
+        area_type_names,
+        type_name,
+    )
 
     placeholder, RecordedPost, RecordedMedia, RenamePlaceholders = _classes()
     out = {}

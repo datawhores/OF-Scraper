@@ -19,8 +19,8 @@ import arrow
 from rich.console import Console
 
 import ofscraper.db.operations_.wrapper as wrapper
-import ofscraper.db.utils.rebuild as rebuild
 import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.rebuild as rebuild
 import ofscraper.utils.settings as settings
 from ofscraper.db.operations_.others import schemaInsert
 from ofscraper.db.operations_.profile import get_single_model_via_profile
@@ -31,19 +31,19 @@ log = logging.getLogger("shared")
 
 mediaCreate = """
 CREATE TABLE IF NOT EXISTS medias (
-    id INTEGER NOT NULL, 
-    media_id INTEGER, 
-    post_id INTEGER NOT NULL, 
-    link VARCHAR, 
-    directory VARCHAR, 
-    filename VARCHAR, 
-    size INTEGER, 
-    api_type VARCHAR, 
-    media_type VARCHAR, 
+    id INTEGER NOT NULL,
+    media_id INTEGER,
+    post_id INTEGER NOT NULL,
+    link VARCHAR,
+    directory VARCHAR,
+    filename VARCHAR,
+    size INTEGER,
+    api_type VARCHAR,
+    media_type VARCHAR,
     preview INTEGER,
     linked BOOL,
     downloaded BOOL,
-    created_at TIMESTAMP, 
+    created_at TIMESTAMP,
     posted_at TIMESTAMP,
     duration VARCHAR,
     unlocked BOOL,
@@ -118,7 +118,7 @@ unlocked=FALSE
 WHERE media_id=(?) and model_id=(?);
 """
 _mediaDownloadSelect = """
-SELECT  
+SELECT
 directory,filename,size,
 downloaded,hash,skip_permanent
 FROM medias where media_id=(?) and model_id=(?)

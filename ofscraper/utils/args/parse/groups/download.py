@@ -1,11 +1,11 @@
 import cloup as click
 
 from ofscraper.utils.args.parse.arguments.download import (
-    download_sem_option,
-    download_limit_option,
-    show_download_bars_option,
-    no_auto_resume_option,
     allow_dupes_option,
+    download_limit_option,
+    download_sem_option,
+    no_auto_resume_option,
+    show_download_bars_option,
     skip_purchased_dupes_option,
 )
 

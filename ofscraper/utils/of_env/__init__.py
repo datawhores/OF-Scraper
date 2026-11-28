@@ -1,5 +1,7 @@
-from .values.main import load_main_config  # Contains all the prompt choice dictionaries
-
+# Nested 'action' directory
+from .values.action.download import load_download_config  # From action/download.py
+from .values.action.like import load_like_config  # From action/like.py
+from .values.action.metadata import load_metadata_config  # From action/metadata.py
 from .values.date import (
     load_date_config,
 )  # Contains PROMPT_DATE_FORMAT, API_DATE_FORMAT
@@ -10,22 +12,7 @@ from .values.general import (
 from .values.list import load_list_config
 from .values.live import load_live_display_config
 from .values.logger import load_log_config  # Assuming both functions are in logger.py
-from .values.prompts import (
-    load_prompts_config,
-)  # Contains all the prompt choice dictionaries
-
-# Placeholder imports for files where specific constants weren't previously specified,
-# but which exist in your tree. You'll need to define these functions in their files.
-from .values.system import (
-    load_system_config,
-)  # Assuming system.py has a load_system_config() function
-
-from .values.time import load_expiry_config
-
-# Nested 'action' directory
-from .values.action.download import load_download_config  # From action/download.py
-from .values.action.like import load_like_config  # From action/like.py
-from .values.action.metadata import load_metadata_config  # From action/metadata.py
+from .values.main import load_main_config  # Contains all the prompt choice dictionaries
 
 # Nested 'path' directory
 from .values.path.bytes import load_path_bytes_config
@@ -36,25 +23,35 @@ from .values.path.general import (
 from .values.path.length import (
     load_max_lengths_config,
 )  # From path/length.py (MAX_TEXT_LENGTH, WINDOWS_MAX_PATH_BYTES etc.)
+from .values.prompts import (
+    load_prompts_config,
+)  # Contains all the prompt choice dictionaries
 
 # Nested 'req' directory
 from .values.req.anon import load_req_config  # From req/anon.py (ANON_USERAGENT)
 from .values.req.api import load_api_limits_config  # From req/api.py
+from .values.req.auth import load_auth_config
 from .values.req.cdm import load_cdm_config  # From req/cdm.py
 from .values.req.discord import load_discord_config  # From req/discord.py
 from .values.req.git import load_git_config  # From req/git.py
-from .values.req.mpd import load_mpd_config  # From req/mpd.py
 from .values.req.live import load_req_live_config
+from .values.req.mpd import load_mpd_config  # From req/mpd.py
+from .values.req.ratelimit import load_ratelimit_config
 from .values.req.req import (
     load_network_config,
 )  # From req/req.py (the "big one" with timeouts, semaphores etc.)
-from .values.req.ratelimit import load_ratelimit_config
-from .values.req.auth import load_auth_config
+
+# Placeholder imports for files where specific constants weren't previously specified,
+# but which exist in your tree. You'll need to define these functions in their files.
+from .values.system import (
+    load_system_config,
+)  # Assuming system.py has a load_system_config() function
+from .values.time import load_expiry_config
+from .values.url.dynamic import load_dynamic_url_config
 
 # Nested 'url' directory
 from .values.url.other_url import load_other_urls_config  # From url/other_url.py
 from .values.url.url import load_api_endpoints_config  # From url/url.py
-from .values.url.dynamic import load_dynamic_url_config
 
 # hardcoded values
 

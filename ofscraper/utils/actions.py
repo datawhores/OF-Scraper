@@ -13,8 +13,8 @@ r"""
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.args.accessors.areas as areas
-import ofscraper.utils.system.free as free
 import ofscraper.utils.settings as settings
+import ofscraper.utils.system.free as free
 
 
 def reset_download():

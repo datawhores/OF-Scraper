@@ -1,6 +1,9 @@
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
+
 import ofscraper.managers.sessionmanager.ofsession as OFsessionManager
 import ofscraper.managers.sessionmanager.sessionmanager as sessionManager
+
+
 class SessionHandler:
     @staticmethod
     @contextmanager

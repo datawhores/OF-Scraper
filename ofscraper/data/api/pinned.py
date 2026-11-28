@@ -11,18 +11,17 @@ r"""
 
 """
 
-from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
 
-
 import ofscraper.data.api.common.incomplete as incomplete
 import ofscraper.data.api.common.logs.strings as common_logs
-import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.live.updater as progress_utils
+import ofscraper.utils.of_env.of_env as of_env
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 from ofscraper.data.api.tasks import collect_pages
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
 
 log = logging.getLogger("shared")
 API = "Pinned"

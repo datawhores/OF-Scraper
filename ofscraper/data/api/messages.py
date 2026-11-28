@@ -11,35 +11,37 @@ r"""
 
 """
 
-from ofscraper.commands.scraper.actions.download import stop
 import logging
 import traceback
+
 import arrow
 
-import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.data.api.common.incomplete as incomplete
+import ofscraper.data.api.common.logs.strings as common_logs
 import ofscraper.data.api.common.scan_range as scan_range
-import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.const as const
+
 # module attribute that callers and tests patch the progress screen through
 import ofscraper.utils.live.updater as progress_utils  # noqa: F401
-from ofscraper.data.api.tasks import collect_pages
+import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.data.api.common.after import get_after_pre_checks
 from ofscraper.data.api.common.check import update_check
+from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
+from ofscraper.data.api.common.page import get_min_posts_batch
+from ofscraper.data.api.tasks import collect_pages
 from ofscraper.db.operations_.media import (
     get_media_ids_downloaded_model,
     get_messages_media,
 )
 from ofscraper.db.operations_.messages import (
+    get_deleted_messages_ids,
     get_messages_post_info,
     get_newest_message_date,
     mark_message_as_deleted,
-    get_deleted_messages_ids,
 )
 from ofscraper.utils.context.run_async import run
-from ofscraper.data.api.common.logs.logs import trace_log_raw, trace_progress_log
-import ofscraper.utils.const as const
-from ofscraper.data.api.common.page import get_min_posts_batch
 
 API = "Messages"
 log = logging.getLogger("shared")

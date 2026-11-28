@@ -1,20 +1,20 @@
 import logging
-import time
-import traceback
-import re
 import platform
+import re
 import ssl
 import sys
+import time
+import traceback
 
 import certifi
 
+import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.console as console
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
 import ofscraper.utils.system.system as system
 from ofscraper.__version__ import __dist_name__, __version__
-import ofscraper.utils.cache.cache as cache
 from ofscraper.managers.sessionmanager.sessionmanager import BareSession
 
 

@@ -55,8 +55,8 @@ def _creators():
 def _safe_error(error):
     """The error as a log line shows it (cookies, tokens and signed links
     hidden), cut to ERROR_LIMIT: post_script gets it, not only the log."""
-    from ofscraper.utils.logs.classes.classes import SensitiveFormatter
     import ofscraper.utils.logs.utils.sensitive as sensitive
+    from ofscraper.utils.logs.classes.classes import SensitiveFormatter
 
     text = SensitiveFormatter()._filter(sensitive.hide_links(str(error)))
     return text if len(text) <= ERROR_LIMIT else text[: ERROR_LIMIT - 3] + "..."

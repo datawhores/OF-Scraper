@@ -1,23 +1,22 @@
+from rich.progress import Progress, TaskID
+
 from ofscraper.utils.live.progress import (
     activity_counter,
     activity_desc,
     api_job_progress,
     api_overall_progress,
-    userlist_job_progress,
-    userlist_overall_progress,
-    metadata_overall_progress,
     download_job_progress,
     download_overall_progress,
     like_overall_progress,
+    metadata_overall_progress,
+    userlist_job_progress,
+    userlist_overall_progress,
 )
 from ofscraper.utils.live.tasks import (
     get_activity_counter_task,
     get_activity_task,
     get_user_task,
 )
-
-
-from rich.progress import Progress, TaskID
 
 
 class ProgressManager:

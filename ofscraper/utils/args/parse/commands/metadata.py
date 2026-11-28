@@ -1,7 +1,7 @@
 import cloup as click
 
-from ofscraper.utils.args.parse.group_bundles.metadata import metadata_args
 import ofscraper.utils.args.parse.arguments.utils.retry as retry_helper
+from ofscraper.utils.args.parse.group_bundles.metadata import metadata_args
 
 
 @metadata_args

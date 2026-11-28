@@ -17,26 +17,26 @@ import logging
 from rich.console import Console
 
 import ofscraper.classes.labels as labels_class
-import ofscraper.db.utils.convert as convert
 import ofscraper.db.operations_.posts as post_
 import ofscraper.db.operations_.wrapper as wrapper
 import ofscraper.db.utils.columns as db_columns
+import ofscraper.db.utils.convert as convert
 import ofscraper.db.utils.rebuild as rebuild
-from ofscraper.db.operations_.profile import get_single_model_via_profile
 import ofscraper.utils.settings as settings
+from ofscraper.db.operations_.profile import get_single_model_via_profile
 
 console = Console()
 log = logging.getLogger("shared")
 
 labelsCreate = """
 CREATE TABLE IF NOT EXISTS labels (
-    id INTEGER NOT NULL, 
+    id INTEGER NOT NULL,
     label_id INTEGER,
-    name VARCHAR, 
-    type VARCHAR, 
-    post_id INTEGER, 
+    name VARCHAR,
+    type VARCHAR,
+    post_id INTEGER,
     model_id INTEGER,
-    PRIMARY KEY (id),                     
+    PRIMARY KEY (id),
     UNIQUE (post_id,label_id,model_id)
 )
 """

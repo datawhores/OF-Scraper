@@ -1,6 +1,6 @@
 import functools
-import arrow
 
+import arrow
 import cloup as click
 
 

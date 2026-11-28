@@ -2,10 +2,10 @@ import cloup as click
 
 from ofscraper.utils.args.parse.arguments.check import (
     check_areas,
-    url_option,
     file_option,
-    user_option,
     file_username_option,
+    url_option,
+    user_option,
 )
 from ofscraper.utils.args.parse.arguments.post_content import timeline_strict
 

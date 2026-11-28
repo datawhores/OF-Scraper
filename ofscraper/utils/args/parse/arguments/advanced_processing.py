@@ -1,6 +1,6 @@
 import cloup as click
-from ofscraper.utils.args.callbacks.arguments.username import set_search_strategy_flag
 
+from ofscraper.utils.args.callbacks.arguments.username import set_search_strategy_flag
 
 users_first_option = click.option(
     "-uf",

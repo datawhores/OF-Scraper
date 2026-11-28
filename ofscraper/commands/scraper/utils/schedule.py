@@ -1,20 +1,21 @@
-import arrow
-import schedule
 import logging
-from datetime import timezone
-from dateutil import tz
 import random
+import signal
 import time
 import traceback
-import signal
+from datetime import timezone
 
-import ofscraper.utils.args.mutators.before as before_arg
-import ofscraper.utils.logs.logs as logs
-import ofscraper.utils.logs.logger as logger
-import ofscraper.managers.manager as manager
+import arrow
+import schedule
+from dateutil import tz
+
 import ofscraper.main.close.status_file as status_file
-from ofscraper.commands.scraper.utils.jobqueue import jobqueue
+import ofscraper.managers.manager as manager
+import ofscraper.utils.args.mutators.before as before_arg
+import ofscraper.utils.logs.logger as logger
+import ofscraper.utils.logs.logs as logs
 import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.utils.jobqueue import jobqueue
 
 log = logging.getLogger("shared")
 

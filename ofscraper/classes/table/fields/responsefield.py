@@ -1,6 +1,7 @@
 from textual.widgets import Label, SelectionList
-from ofscraper.classes.table.fields.selectfield import SelectField
 from textual.widgets.selection_list import Selection
+
+from ofscraper.classes.table.fields.selectfield import SelectField
 
 
 class ResponseField(SelectField):

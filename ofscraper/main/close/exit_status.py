@@ -4,8 +4,8 @@ Kept free of imports from the rest of the app so any module can record an
 outcome without introducing new coupling.
 """
 
-from enum import IntEnum
 import threading
+from enum import IntEnum
 
 
 class ExitCode(IntEnum):

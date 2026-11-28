@@ -14,22 +14,21 @@ r"""
 from InquirerPy.base import Choice
 from InquirerPy.separator import Separator
 from InquirerPy.validator import EmptyInputValidator, PathValidator
-from ofscraper.prompts.promptConvert import prompt
 from rich.console import Console
-
 
 import ofscraper.db.postgres as postgres
 import ofscraper.prompts.prompt_strings as prompt_strings
 import ofscraper.prompts.prompt_validators as prompt_validators
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.prompts.utils.size_prompt as size_prompt
+import ofscraper.utils.config.data as data
 import ofscraper.utils.config.file as config_file
 import ofscraper.utils.config.schema as schema
+import ofscraper.utils.const as const
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.paths.common as common_paths
 import ofscraper.utils.settings as settings
-import ofscraper.utils.config.data as data
-import ofscraper.utils.const as const
+from ofscraper.prompts.promptConvert import prompt
 
 console = Console()
 
@@ -44,7 +43,7 @@ SPEED_MIN = 64 * 1000 // 8  # 64 Kbps; slower would stall every download
 def funct(prompt_):
     console.print("""
     For more Details => https://cloakedkeys.gitbook.io/ofsc/setup/getting-started/config-options
-    
+
     [General Options]
     main_profile: default profile attached to config
     metadata: path to save db files
@@ -74,13 +73,13 @@ def funct(prompt_):
     -----------------------------------
     [Script Options]
     after_action_script: A script that runs after an action for each model has completed.
-   
+
     post_script: A script that runs after all actions for all models have completed.
     alert_script: A script that runs when something needs a person (login rejected, disk full, daemon pass failing).
-    naming_script: A script that provides custom logic for generating the final filename. 
+    naming_script: A script that provides custom logic for generating the final filename.
     It outputs the desired filename or path.
 
-    skip_download_script: A script that determines whether to skip or continue a download. 
+    skip_download_script: A script that determines whether to skip or continue a download.
     It executes before the download process begins. Printing "False" or nothing to stdout skips the file
     in this run only: the next run asks again. Printing "skip-permanent" skips it for good: it's saved as
     downloaded with no file and not asked about again (--retry-permanent-skips or
@@ -123,7 +122,7 @@ def funct(prompt_):
     [Response Type]
     values that remap responsetypes for downloads
     ======================================================
-    
+
     PRESS ENTER TO RETURN
     """)
     prompt("")

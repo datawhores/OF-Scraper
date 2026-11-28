@@ -1,15 +1,14 @@
-from ofscraper.prompts.cancel import cancel_scope
-
-from InquirerPy.separator import Separator
 import arrow
+from InquirerPy.base import Choice
+from InquirerPy.separator import Separator
 
 import ofscraper.data.api.common.scan_range as scan_range
 import ofscraper.prompts.promptConvert as promptClasses
 import ofscraper.sites as sites
 import ofscraper.utils.dry_run as dry_run
 import ofscraper.utils.of_env.of_env as of_env
-from InquirerPy.base import Choice
 import ofscraper.utils.settings as settings
+from ofscraper.prompts.cancel import cancel_scope
 
 # what a Yes to the redownload question changes, for that run only
 REDOWNLOAD_ARGS = ("after", "force_all", "no_api_cache")

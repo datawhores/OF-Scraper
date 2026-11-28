@@ -1,5 +1,6 @@
-import ofscraper.utils.console as console
 from typing import List, Union
+
+import ofscraper.utils.console as console
 from ofscraper.utils.live.progress import (
     activity_counter,
     activity_desc,
@@ -7,8 +8,8 @@ from ofscraper.utils.live.progress import (
     api_overall_progress,
     download_job_progress,
     download_overall_progress,
-    metadata_overall_progress,
     like_overall_progress,
+    metadata_overall_progress,
     userlist_job_progress,
     userlist_overall_progress,
 )

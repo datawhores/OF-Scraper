@@ -1,38 +1,37 @@
+import csv
+import datetime
 import logging
 import time
-import datetime
 from collections import OrderedDict
-import csv
+
 import arrow
+from humanfriendly import format_size
+from rich import box
 from rich.table import Table
 from rich.text import Text
-from rich import box
-from humanfriendly import format_size
 
-
-import ofscraper.utils.console as console
-
-from ofscraper.db.operations_.media import (
-    get_timeline_media,
-    get_archived_media,
-    get_messages_media,
-    get_streams_media,
-    get_pinned_media,
-    get_highlights_media,
-    get_stories_media,
-    get_all_medias,
-    get_permanent_skip_media_ids,
-    unmark_permanent_skips,
-)
 import ofscraper.db.operations_.wrapper as db_wrapper
-from ofscraper.db.operations_.wrapper import DatabaseMissing
-from ofscraper.utils.logs.other import add_other_handler
-from ofscraper.utils.context.run_async import run as run_async
+import ofscraper.managers.manager as manager
+import ofscraper.sites as sites
+import ofscraper.utils.actions as actions
+import ofscraper.utils.console as console
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
-import ofscraper.managers.manager as manager
-import ofscraper.utils.actions as actions
-import ofscraper.sites as sites
+from ofscraper.db.operations_.media import (
+    get_all_medias,
+    get_archived_media,
+    get_highlights_media,
+    get_messages_media,
+    get_permanent_skip_media_ids,
+    get_pinned_media,
+    get_stories_media,
+    get_streams_media,
+    get_timeline_media,
+    unmark_permanent_skips,
+)
+from ofscraper.db.operations_.wrapper import DatabaseMissing
+from ofscraper.utils.context.run_async import run as run_async
+from ofscraper.utils.logs.other import add_other_handler
 
 
 def unmarking():

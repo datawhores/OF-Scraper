@@ -1,28 +1,28 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import json
-from ofscraper.prompts.cancel import back_to_menu
 import logging
 
 from rich.console import Console
-from ofscraper.utils.markup import escape_text
 
 import ofscraper.prompts.prompts as prompts
 import ofscraper.utils.auth.make as make
 import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.interactive as interactive
 import ofscraper.utils.paths.common as common_paths
+from ofscraper.prompts.cancel import back_to_menu
+from ofscraper.utils.markup import escape_text
 
 console = Console()
 log = logging.getLogger("shared")
@@ -37,7 +37,7 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
         include_main_menu (Bool): add the main_menu to choices in user prompt
 
     Returns:
-        str | None: "quit" or "main" if the user chooses to exit, 
+        str | None: "quit" or "main" if the user chooses to exit,
                     or None if the user fixes the issue and the operation should be retried.
     """
     if isinstance(e, FileNotFoundError):
@@ -52,7 +52,7 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
         while True:
             try:
                 # This prompt should be defined in your prompts module
-                auth_prompt = prompts.reset_auth_prompt(include_main_menu=include_main_menu)   
+                auth_prompt = prompts.reset_auth_prompt(include_main_menu=include_main_menu)
                 if auth_prompt == "manual":
                     # Let the user manually fix the file content
                     authStr = auth_dict.get_auth_string()
@@ -67,7 +67,7 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                     return auth_prompt
 
                 # After fixing, check if the file is now valid JSON before breaking the loop
-                auth_dict.get_auth_dict() 
+                auth_dict.get_auth_dict()
                 console.print("`auth.json` has been fixed.")
                 break
             except interactive.NoConsoleError:
@@ -76,7 +76,7 @@ def handle_auth_errors(e: Exception,include_main_menu:bool=False) -> str | None:
                 console.print(f"An error occurred while trying to fix the file: {escape_text(new_e)}")
                 # Loop continues to give user another chance
                 continue
-    
+
     # Return None to signal that the error was handled and the calling function should retry
     return None
 

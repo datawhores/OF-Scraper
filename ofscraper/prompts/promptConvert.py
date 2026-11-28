@@ -5,10 +5,14 @@ from InquirerPy import get_style, inquirer
 from InquirerPy.containers.instruction import InstructionWindow
 from InquirerPy.containers.validation import ValidationFloat
 from InquirerPy.separator import Separator
+from prompt_toolkit.application import get_app
+from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import FloatContainer
 from prompt_toolkit.shortcuts import PromptSession
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.application import get_app
+
+import ofscraper.prompts.keybindings as keybindings
+import ofscraper.prompts.prompt_strings as prompt_strings
+import ofscraper.utils.interactive as interactive
 
 # top_level is re-exported: menu.py uses it as promptClasses.top_level
 from ofscraper.prompts.cancel import (  # noqa: F401
@@ -17,12 +21,8 @@ from ofscraper.prompts.cancel import (  # noqa: F401
     cancel_scope,
     top_level,
 )
-
-import ofscraper.prompts.keybindings as keybindings
-import ofscraper.prompts.prompt_strings as prompt_strings
-import ofscraper.utils.interactive as interactive
-from ofscraper.utils.live.empty import prompt_live
 from ofscraper.utils.live.clear import clear
+from ofscraper.utils.live.empty import prompt_live
 
 
 def wrapper(prompt_funct):

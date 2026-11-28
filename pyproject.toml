@@ -119,7 +119,7 @@ target-version = "py311"
 # bugbear. Blind excepts and try/except/pass in ofscraper/data/api and
 # ofscraper/db are checked against a baseline by
 # scripts/lint/check_blind_except.py, not here.
-select = ["E9", "F", "B"]
+select = ["E9", "F", "B", "I", "W291", "W293"]
 ignore = [
   # raise-without-from-inside-except: adding `from err`/`from None` changes
   # the chained traceback users and logs see, so each site needs a decision

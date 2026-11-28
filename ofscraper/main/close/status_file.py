@@ -6,7 +6,6 @@ atomically via a temporary file and ``os.replace``. Never includes creator
 usernames.
 """
 
-from datetime import datetime, timezone
 import json
 import logging
 import os
@@ -14,6 +13,7 @@ import pathlib
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 
 log = logging.getLogger("shared")
 

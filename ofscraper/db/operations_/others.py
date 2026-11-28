@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import contextlib
@@ -26,30 +26,30 @@ log = logging.getLogger("shared")
 
 otherCreate = """
 CREATE TABLE IF NOT EXISTS others (
-	id INTEGER NOT NULL,  
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
-	created_at TIMESTAMP, 
-	model_id INTEGER, 
-	PRIMARY KEY (id), 
+	id INTEGER NOT NULL,
+	post_id INTEGER NOT NULL,
+	text VARCHAR,
+	price INTEGER,
+	paid INTEGER,
+	archived BOOLEAN,
+	created_at TIMESTAMP,
+	model_id INTEGER,
+	PRIMARY KEY (id),
 	UNIQUE (post_id,model_id)
 )
 """
 productCreate = """
 CREATE TABLE IF NOT EXISTS products (
-	id INTEGER NOT NULL, 
-	post_id INTEGER NOT NULL, 
-	text VARCHAR, 
-	price INTEGER, 
-	paid INTEGER, 
-	archived BOOLEAN, 
+	id INTEGER NOT NULL,
+	post_id INTEGER NOT NULL,
+	text VARCHAR,
+	price INTEGER,
+	paid INTEGER,
+	archived BOOLEAN,
 	created_at TIMESTAMP,
-    title VARCHAR, 
-    model_id INTEGER, 
-	PRIMARY KEY (id), 
+    title VARCHAR,
+    model_id INTEGER,
+	PRIMARY KEY (id),
 	UNIQUE (post_id,model_id)
 )
 """

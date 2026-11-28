@@ -18,35 +18,33 @@ import traceback
 import urllib.parse
 from contextlib import nullcontext
 
-from ofscraper.commands.scraper.actions.download import stop
-
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
 import ofscraper.utils.events as events
 import ofscraper.utils.live.updater as progress_updater
-from ofscraper.utils.logs.classes.classes import SensitiveFormatter
-from ofscraper.commands.scraper.actions.utils.log import (
-    log_download_progress,
-)
-from ofscraper.commands.scraper.actions.utils.log import get_medialog
-
-from ofscraper.commands.scraper.actions.utils.progress.convert import convert_num_bytes
-from ofscraper.commands.scraper.actions.download.utils.desc import desc
+from ofscraper.classes.of.media import Media
+from ofscraper.commands.scraper.actions.download import stop
 from ofscraper.commands.scraper.actions.download.managers.alt_download import (
     AltDownloadManager,
-)
-from ofscraper.commands.scraper.actions.download.managers.main_download import (
-    MainDownloadManager,
 )
 from ofscraper.commands.scraper.actions.download.managers.fansly_stream_download import (
     FanslyStreamDownloadManager,
 )
+from ofscraper.commands.scraper.actions.download.managers.main_download import (
+    MainDownloadManager,
+)
+from ofscraper.commands.scraper.actions.download.utils import silent
+from ofscraper.commands.scraper.actions.download.utils.desc import desc
 from ofscraper.commands.scraper.actions.download.utils.refresh import (
     fansly_refresher,
     fresh_before_download,
 )
-from ofscraper.classes.of.media import Media
+from ofscraper.commands.scraper.actions.utils.log import (
+    get_medialog,
+    log_download_progress,
+)
+from ofscraper.commands.scraper.actions.utils.progress.convert import convert_num_bytes
 from ofscraper.sites.fansly import video as fansly_video
-from ofscraper.commands.scraper.actions.download.utils import silent
+from ofscraper.utils.logs.classes.classes import SensitiveFormatter
 
 
 async def consumer(aws, task1, medialist, lock, on_result=None):

@@ -1,48 +1,50 @@
 import logging
-from ofscraper.prompts.cancel import cancel_scope
-import traceback
 import threading
+import traceback
+
 import schedule
-from ofscraper.commands.scraper.actions.download import stop
-import ofscraper.utils.context.exit as exit
-import ofscraper.utils.live.screens as progress_utils
-from ofscraper.commands.utils.scrape_context import scrape_context_manager
-from ofscraper.utils.checkers import check_auth, LoginRejected
+
+import ofscraper.commands.scraper.actions.like.like as like_action
+import ofscraper.db.operations as operations
 import ofscraper.main.close.alerts as alerts
 import ofscraper.main.close.exit_status as exit_status
 import ofscraper.main.close.status_file as status_file
-from ofscraper.main.close.final.final import final_action
-from ofscraper.data.posts.scrape_paid import scrape_paid_all
-from ofscraper.commands.scraper.actions.download.download import downloader
-import ofscraper.commands.scraper.actions.like.like as like_action
-import ofscraper.utils.live.updater as progress_updater
-import ofscraper.db.operations as operations
-from ofscraper.utils.context.run_async import run as run_async
-from ofscraper.data.posts.post import post_media_process
-import ofscraper.prompts.prompts as prompts
-import ofscraper.prompts.prompt_groups.actions as action_prompts
-import ofscraper.utils.paths.paths as paths
-import ofscraper.utils.system.network as network
-from ofscraper.commands.scraper.utils.prepare import prepare
-import ofscraper.utils.console as console
-from ofscraper.commands.utils.command import CommandManager, log_user_failure
-import ofscraper.utils.actions as actions
-import ofscraper.utils.checkers as checkers
 import ofscraper.managers.manager as manager
-import ofscraper.utils.interactive as interactive
-from ofscraper.commands.scraper.utils.schedule import DaemonWakeup, set_schedule
-import ofscraper.utils.config.data as data
-import ofscraper.utils.menu as menu
-from ofscraper.commands.scraper.utils.jobqueue import jobqueue
-from ofscraper.__version__ import __version__
-import ofscraper.utils.settings as settings
-import ofscraper.utils.dry_run as dry_run
-from ofscraper.scripts.after_download_action_script import after_download_action_script
-from ofscraper.scripts.after_like_action_script import after_like_action_script
-from ofscraper.managers.postcollection import PostCollection
+import ofscraper.prompts.prompt_groups.actions as action_prompts
+import ofscraper.prompts.prompts as prompts
+import ofscraper.sites as sites
 import ofscraper.sites.fansly.live as live
 import ofscraper.sites.fansly.pipeline as fansly_pipeline
-import ofscraper.sites as sites
+import ofscraper.utils.actions as actions
+import ofscraper.utils.checkers as checkers
+import ofscraper.utils.config.data as data
+import ofscraper.utils.console as console
+import ofscraper.utils.context.exit as exit
+import ofscraper.utils.dry_run as dry_run
+import ofscraper.utils.interactive as interactive
+import ofscraper.utils.live.screens as progress_utils
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.menu as menu
+import ofscraper.utils.paths.paths as paths
+import ofscraper.utils.settings as settings
+import ofscraper.utils.system.network as network
+from ofscraper.__version__ import __version__
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.commands.scraper.actions.download.download import downloader
+from ofscraper.commands.scraper.utils.jobqueue import jobqueue
+from ofscraper.commands.scraper.utils.prepare import prepare
+from ofscraper.commands.scraper.utils.schedule import DaemonWakeup, set_schedule
+from ofscraper.commands.utils.command import CommandManager, log_user_failure
+from ofscraper.commands.utils.scrape_context import scrape_context_manager
+from ofscraper.data.posts.post import post_media_process
+from ofscraper.data.posts.scrape_paid import scrape_paid_all
+from ofscraper.main.close.final.final import final_action
+from ofscraper.managers.postcollection import PostCollection
+from ofscraper.prompts.cancel import cancel_scope
+from ofscraper.scripts.after_download_action_script import after_download_action_script
+from ofscraper.scripts.after_like_action_script import after_like_action_script
+from ofscraper.utils.checkers import LoginRejected, check_auth
+from ofscraper.utils.context.run_async import run as run_async
 
 log = logging.getLogger("shared")
 

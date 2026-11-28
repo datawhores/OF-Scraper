@@ -10,9 +10,9 @@ from ofscraper.utils.live.progress import (
     download_job_progress,
     download_overall_progress,
     like_overall_progress,
+    metadata_overall_progress,
     userlist_job_progress,
     userlist_overall_progress,
-    metadata_overall_progress,
 )
 
 # activity group

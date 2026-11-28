@@ -1,13 +1,9 @@
+import json
+import logging
+import re
 from copy import deepcopy
 
-from ofscraper.prompts.cancel import cancel_scope
-
-import json
-import re
-import logging
-
 from rich.console import Console
-from ofscraper.utils.markup import escape_text
 
 import ofscraper.main.close.exit_status as exit_status
 import ofscraper.prompts.prompts as prompts
@@ -15,10 +11,11 @@ import ofscraper.utils.auth.schema as auth_schema
 import ofscraper.utils.auth.utils.dict as auth_dict
 import ofscraper.utils.auth.utils.prompt as auth_prompt
 import ofscraper.utils.paths.common as common_paths
+import ofscraper.utils.settings as settings
+from ofscraper.prompts.cancel import cancel_scope
 from ofscraper.utils.auth.utils.warning.check import check_auth_warning
 from ofscraper.utils.auth.utils.warning.warning import authwarning
-import ofscraper.utils.settings as settings
-
+from ofscraper.utils.markup import escape_text
 
 console = Console()
 

@@ -10,20 +10,20 @@ from pywidevine.cdm import Cdm
 from pywidevine.device import Device
 from pywidevine.pssh import PSSH
 
-from ofscraper.commands.scraper.actions.download import stop
 import ofscraper.commands.scraper.actions.utils.globals as common_globals
+import ofscraper.managers.manager as manager
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.cache.cache as cache
 import ofscraper.utils.of_env.of_env as of_env
 import ofscraper.utils.settings as settings
+from ofscraper.commands.scraper.actions.download import stop
+from ofscraper.commands.scraper.actions.utils.log import get_medialog
 from ofscraper.commands.scraper.actions.utils.retries import (
     get_cmd_download_req_retries,
 )
-from ofscraper.commands.scraper.actions.utils.log import get_medialog
-from ofscraper.utils.system.subprocess import async_run
 from ofscraper.utils.system.ffmpeg import get_ffmpeg
 from ofscraper.utils.system.network import CDRM_DEPRECATED
-import ofscraper.managers.manager as manager
+from ofscraper.utils.system.subprocess import async_run
 
 log = None
 

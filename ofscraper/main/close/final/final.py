@@ -14,11 +14,11 @@ r"""
 import logging
 
 import ofscraper.main.close.exit_status as exit_status
+import ofscraper.main.close.final.run_record as run_record
+import ofscraper.managers.manager as manager
 import ofscraper.utils.settings as settings
 from ofscraper.scripts.final_script import final_script
 from ofscraper.utils.logs.logs import printEndValues
-import ofscraper.managers.manager as manager
-import ofscraper.main.close.final.run_record as run_record
 
 
 def final_action(outcome="ok"):

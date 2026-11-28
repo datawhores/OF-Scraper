@@ -1,21 +1,20 @@
-import traceback
 import logging
+import traceback
 
-
-import ofscraper.utils.of_env.of_env as of_env
-import ofscraper.utils.live.updater as progress_updater
-from ofscraper.data.posts.post import post_media_process
+import ofscraper.main.close.exit_status as exit_status
+import ofscraper.managers.manager as manager
 import ofscraper.utils.args.accessors.areas as areas
 import ofscraper.utils.live.tasks as progress_tasks
+import ofscraper.utils.live.updater as progress_updater
+import ofscraper.utils.of_env.of_env as of_env
+import ofscraper.utils.settings as settings
 from ofscraper.commands.utils.strings import (
     area_str,
     avatar_str,
     data_str,
     progress_str,
 )
-import ofscraper.main.close.exit_status as exit_status
-import ofscraper.managers.manager as manager
-import ofscraper.utils.settings as settings
+from ofscraper.data.posts.post import post_media_process
 
 log = logging.getLogger("shared")
 

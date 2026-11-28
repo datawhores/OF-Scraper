@@ -1,4 +1,5 @@
 import logging
+
 import ofscraper.utils.of_env.of_env as of_env
 
 log = logging.getLogger("shared")

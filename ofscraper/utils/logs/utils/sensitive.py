@@ -1,6 +1,7 @@
 import re
-import ofscraper.utils.paths.common as paths
 from typing import Any
+
+import ofscraper.utils.paths.common as paths
 
 # The other cookies the app sends, hidden by name like the auth cookies: the
 # CloudFront cookies of a signed stream (OnlyFans and Fansly), and the ones

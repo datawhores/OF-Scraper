@@ -1,14 +1,14 @@
 r"""
-                                                             
- _______  _______         _______  _______  _______  _______  _______  _______  _______ 
+
+ _______  _______         _______  _______  _______  _______  _______  _______  _______
 (  ___  )(  ____ \       (  ____ \(  ____ \(  ____ )(  ___  )(  ____ )(  ____ \(  ____ )
 | (   ) || (    \/       | (    \/| (    \/| (    )|| (   ) || (    )|| (    \/| (    )|
 | |   | || (__     _____ | (_____ | |      | (____)|| (___) || (____)|| (__    | (____)|
 | |   | ||  __)   (_____)(_____  )| |      |     __)|  ___  ||  _____)|  __)   |     __)
-| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (   
+| |   | || (                   ) || |      | (\ (   | (   ) || (      | (      | (\ (
 | (___) || )             /\____) || (____/\| ) \ \__| )   ( || )      | (____/\| ) \ \__
 (_______)|/              \_______)(_______/|/   \__/|/     \||/       (_______/|/   \__/
-                                                                                      
+
 """
 
 import sys
@@ -123,7 +123,7 @@ def prompt_for_browser_auth(include_main_menu: bool = True) -> str:
 
     Returns:
         str: The user's selected choice.
-   
+
     """
     extraction_enabled_note = "\nNote: Browser Extractions only work with default browser profile\n\nHint: Select 'Enter Each Field Manually' to edit your current config\n"
     extraction_disabled_note = "\nNote: To enable automatic extraction, install with Python 3.9 or greater\n\nHint: Select 'Enter Each Field Manually' to edit your current config\n"
@@ -168,10 +168,10 @@ def prompt_for_browser_auth(include_main_menu: bool = True) -> str:
                 }
             ]
         )
-    
+
     if not answer:
         return "quit"
-    
+
     return answer[name]
 
 

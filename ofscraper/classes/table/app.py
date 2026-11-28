@@ -1,26 +1,35 @@
 import logging
 import queue
 import re
+
 import arrow
 from rich.text import Text
 from textual import events
 from textual.app import App
 from textual.binding import Binding
 from textual.css.query import NoMatches
-from textual.widgets import Button, ContentSwitcher, Checkbox, Input, SelectionList
-from ofscraper.classes.table.utils.names import get_col_names, get_input_names, get_post_col_names, PINNED_COLUMNS, EXTRA_COLUMNS, POST_EXTRA_COLUMNS
-from ofscraper.classes.table.utils.lock import mutex
-from ofscraper.classes.table.sections.table import get_styled, get_post_styled
-from ofscraper.classes.table.css import CSS
-from ofscraper.classes.table.const import AMOUNT_PER_PAGE
-from ofscraper.classes.table.compose import composer
-from ofscraper.classes.table.fields.timefield import hms_to_seconds
-from ofscraper.commands.scraper.actions.download import stop
+from textual.widgets import Button, Checkbox, ContentSwitcher, Input, SelectionList
+
 import ofscraper.classes.table.utils.open_folder as open_folder
+import ofscraper.utils.cache.cache as cache
+import ofscraper.utils.console as console_
 import ofscraper.utils.logs.logger as logger
 import ofscraper.utils.settings as settings
-import ofscraper.utils.console as console_
-import ofscraper.utils.cache.cache as cache
+from ofscraper.classes.table.compose import composer
+from ofscraper.classes.table.const import AMOUNT_PER_PAGE
+from ofscraper.classes.table.css import CSS
+from ofscraper.classes.table.fields.timefield import hms_to_seconds
+from ofscraper.classes.table.sections.table import get_post_styled, get_styled
+from ofscraper.classes.table.utils.lock import mutex
+from ofscraper.classes.table.utils.names import (
+    EXTRA_COLUMNS,
+    PINNED_COLUMNS,
+    POST_EXTRA_COLUMNS,
+    get_col_names,
+    get_input_names,
+    get_post_col_names,
+)
+from ofscraper.commands.scraper.actions.download import stop
 
 log = logging.getLogger("shared")
 app = None

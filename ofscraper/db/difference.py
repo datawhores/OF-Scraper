@@ -1,6 +1,5 @@
 from ofscraper.db.operations_.others import get_schema_changes
 
-
 groupA = [
     "media_hash",
     "media_model_id",

@@ -4,8 +4,8 @@ other filters
 
 import logging
 
-from ofscraper.filters.models.utils.logs import trace_log_user
 import ofscraper.utils.settings as settings
+from ofscraper.filters.models.utils.logs import trace_log_user
 from ofscraper.utils.username_match import matches_account, model_matches, username_keys
 
 

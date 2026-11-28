@@ -1,7 +1,9 @@
 import re
+
 import arrow
 from textual.containers import Container, Horizontal
 from textual.widgets import Input, Label
+
 import ofscraper.utils.settings as settings  # Reconnect to truth
 
 

@@ -1,10 +1,10 @@
 import cloup as click
 
-from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
-from ofscraper.utils.args.parse.group_bundles.common import common_args
 from ofscraper.utils.args.helpers.hide_args import hide_manual_mode
-from ofscraper.utils.args.parse.groups.check_content import url_group
+from ofscraper.utils.args.parse.group_bundles.advanced_common import advanced_args
 from ofscraper.utils.args.parse.group_bundles.check import main_check
+from ofscraper.utils.args.parse.group_bundles.common import common_args
+from ofscraper.utils.args.parse.groups.check_content import url_group
 
 
 def manual_args(func):

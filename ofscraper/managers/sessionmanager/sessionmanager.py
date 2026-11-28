@@ -1,39 +1,44 @@
 import asyncio
+import contextlib
 import functools
 import logging
+import ssl
 import sys
 import threading
-from contextlib import contextmanager
 import time
-import ssl
-import contextlib
 import traceback
 import weakref
-from typing import Optional, Dict, Union, AsyncGenerator, Any, Generator
+from contextlib import contextmanager
+from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union
 from urllib.parse import parse_qs, urlsplit
 
+import aiohttp
 import arrow
 import httpx
 import tenacity
-import aiohttp
-from tenacity import AsyncRetrying, Retrying, retry_if_exception, retry_if_not_exception_type
+from tenacity import (
+    AsyncRetrying,
+    Retrying,
+    retry_if_exception,
+    retry_if_not_exception_type,
+)
 
 import ofscraper.main.close.exit_status as exit_status
+import ofscraper.managers.sessionmanager.addresses as addresses
+import ofscraper.managers.sessionmanager.refusing as refusing
 import ofscraper.sites as sites
 import ofscraper.sites.fansly.address as fansly_address
-import ofscraper.managers.sessionmanager.refusing as refusing
-import ofscraper.managers.sessionmanager.addresses as addresses
 import ofscraper.sites.fansly.headers as fansly_headers
 import ofscraper.utils.auth.request as auth_requests
 import ofscraper.utils.host_allowlist as host_allowlist
 import ofscraper.utils.of_env.of_env as of_env
-from ofscraper.utils.auth.utils.warning.print import print_auth_warning
-from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 import ofscraper.utils.settings as settings
 from ofscraper.managers.sessionmanager.cert import (
     create_custom_ssl_context,
     load_certifi_if_no_ca_certs,
 )
+from ofscraper.utils.auth.utils.warning.print import print_auth_warning
+from ofscraper.utils.logs.utils.sensitive import hide_link, hide_links
 
 # Constants for request actions
 TOO_MANY = "too_many"
