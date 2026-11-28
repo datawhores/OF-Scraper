@@ -780,3 +780,71 @@ def test_live_tui_cli_sets_flags_and_rejects_no_rich():
         main_cmd.program(
             standalone_mode=False, prog_name="OF-Scraper", args=["live_tui", "--no-rich"]
         )
+
+
+def test_live_tui_cli_keeps_runtime_option_groups():
+    param_names = {p.name for p in live_tui_cmd.live_tui.params}
+    for required in (
+        "username_search",
+        "dynamic_rules",
+        "auth_fail",
+        "no_cache",
+        "no_api_cache",
+        "update_profile",
+        "desc",
+    ):
+        assert required in param_names
+
+
+def test_live_store_stop_resume_and_index_pruning():
+    from ofscraper.classes.live_tui.state import LiveStore
+
+    store = LiveStore()
+    store.apply_poll_ok(
+        "fansly",
+        [
+            {"accountId": "1", "username": "creator_a"},
+            {"accountId": "2", "username": "creator_b"},
+        ],
+    )
+    store.streams["fansly:1"].status = "recording"
+
+    stopped = store.stop_all()
+    assert len(stopped) == 2
+    assert store.streams["fansly:1"].status == "stopping"
+    assert store.streams["fansly:1"].reason == "Finalizing recording..."
+    assert store.streams["fansly:2"].status == "stopped"
+
+    resumed = store.resume_all()
+    assert len(resumed) == 2
+    assert all(e.status == "queued" and not e.user_stopped for e in resumed)
+
+    store.streams["fansly:2"].status = "ended"
+    assert store.clear_ended() == 1
+    assert "fansly:2" not in store.streams
+    assert ("fansly", "creator_b") not in store.username_index
+    assert ("fansly", "creator_a") in store.username_index
+
+
+def test_formatters_epoch_seconds_and_helpers():
+    import datetime
+
+    from ofscraper.classes.live_tui.formatters import _epoch_seconds, _fmt_bytes, _fmt_hms
+
+    assert _epoch_seconds(None) is None
+    assert _epoch_seconds("") is None
+    assert _epoch_seconds(0) is None
+    assert _epoch_seconds(-10) is None
+    assert _epoch_seconds(float("inf")) is None
+    assert _epoch_seconds(float("-inf")) is None
+    assert _epoch_seconds(float("nan")) is None
+    assert _epoch_seconds("not-a-date") is None
+    assert _epoch_seconds(1_700_000_000) == pytest.approx(1_700_000_000.0)
+    assert _epoch_seconds(1_700_000_000_000) == pytest.approx(1_700_000_000.0)
+    dt = datetime.datetime(2026, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
+    assert _epoch_seconds(dt) == pytest.approx(dt.timestamp())
+    assert _epoch_seconds("2026-01-01T00:00:00+00:00") == pytest.approx(dt.timestamp())
+    assert _fmt_bytes(0) == "0 B"
+    assert _fmt_bytes(1536) == "1.5 KB"
+    assert _fmt_hms(3661) == "1:01:01"
+

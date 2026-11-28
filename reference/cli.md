@@ -854,7 +854,7 @@ Comma- or space-separated profiles to run one after another on each --daemon pas
 
 Record the selected creators (all followed creators without -u) who are live now, then continue. OnlyFans needs the optional live install (a Chromium browser)
 
-**Dest:** `live` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`, `ofscraper/utils/args/parse/commands/live_tui.py`
+**Dest:** `live` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`, `ofscraper/utils/args/parse/group_bundles/live_tui.py`
 
 #### `--live-watch`
 
@@ -1498,5 +1498,5 @@ Change the sort order of the table to ascending
 
 Check who is live right now, record active streams until they end, and exit without polling again
 
-**Dest:** `live` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`, `ofscraper/utils/args/parse/commands/live_tui.py`
+**Dest:** `live` · **Defined in:** `ofscraper/utils/args/parse/arguments/automatic.py`, `ofscraper/utils/args/parse/group_bundles/live_tui.py`
 
